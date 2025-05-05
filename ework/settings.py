@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'ework_job',
     'ework_post',
     'ework_services',
-    'ework_location',
+    'ework_locations',
     'ework_premium',
 
 ]
@@ -90,3 +90,5 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'ework_user_tg.TelegramUser'
