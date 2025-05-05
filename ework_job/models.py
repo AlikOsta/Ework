@@ -1,14 +1,15 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ework_post.models import AbsPost, AbsCategory, AbsFavorite, AbsProductView
-
+from .choices import TYPE_OF_EMPLOYMENT_CHOICES, WORK_SCHEDULE_CHOICES, EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES 
 
 
 class PostJob(AbsPost):
     category = models.ForeignKey("CategoryJob", on_delete=models.CASCADE, related_name='products', verbose_name=_("Категория"))
-    salary = models.IntegerField(verbose_name='Зарплата')
-    experience = models.IntegerField(verbose_name='Опыт работы')
-    work_schedule = models.CharField(max_length=200, verbose_name='График работы')
+    experience = models.IntegerField(choices=EXPERIENCE_CHOICES, default=0, verbose_name=_('Опыт работы')) 
+    work_schedule = models.IntegerField(choices=WORK_SCHEDULE_CHOICES, default=0, verbose_name=_('График работы'))
+    type_of_work = models.IntegerField(choices=TYPE_OF_EMPLOYMENT_CHOICES, default=0, verbose_name=_('Тип занятости'))
+    work_format = models.IntegerField(choices=WORK_FORMAT_CHOICES, default=0, verbose_name=_('Формат работы'))
 
     class Meta:
         pass

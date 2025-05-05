@@ -18,16 +18,16 @@ class AbsPost(models.Model):
     city = models.ForeignKey(City, verbose_name=_('Город работы'), help_text=_('Город работы'), on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))    
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('Сумма'), help_text=_('Укажите сумму'))
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'), help_text=_('Валюта объявления'))
     status = models.IntegerField(choices=STATUS_CHOICES, default=0, verbose_name=_('Статус'))
     is_premium = models.BooleanField(default=False, verbose_name=_('Премиум'), help_text=_('Премиум объявление'))
-    price = models.IntegerField(verbose_name=_('Цена'), help_text=_('Цена'))
-    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'), help_text=_('Валюта объявления'))
 
     class Meta:
         abstract = True
         verbose_name = _("Объявление")
         verbose_name_plural = _("Объявления")
-        ordering = ["-create_at"]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return self.title
@@ -92,7 +92,7 @@ class AbsFavorite(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['user', 'product'], name='unique_user_favorite')
         ]
-        ordering = ["-create_at"]
+        ordering = ["-created_at"]
 
 
 

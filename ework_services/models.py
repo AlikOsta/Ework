@@ -12,7 +12,6 @@ class PostServices(AbsPost):
 
 
 class CategoryServices(AbsCategory):
-    
     class Meta:
         pass
 
