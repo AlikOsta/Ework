@@ -71,7 +71,9 @@ def process_image(
     img = apply_exif_orientation(img)
 
     if img.width > max_size[0] or img.height > max_size[1]:
-        img.thumbnail(max_size, Image.ANTIALIAS)
+        # Заменяем Image.ANTIALIAS на Image.Resampling.LANCZOS
+        # или просто опускаем второй аргумент
+        img.thumbnail(max_size)
 
     supports_alpha = img_format in ('WEBP', 'PNG')
     
