@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rosetta',
+    'django_htmx',
     'ework_bot_tg', #бот ТГ и его фунционнал
     'ework_user_tg', # модель пользователя и авторизация
     'ework_job', # объявления о работе 
@@ -40,6 +41,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'django_htmx.middleware.HtmxMiddleware',
 ]
 
 ROOT_URLCONF = 'ework.urls'
@@ -47,7 +49,9 @@ ROOT_URLCONF = 'ework.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -116,3 +120,8 @@ ROSETTA_MESSAGES_PER_PAGE = 50
 ROSETTA_ENABLE_TRANSLATION_SUGGESTIONS = True
 ROSETTA_STORAGE_CLASS = 'rosetta.storage.CacheRosettaStorage'
 ROSETTA_UWSGI_AUTO_RELOAD = True
+
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]

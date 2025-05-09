@@ -5,6 +5,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.conf.urls.i18n import i18n_patterns
 
+from .views import ProductListView 
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -12,6 +14,7 @@ urlpatterns = [
     path('jobs/', include('ework_job.urls', namespace='jobs')),
     path('users/', include('ework_user_tg.urls', namespace='users')),
     path('rosetta/', include('rosetta.urls')),
+    path('', ProductListView.as_view(), name='home'),
 ]
 
 if settings.DEBUG:

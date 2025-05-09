@@ -1,0 +1,157 @@
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+{% comment %} <html lang="{{ request.user.language|default:LANGUAGE_CODE }}"> {% endcomment %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}{% trans "eWork" %}{% endblock %}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+          rel="stylesheet" 
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" 
+          crossorigin="anonymous">
+    <link rel="stylesheet" 
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" 
+          integrity="sha384-4LISF5TTJX/fLmGSxO53rV4miRxdg84mZsxmO8Rx5jGtp/LbrixFETvWa5a6sESd" 
+          crossorigin="anonymous">
+    
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="d-flex flex-column min-vh-100" data-bs-theme="light">
+    <main class="flex-grow-1 pb-5 mb-5">
+        <div class="container">
+            {% if messages %}
+            <div class="messages mt-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="fixed-bottom bg-white border-top shadow-sm">
+        <nav class="container d-flex justify-content-around py-2">
+            <a href="{% url 'home' %}" 
+            class="text-decoration-none d-flex flex-column align-items-center {% if request.path == '/' %}active{% endif %}">
+                <i class="bi bi-search fs-5"></i>
+                <small>{% trans "Поиск" %}</small>
+            </a>
+            <a href="#" 
+            class="text-decoration-none d-flex flex-column align-items-center {% if 'favorites' in request.path %}active{% endif %}">
+                <i class="bi bi-heart fs-5"></i>
+                <small>{% trans "Избранное" %}</small>
+            </a>
+            <a href="#" 
+            class="text-decoration-none d-flex flex-column align-items-center"
+            data-bs-toggle="modal" data-bs-target="#createPostModal">
+                <i class="bi bi-plus-square fs-5"></i>
+                <small>{% trans "Создать" %}</small>
+            </a>
+            <a href="#" 
+            class="text-decoration-none d-flex flex-column align-items-center {% if 'premium' in request.path %}active{% endif %}">
+                <i class="bi bi-star fs-5"></i>
+                <small>{% trans "Тарифы" %}</small>
+            </a>
+            <a href="#" 
+            class="text-decoration-none d-flex flex-column align-items-center {% if 'profile' in request.path %}active{% endif %}">
+                <i class="bi bi-person fs-5"></i>
+                <small>{% trans "Профиль" %}</small>
+            </a>
+        </nav>
+    </footer>
+
+    <!-- Модальное окно для создания объявления -->
+    <div class="modal fade bottom-sheet" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createPostModalLabel">{% trans "Создать объявление" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-grid gap-3 pb-3">
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="bi bi-briefcase me-2"></i>{% trans "Разместить вакансию" %}
+                        </a>
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="bi bi-tools me-2"></i>{% trans "Разместить услугу" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+            integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
+            crossorigin="anonymous"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tgApp = window.Telegram.WebApp;
+            tgApp.ready();
+            
+            if (tgApp.themeParams) {
+                document.documentElement.style.setProperty('--tg-theme-bg-color', tgApp.themeParams.bg_color);
+                document.documentElement.style.setProperty('--tg-theme-text-color', tgApp.themeParams.text_color);
+                document.documentElement.style.setProperty('--tg-theme-hint-color', tgApp.themeParams.hint_color);
+                document.documentElement.style.setProperty('--tg-theme-link-color', tgApp.themeParams.link_color);
+                document.documentElement.style.setProperty('--tg-theme-button-color', tgApp.themeParams.button_color);
+                document.documentElement.style.setProperty('--tg-theme-button-text-color', tgApp.themeParams.button_text_color);
+            }
+            
+            // Исправление проблемы с aria-hidden и фокусом
+            const createPostModal = document.getElementById('createPostModal');
+            if (createPostModal) {
+                // Предотвращаем добавление aria-hidden="true" к модальному окну
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && 
+                            mutation.attributeName === 'aria-hidden' && 
+                            createPostModal.getAttribute('aria-hidden') === 'true') {
+                            createPostModal.removeAttribute('aria-hidden');
+                        }
+                    });
+                });
+                
+                observer.observe(createPostModal, { attributes: true });
+                
+                // Управляем фокусом при открытии и закрытии модального окна
+                createPostModal.addEventListener('shown.bs.modal', function() {
+                    const firstButton = this.querySelector('.modal-body .btn:first-child');
+                    if (firstButton) {
+                        firstButton.focus();
+                    }
+                });
+                
+                createPostModal.addEventListener('hide.bs.modal', function() {
+                    // Убираем фокус перед закрытием
+                    document.activeElement.blur();
+                });
+            }
+        });
+    </script>
+
+
+  
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
