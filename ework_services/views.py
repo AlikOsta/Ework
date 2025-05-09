@@ -7,12 +7,15 @@ from ework_post.views import (
     BasePostDeleteView, 
     base_toggle_favorite,
 )
-from .models import PostServices, CategoryServices, FavoriteServices, ProductViewServices
+from .models import PostServices, FavoriteServices, ProductViewServices
 from .forms import ServicePostForm
+from ework_rubric.models import SubRubric
+
+
 
 class ServiceListView(BasePostListView):
     model = PostServices
-    category_model = CategoryServices
+    category_model = SubRubric
     template_name = 'services/service_list.html'
     
     def get_context_data(self, **kwargs):
@@ -49,5 +52,4 @@ class ServiceDeleteView(BasePostDeleteView):
 
 def toggle_service_favorite(request, pk):
     """Добавление/удаление услуги из избранного"""
-    from .models import FavoriteServices, PostServices
     return base_toggle_favorite(request, pk, FavoriteServices, PostServices)

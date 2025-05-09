@@ -3,6 +3,6 @@ from . import views
 
 app_name = 'users'
 
-# urlpatterns = [
-#     ...
-# ]
+urlpatterns = [
+    # path('some-url/', some_view, name='some-name'),  # Закомментировано
+]

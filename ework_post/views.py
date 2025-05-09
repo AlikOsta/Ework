@@ -41,7 +41,6 @@ class BasePostListView(ListView):
         return context
 
 
-@login_required
 class BasePostDetailView(DetailView):
     """Базовое представление для детальной страницы объявления"""
     template_name = 'post/post_detail.html'
@@ -79,7 +78,6 @@ class BasePostDetailView(DetailView):
         return response
 
 
-@login_required
 class BasePostCreateView(LoginRequiredMixin, CreateView):
     """Базовое представление для создания объявления"""
     template_name = 'post/post_form.html'
@@ -96,7 +94,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-@login_required
 class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """Базовое представление для редактирования объявления"""
     template_name = 'post/post_form.html'
@@ -116,7 +113,6 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return super().form_valid(form)
 
 
-@login_required
 class BasePostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     """Базовое представление для удаления объявления"""
     template_name = 'post/post_confirm_delete.html'

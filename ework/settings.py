@@ -18,14 +18,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'ework_bot_tg',
-    'ework_user_tg',
-    'ework_job',
-    'ework_post',
-    'ework_services',
-    'ework_locations',
-    'ework_premium',
-
+    'ework_bot_tg', #бот ТГ и его фунционнал
+    'ework_user_tg', # модель пользователя и авторизация
+    'ework_job', # объявления о работе 
+    'ework_post', # абмтрактная модель постов 
+    'ework_services', # объявления о услугах
+    'ework_locations', # города 
+    'ework_premium', # модели для премиум объявления
+    'ework_rubric', # рубрики объявлений
+    'ework_payment', # оплата
+    'ework_currency', # валюты
 ]
 
 MIDDLEWARE = [
@@ -50,6 +52,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'ework_rubric.middleware.post_rubric_context_processor',
             ],
         },
     },

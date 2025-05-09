@@ -6,22 +6,25 @@ from slugify import slugify
 
 from .choices import STATUS_CHOICES
 from .utils_img import process_image
-from ework_locations.models import City,  Currency
+from ework_locations.models import City
+from ework_currency.models import Currency
+from ework_rubric.models import SubRubric
 
 
 class AbsPost(models.Model):
     title = models.CharField(max_length=200, verbose_name=_('Название'), help_text=_('Название объявления'))
     description = models.TextField(verbose_name=_('Описание'), help_text=_('Описание объявления'))
-    image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), help_text=_('Изображение для объявления'))
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name=_('Автор'), help_text=_('Автор объявления'))
-    user_phone = models.CharField(max_length=20, verbose_name=_('Телефон'), help_text=_('Телефон автора объявления'), null=True, blank=True)
-    city = models.ForeignKey(City, verbose_name=_('Город работы'), help_text=_('Город работы'), on_delete=models.PROTECT)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))    
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+    image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), help_text=_('Изображение для объявления')) 
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('Сумма'), help_text=_('Укажите сумму'))
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'), help_text=_('Валюта объявления'))
+    sub_rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, verbose_name=_('Рубрика'), help_text=_('Рубрика объявления'))
+    city = models.ForeignKey(City, verbose_name=_('Город работы'), help_text=_('Город работы'), on_delete=models.PROTECT)
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name=_('Автор'), help_text=_('Автор объявления'))
+    user_phone = models.CharField(max_length=20, verbose_name=_('Телефон'), help_text=_('Телефон автора объявления'), null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0, verbose_name=_('Статус'))
     is_premium = models.BooleanField(default=False, verbose_name=_('Премиум'), help_text=_('Премиум объявление'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))    
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
 
     class Meta:
         abstract = True
@@ -29,7 +32,7 @@ class AbsPost(models.Model):
         verbose_name_plural = _("Объявления")
         ordering = ["-created_at"]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.title
     
     def get_absolute_url(self) -> str:
@@ -43,42 +46,11 @@ class AbsPost(models.Model):
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-
         if self.image:
             processed = process_image(self.image, self.pk)
-
             if processed != self.image:
                 self.image = processed
                 super().save(update_fields=['image'])
-
-
-class AbsCategory(models.Model):
-    title = models.CharField(max_length=200, verbose_name=_('Название'), help_text=_('Название категории'))
-    image = models.ImageField(upload_to='category_img/', verbose_name=_('Изображение'), help_text=_('Изображение для категории'))
-    order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_('Порядок'), help_text=_('Порядок категории'))
-    slug = models.SlugField(max_length=50, unique=True, verbose_name=_('Слаг'), help_text=_('Слаг категории'))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
-
-    class Meta:
-        abstract = True
-        verbose_name = _("Категория")
-        verbose_name_plural = _("Категории")
-        ordering = ['order']
-        
-    def __str__(self):
-        return self.title
-    
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
-        super().save(*args, **kwargs)
-
-    def get_absolute_url(self):
-        return reverse('category-detail', kwargs={'slug': self.slug})
-    
-    def get_count_products(self):
-        products = self.products.filter(status=3)
-        return products.count()
 
 
 class AbsFavorite(models.Model):
@@ -93,6 +65,9 @@ class AbsFavorite(models.Model):
             models.UniqueConstraint(fields=['user', 'product'], name='unique_user_favorite')
         ]
         ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+       return f"{self.user.username} - {self.product.title}"
 
 
 
@@ -111,5 +86,7 @@ class AbsProductView(models.Model):
             ),
         ]
 
+    def __str__(self) -> str:
+        return f"{self.product.title} - {self.user.username}"
 
 

@@ -7,12 +7,14 @@ from ework_post.views import (
     BasePostDeleteView,
     base_toggle_favorite,
 )
-from .models import PostJob, CategoryJob, FavoriteJob, ProductViewJob
+from .models import PostJob, FavoriteJob, ProductViewJob
 from .forms import JobPostForm
+
+from ework_rubric.models import SubRubric
 
 class JobListView(BasePostListView):
     model = PostJob
-    category_model = CategoryJob
+    category_model = SubRubric
     template_name = 'jobs/job_list.html'
     
     def get_context_data(self, **kwargs):

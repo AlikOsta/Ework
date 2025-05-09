@@ -2,7 +2,10 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from ework_post.models import AbsPost
-from ework_locations.models import City, Currency
+from ework_locations.models import City
+from ework_currency.models import Currency
+
+from ework_rubric.models import SubRubric
 
 
 class BasePostForm(forms.ModelForm):
@@ -24,6 +27,11 @@ class BasePostForm(forms.ModelForm):
             'class': 'form-control',
             'placeholder': _('Подробно опишите ваше объявление'),
             'rows': 5
+        })
+
+        self.fields['sub_rubric'].queryset = SubRubric.objects.all().order_by('order', 'name')
+        self.fields['sub_rubric'].widget.attrs.update({
+            'class': 'form-select'
         })
 
         self.fields['price'].widget.attrs.update({
