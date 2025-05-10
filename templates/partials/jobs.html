@@ -1,0 +1,20 @@
+{% load i18n %}
+<div class="row g-3">
+    {% for job in latest_jobs %}
+    <div class="col-12 col-md-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="#">{{ job.title }}</a>
+                </h5>
+                <p class="card-text text-truncate">{{ job.description }}</p>
+                <small class="text-muted">{{ job.created_at|date:"SHORT_DATE_FORMAT" }}</small>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <p class="text-center text-muted">{% trans "Вакансии не найдены." %}</p>
+    </div>
+    {% endfor %}
+</div>
