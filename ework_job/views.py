@@ -1,30 +1,30 @@
 
 from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.views.decorators.http import require_http_methods
-from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
+
 from .models import PostJob
 from .forms import JobPostForm
 from ework_post.views import BasePostCreateView
-from django.utils.translation import gettext as _
+from django.shortcuts import render, redirect
+from ework_user_tg.models import TelegramUser
 
 
-
-
-class JobCreateView(BasePostCreateView):
+class JobPostCreateView(BasePostCreateView):
     model = PostJob
     form_class = JobPostForm
     template_name = 'job/post_job_form.html'
     success_url = reverse_lazy('home')
-    
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        if self.request.headers.get('HX-Request'):
-            return JsonResponse({
-                'success': True,
-                'message': _('Объявление успешно создано и отправлено на модерацию'),
-                'redirect_url': self.get_success_url()
-            })
-        
-        return response
+
+
+def add_job(response):
+    if response.method == 'POST':
+        form = JobPostForm(response.POST)
+        if form.is_valid():
+            job = form.save(commit=False)
+            job.user = response.user
+            job.save()
+            return redirect("home")
+    else:
+        form = JobPostForm()
+    return render(response, 'job/post_job_form.html', {'form': form})

@@ -1,280 +1,95 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% load widget_tweaks %}
 
 {% block title %}{% trans "Создание вакансии" %} | eWork{% endblock %}
 
 {% block content %}
-<div class="job-form-container py-3">
-    {% comment %} <!-- Заголовок с кнопкой назад -->
-    <div class="d-flex align-items-center mb-3">
-        <a href="javascript:history.back()" class="btn btn-link text-decoration-none p-0 me-2">
-            <i class="bi bi-arrow-left fs-4"></i>
-        </a>
-        <h1 class="h4 mb-0">{% trans "Создание вакансии" %}</h1>
-    </div> {% endcomment %}
+{% with WIGGET_ERROR_CLASS="is-invalid" WIGET_REQUIRED_CLASS="my_required" %}
 
-    <!-- Форма создания объявления -->
-    <form method="post" enctype="multipart/form-data" id="jobPostForm" hx-post="{% url 'jobs:job_create' %}" hx-encoding="multipart/form-data" hx-indicator="#form-indicator">
-        {% csrf_token %}
-        
-        <!-- Индикатор загрузки (скрыт по умолчанию) -->
-        <div id="form-indicator" class="htmx-indicator d-none position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-white bg-opacity-75" style="z-index: 1050;">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">{% trans "Загрузка..." %}</span>
-            </div>
+<form method="POST" enctype="multipart/form-data" id="jobPostForm" hx-post="{% url 'jobs:job_create' %}" hx-encoding="multipart/form-data" hx-indicator="#form-indicator">
+    {% csrf_token %}
+
+    <div class="px-5 my-3 text-center">
+        <h5 class="mb-0">{% trans "Новая вакансия" %}</h5>
+    </div>
+
+    <!-- Основная информация -->
+    <div class="mb-3">
+        <label for="{{ form.title.id_for_label }}" class="form-label">{% trans "Название вакансии" %}</label>
+        {% render_field form.title class="form-control" placeholder="Укажите название вакансии" %}
+        <div class="invalid-feedback">{{ form.title.errors|first }}</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="{{ form.description.id_for_label }}" class="form-label">{% trans "Описание вакансии" %}</label>
+        {% render_field form.description class="form-control" placeholder="Укажите описание вакансии" %}
+        <div class="invalid-feedback">{{ form.description.errors|first }}</div>
+    </div>
+
+    <!-- Финансовая информация -->
+    <div class="row mb-3">
+        <div class="col-8">
+            <label for="{{ form.price.id_for_label }}" class="form-label">{% trans "Оплата" %}</label>
+            {% render_field form.price class="form-control" placeholder="Укажите оплату" %}
+            <div class="invalid-feedback">{{ form.price.errors|first }}</div>
         </div>
-
-        <!-- Основная информация -->
-        <div class="card mb-3 border-0 shadow-sm">
-            <div class="card-header bg-transparent">
-                <h5 class="mb-0">{% trans "Основная информация" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    {% comment %} <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}*</label> {% endcomment %}
-                    {{ form.title }}
-                    {% if form.title.errors %}
-                    <div class="invalid-feedback d-block">
-                        {{ form.title.errors }}
-                    </div>
-                    {% endif %}
-                    {% comment %} <div class="form-text">{% trans "Укажите название вакансии" %}</div> {% endcomment %}
-                </div>
-
-                <div class="mb-3">
-                    {% comment %} <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}*</label> {% endcomment %}
-                    {{ form.description }}
-                    {% if form.description.errors %}
-                    <div class="invalid-feedback d-block">
-                        {{ form.description.errors }}
-                    </div>
-                    {% endif %}
-                    {% comment %} <div class="form-text">{% trans "Подробно опишите требования и обязанности" %}</div> {% endcomment %}
-                </div>
-            </div>
+        <div class="col-4">
+            <label for="{{ form.currency.id_for_label }}" class="form-label">{% trans "Валюта" %}</label>
+            {% render_field form.currency class="form-control" %}
+            <div class="invalid-feedback">{{ form.currency.errors|first }}</div>
         </div>
+    </div>
 
-        <!-- Детали работы -->
-        <div class="card mb-3 border-0 shadow-sm">
-            <div class="card-header bg-transparent">
-                <h5 class="mb-0">{% trans "Детали работы" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        {% comment %} <label for="{{ form.experience.id_for_label }}" class="form-label">{{ form.experience.label }}*</label> {% endcomment %}
-                        {{ form.experience }}
-                        {% if form.experience.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.experience.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        {% comment %} <label for="{{ form.work_schedule.id_for_label }}" class="form-label">{{ form.work_schedule.label }}*</label> {% endcomment %}
-                        {{ form.work_schedule }}
-                        {% if form.work_schedule.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.work_schedule.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        {% comment %} <label for="{{ form.type_of_work.id_for_label }}" class="form-label">{{ form.type_of_work.label }}*</label> {% endcomment %}
-                        {{ form.type_of_work }}
-                        {% if form.type_of_work.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.type_of_work.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        {% comment %} <label for="{{ form.work_format.id_for_label }}" class="form-label">{{ form.work_format.label }}*</label> {% endcomment %}
-                        {{ form.work_format }}
-                        {% if form.work_format.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.work_format.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Город -->
+    <div class="mb-3">
+        <label for="{{ form.city.id_for_label }}" class="form-label">{% trans "Город" %}</label>
+        {% render_field form.city class="form-control" %}
+        <div class="invalid-feedback">{{ form.city.errors|first }}</div>
+    </div>
 
-        <!-- Финансовая информация -->
-        <div class="card mb-3 border-0 shadow-sm">
-            <div class="card-header bg-transparent">
-                <h5 class="mb-0">{% trans "Оплата" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-8">
-                        {% comment %} <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}*</label> {% endcomment %}
-                        {{ form.price }}
-                        {% if form.price.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.price.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-4">
-                        {% comment %} <label for="{{ form.currency.id_for_label }}" class="form-label">{{ form.currency.label }}*</label> {% endcomment %}
-                        {{ form.currency }}
-                        {% if form.currency.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.currency.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Рубрика -->
+    <div class="mb-3">
+        <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Рубрика" %}</label>
+        {% render_field form.sub_rubric class="form-control" %}
+        <div class="invalid-feedback">{{ form.sub_rubric.errors|first }}</div>
+    </div>
 
-        <!-- Местоположение и рубрика -->
-        <div class="card mb-3 border-0 shadow-sm">
-            <div class="card-header bg-transparent">
-                <h5 class="mb-0">{% trans "Местоположение и категория" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        {% comment %} <label for="{{ form.city.id_for_label }}" class="form-label">{{ form.city.label }}*</label> {% endcomment %}
-                        {{ form.city }}
-                        {% if form.city.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.city.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        {% comment %} <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{{ form.sub_rubric.label }}*</label> {% endcomment %}
-                        {{ form.sub_rubric }}
-                        {% if form.sub_rubric.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ form.sub_rubric.errors }}
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Детали работы -->
+    <div class="mb-3">
+        <label for="{{ form.experience.id_for_label }}" class="form-label">{% trans "Опыт работы" %}</label>
+        {% render_field form.experience class="form-control" placeholder="Укажите опыт работы" %}
+        <div class="invalid-feedback">{{ form.experience.errors|first }}</div>
+    </div>
 
-        <!-- Контактная информация -->
-        <div class="card mb-3 border-0 shadow-sm">
-            <div class="card-header bg-transparent">
-                <h5 class="mb-0">{% trans "Контактная информация" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    {% comment %} <label for="{{ form.user_phone.id_for_label }}" class="form-label">{{ form.user_phone.label }}</label> {% endcomment %}
-                    {{ form.user_phone }}
-                    {% if form.user_phone.errors %}
-                    <div class="invalid-feedback d-block">
-                        {{ form.user_phone.errors }}
-                    </div>
-                    {% endif %}
-                    <div class="form-text">{% trans "Укажите номер телефона для связи" %}</div>
-                </div>
-            </div>
-        </div>
+    <div class="mb-3">
+        <label for="{{ form.work_schedule.id_for_label }}" class="form-label">{% trans "График работы" %}</label>
+        {% render_field form.work_schedule class="form-control" %}
+        <div class="invalid-feedback">{{ form.work_schedule.errors|first }}</div>
+    </div>
 
-        <!-- Изображение -->
-        <div class="card mb-3 border-0 shadow-sm">
-            <div class="card-header bg-transparent">
-                <h5 class="mb-0">{% trans "Изображение" %}</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    {% comment %} <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label> {% endcomment %}
-                    <div class="image-preview-container mb-2 d-none">
-                        <img id="image-preview" class="img-fluid rounded" style="max-height: 200px;" alt="">
-                    </div>
-                    {{ form.image }}
-                    {% if form.image.errors %}
-                    <div class="invalid-feedback d-block">
-                        {{ form.image.errors }}
-                    </div>
-                    {% endif %}
-                    <div class="form-text">{% trans "Загрузите изображение для вакансии (необязательно)" %}</div>
-                </div>
-            </div>
-        </div>
+    <div class="mb-3">
+        <label for="{{ form.work_format.id_for_label }}" class="form-label">{% trans "Формат работы" %}</label>
+        {% render_field form.work_format class="form-control"%}
+        <div class="invalid-feedback">{{ form.work_format.errors|first }}</div>
+    </div>
 
-        <!-- Кнопки управления -->
-        <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-5">
-            <a href="javascript:history.back()" class="btn btn-outline-secondary">{% trans "Отмена" %}</a>
-            <button type="submit" class="btn btn-primary">{% trans "Опубликовать" %}</button>
-        </div>
-    </form>
-</div>
+    <h5> 
+
+    </h5>
+
+
+    <!-- Кнопки управления -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-5">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary">{% trans "Отмена" %}</a>
+        <button type="submit" class="btn btn-primary">{% trans "Опубликовать" %}</button>
+    </div>
+</form>
+
+{% endwith %}
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Предпросмотр изображения
-    const imageInput = document.getElementById('{{ form.image.id_for_label }}');
-    const imagePreview = document.getElementById('image-preview');
-    const previewContainer = document.querySelector('.image-preview-container');
-    
-    if (imageInput) {
-        imageInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    imagePreview.src = e.target.result;
-                    previewContainer.classList.remove('d-none');
-                }
-                
-                reader.readAsDataURL(this.files[0]);
-            } else {
-                previewContainer.classList.add('d-none');
-            }
-        });
-    }
-    
-    // Обработка отправки формы через HTMX
-    document.getElementById('jobPostForm').addEventListener('htmx:beforeRequest', function() {
-        // Можно добавить дополнительную логику перед отправкой
-        console.log('Отправка формы...');
-    });
-    
-    document.getElementById('jobPostForm').addEventListener('htmx:afterRequest', function(event) {
-        if (event.detail.successful) {
-            // Перенаправление после успешной отправки
-            if (event.detail.xhr.status === 200 || event.detail.xhr.status === 201) {
-                try {
-                    const response = JSON.parse(event.detail.xhr.responseText);
-                    if (response.redirect_url) {
-                        window.location.href = response.redirect_url;
-                    }
-                } catch (e) {
-                    // Если ответ не JSON, просто перезагружаем страницу
-                    window.location.reload();
-                }
-            }
-        }
-    });
-    
-    // Интеграция с Telegram Web App
-    if (window.Telegram && window.Telegram.WebApp) {
-        const tg = window.Telegram.WebApp;
-        
-        // Настройка кнопки "Назад" в Telegram
-        tg.BackButton.show();
-        tg.BackButton.onClick(function() {
-            window.history.back();
-        });
-        
-        // Настройка основной кнопки в Telegram (если нужно)
-        // tg.MainButton.setText('Опубликовать');
-        // tg.MainButton.show();
-        // tg.MainButton.onClick(function() {
-        //     document.getElementById('jobPostForm').submit();
-        // });
-    }
-});
-</script>
+
 {% endblock %}

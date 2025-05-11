@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rosetta',
     'django_htmx',
+    'widget_tweaks',
     'ework_bot_tg', #бот ТГ и его фунционнал
     'ework_user_tg', # модель пользователя и авторизация
     'ework_job', # объявления о работе 
