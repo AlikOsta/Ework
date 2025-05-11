@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
 
 
 class BasePostListView(ListView):
@@ -88,12 +89,28 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         kwargs['user'] = self.request.user
         return kwargs
     
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        form.instance.status = 0 
-        messages.success(self.request, _('Объявление успешно создано и отправлено на модерацию'))
-        return super().form_valid(form)
+    # def form_valid(self, form):
+    #     form.instance.user = self.request.user
+    #     form.instance.status = 0 
+    #     messages.success(self.request, _('Объявление успешно создано и отправлено на модерацию'))
+    #     return super().form_valid(form)
 
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.user = self.request.user
+        self.object.save()
+        
+        if self.request.headers.get('HX-Request'):
+            return HttpResponse(
+                '<div id="dialog"></div>'
+                '<script>'
+                'var modal = bootstrap.Modal.getInstance(document.getElementById("modal"));'
+                'if(modal) modal.hide();'
+                'window.location.href = "/";'
+                '</script>'
+            )
+        
+        return super().form_valid(form)
 
 class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """Базовое представление для редактирования объявления"""

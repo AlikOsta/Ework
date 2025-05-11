@@ -12,6 +12,8 @@ urlpatterns = [
     path('users/', include('ework_user_tg.urls', namespace='users')),
     path('rosetta/', include('rosetta.urls')),
     path('jobs/', include('ework_job.urls', namespace='jobs')),
+    path('services/', include('ework_services.urls')),
+    path('modal-select-post/', views.modal_select_post, name='modal_select_post'),
     path("", views.HomeView.as_view(), name='home'),
 
 ]

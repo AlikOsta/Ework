@@ -3,6 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from slugify import slugify
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import RegexValidator
 
 from .choices import STATUS_CHOICES
 from .utils_img import process_image
@@ -10,17 +12,22 @@ from ework_locations.models import City
 from ework_currency.models import Currency
 from ework_rubric.models import SubRubric
 
+phone_regex = RegexValidator(
+    regex=r'^\+?1?\d{9,15}$',
+    message=_("Номер телефона должен быть в формате: '+999999999'.")
+)
+
 
 class AbsPost(models.Model):
     title = models.CharField(max_length=200, verbose_name=_('Название'), help_text=_('Название объявления'))
     description = models.TextField(verbose_name=_('Описание'), help_text=_('Описание объявления'))
-    image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), help_text=_('Изображение для объявления')) 
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('Сумма'), help_text=_('Укажите сумму'))
+    image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), help_text=_('Изображение для объявления'),null=True, blank=True) 
+    price = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(9999999)], verbose_name=_('Сумма'), help_text=_('Укажите сумму'))
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'), help_text=_('Валюта объявления'))
     sub_rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, verbose_name=_('Рубрика'), help_text=_('Рубрика объявления'))
     city = models.ForeignKey(City, verbose_name=_('Город работы'), help_text=_('Город работы'), on_delete=models.PROTECT)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name=_('Автор'), help_text=_('Автор объявления'))
-    user_phone = models.CharField(max_length=20, verbose_name=_('Телефон'), help_text=_('Телефон автора объявления'), null=True, blank=True)
+    user_phone = models.CharField( max_length=20, validators=[phone_regex], verbose_name=_('Телефон'), help_text=_('Телефон автора объявления'), null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0, verbose_name=_('Статус'))
     is_premium = models.BooleanField(default=False, verbose_name=_('Премиум'), help_text=_('Премиум объявление'))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))    

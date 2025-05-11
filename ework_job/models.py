@@ -7,7 +7,6 @@ from .choices import TYPE_OF_EMPLOYMENT_CHOICES, WORK_SCHEDULE_CHOICES, EXPERIEN
 class PostJob(AbsPost):
     experience = models.IntegerField(choices=EXPERIENCE_CHOICES, default=0, verbose_name=_('Опыт работы')) 
     work_schedule = models.IntegerField(choices=WORK_SCHEDULE_CHOICES, default=0, verbose_name=_('График работы'))
-    type_of_work = models.IntegerField(choices=TYPE_OF_EMPLOYMENT_CHOICES, default=0, verbose_name=_('Тип занятости'))
     work_format = models.IntegerField(choices=WORK_FORMAT_CHOICES, default=0, verbose_name=_('Формат работы'))
 
     class Meta:
