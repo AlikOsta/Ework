@@ -22,6 +22,11 @@ class BasePostForm(forms.ModelForm):
             'class': 'form-control',
             'placeholder': _('Введите название объявления')
         })
+
+        self.fields['sub_rubric'].queryset = SubRubric.objects.all().order_by('order', 'name')
+        self.fields['sub_rubric'].widget.attrs.update({
+            'class': 'form-select'
+        })
         
         self.fields['description'].widget.attrs.update({
             'class': 'form-control',
@@ -94,7 +99,7 @@ class BasePostForm(forms.ModelForm):
     
     class Meta:
         model = AbsPost
-        fields = ['title', 'description', 'image', 'city', 'price', 'currency' ]
+        fields = ['title', 'description', 'image', 'city', 'price', 'currency', 'sub_rubric']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
@@ -102,4 +107,5 @@ class BasePostForm(forms.ModelForm):
             'city': forms.Select(attrs={'class': 'form-control'}),
             'price': forms.NumberInput(attrs={'class': 'form-control'}),
             'currency': forms.Select(attrs={'class': 'form-control'}),
+            'sub_rubric': forms.Select(attrs={'class': 'form-control'}),
         }
