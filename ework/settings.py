@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     'ework_rubric', # рубрики объявлений
     'ework_payment', # оплата
     'ework_currency', # валюты
+    'ework_core', # ядро
+    'ework_config', # конфигурация
 ]
 
 MIDDLEWARE = [
