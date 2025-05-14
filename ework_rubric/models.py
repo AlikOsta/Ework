@@ -4,67 +4,59 @@ from django.utils.translation import gettext_lazy as _
 from slugify import slugify
 
 
-class Rubric(models.Model):
+class SuperRubric(models.Model):
     name = models.CharField(max_length=30, db_index=True, verbose_name=_('Название'), help_text=_('Название рубрики'))
     image  = models.ImageField(upload_to='rubric_img/', verbose_name=_('Изображение'), help_text=_('Изображение для рубрики'))
     slug = models.SlugField(max_length=50, unique=True, db_index=True, verbose_name=_('Слаг'), help_text=_('Слаг рубрики'))
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_('Порядок'), help_text=_('Порядок рубрики'))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
-    super_rubric = models.ForeignKey('SuperRubric', on_delete=models.PROTECT, null=True, blank=True, verbose_name=_('Родительская рубрика'), help_text=_('Родительская рубрика'))
 
     class Meta:
-        verbose_name = _("Рубрика")
-        verbose_name_plural = _("Рубрики")
+        verbose_name = _("Категория")
+        verbose_name_plural = _("Категории")
         ordering = ['order']
-
-    def __str__(self) -> str:
+        
+    def __str__(self):
         return self.name
-
-    def get_absolute_url(self) -> str:
-        return reverse('rubric_detail', kwargs={'slug': self.slug})
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
-    def get_count_products(self) -> int:
+    def get_absolute_url(self):
+        return reverse('category-detail', kwargs={'slug': self.slug})
+    
+    def get_products(self):
         products = self.products.filter(status=3)
-        return products.count()
-
-
-class SuperRubricManager(models.Manager):
-    
-    def get_queryset(self):
-        return super().get_queryset().filter(super_rubric__isnull=True)
+        return products
     
 
-class SuperRubric(Rubric):
-    objects = SuperRubricManager()
+class SubRubric(models.Model):
+    name = models.CharField(max_length=30, db_index=True, verbose_name=_('Название'), help_text=_('Название подрубрики'))
+    image  = models.ImageField(upload_to='sub_rubric_img/', verbose_name=_('Изображение'), help_text=_('Изображение для подрубрики'))
+    slug = models.SlugField(max_length=50, unique=True, db_index=True, verbose_name=_('Слаг'), help_text=_('Слаг подрубрики'))
+    order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_('Порядок'), help_text=_('Порядок подрубрики'))
+    super_rubric = models.ForeignKey(SuperRubric, on_delete=models.PROTECT, related_name='sub_rubrics', verbose_name=_('Категория'), help_text=_('Категория подрубрики'))
 
-    class Meta:
-        proxy = True
-        ordering = ('order', 'name')
-        verbose_name = _("Суперрубрика")
-        verbose_name_plural = _("Суперрубрики")
-
-    def __str__(self) -> str:
+    def __str__(self):
         return self.name
     
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
-class SubRubricManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().filter(super_rubric__isnull=False)
+    def get_absolute_url(self):
+        return reverse('subcategory-detail', kwargs={'slug': self.slug})
+
+    def get_products(self):
+        products = self.products.filter(status=3)
+        return products
+
     
-
-class SubRubric(Rubric):
-    objects = SubRubricManager()
-
     class Meta:
-        proxy = True
-        ordering = ('super_rubric__order', 'super_rubric__name', 'order', 'name')
         verbose_name = _("Подрубрика")
         verbose_name_plural = _("Подрубрики")
+        ordering = ['order']
 
-    def __str__(self) -> str:
-            return '%s - %s' % (self.super_rubric.name, self.name)
+

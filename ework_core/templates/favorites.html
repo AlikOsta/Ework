@@ -1,0 +1,31 @@
+
+
+<div class="mt-3">
+    <div id="products-container" class="row g-3" data-offset="{{ products|length }}" data-has-more="{{ has_more|lower }}">
+
+<!-- тут цыкл и карты -->
+
+        <div class="col-12">
+            <div class="empty-favorites text-center py-5">
+                <div class="empty-icon mb-3">
+                    <i class="bi bi-heart text-danger fs-1"></i>
+                </div>
+                <h5 class="mb-3" style="color: var(--tg-theme-text-color, #000000);">Нет избранных объявлений</h5>
+                <p class="text-muted mb-4">
+                    Добавляйте понравившиеся объявления в избранное, чтобы быстро находить их позже
+                </p>
+                <button 
+                type='button' 
+                class="btn btn-primary" 
+                hx-get="{% url 'core:home' %}" 
+                hx-target="#main-content" 
+                   style="background-color: var(--tg-theme-button-color, #2481cc); border-color: var(--tg-theme-button-color, #2481cc);">
+                    <i class="bi bi-search me-2"></i>Найти объявления
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

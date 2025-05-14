@@ -1,11 +1,18 @@
-console.log('sdada')
+const triggerTabList = document.querySelectorAll('#myTab a')
+triggerTabList.forEach(triggerEl => {
+  const tabTrigger = new bootstrap.Tab(triggerEl)
 
-;(function() {
-    const modal = new bootstrap.Modal(document.getElementById('modal'))
+  triggerEl.addEventListener('click', event => {
+    event.preventDefault()
+    tabTrigger.show()
+  })
+})
 
-    htmx.on('htmx:afterSwap', (e) => {
-        if (e.detail.target.id === 'dialog') {
-            modal.show()
-        }
-    })
-})()
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    const firstTab = document.querySelector('#myTab .nav-link.active');
+    if (firstTab) {
+        htmx.trigger(firstTab, 'click');
+    }
+});

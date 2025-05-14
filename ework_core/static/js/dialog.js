@@ -25,3 +25,13 @@
         }
     });
 })();
+
+
+function setActive(clickedBtn) {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.remove('text-primary');
+    btn.classList.add('text-muted');
+  });
+  clickedBtn.classList.add('text-primary');
+  clickedBtn.classList.remove('text-muted');
+}

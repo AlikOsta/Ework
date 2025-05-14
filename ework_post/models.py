@@ -10,7 +10,7 @@ from .choices import STATUS_CHOICES
 from .utils_img import process_image
 from ework_locations.models import City
 from ework_currency.models import Currency
-from ework_rubric.models import SubRubric
+from ework_rubric.models import SubRubric, SuperRubric
 
 phone_regex = RegexValidator(
     regex=r'^\+?1?\d{9,15}$',
@@ -24,7 +24,7 @@ class AbsPost(models.Model):
     image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), help_text=_('Изображение для объявления'),null=True, blank=True) 
     price = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(9999999)], verbose_name=_('Сумма'), help_text=_('Укажите сумму'))
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'), help_text=_('Валюта объявления'))
-    sub_rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, verbose_name=_('Рубрика'), help_text=_('Рубрика объявления'))
+    sub_rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, related_name='%(app_label)s_%(class)s_products', verbose_name=_('Рубрика'), help_text=_('Рубрика объявления'))
     city = models.ForeignKey(City, verbose_name=_('Город работы'), help_text=_('Город работы'), on_delete=models.PROTECT)
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, verbose_name=_('Автор'), help_text=_('Автор объявления'))
     user_phone = models.CharField( max_length=20, validators=[phone_regex], verbose_name=_('Телефон'), help_text=_('Телефон автора объявления'), null=True, blank=True)

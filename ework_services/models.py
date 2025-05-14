@@ -1,9 +1,10 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ework_post.models import AbsPost,AbsFavorite, AbsProductView
-
+from ework_rubric.models import SuperRubric
 
 class PostServices(AbsPost):
+    rubric = models.ForeignKey(SuperRubric, on_delete=models.PROTECT, related_name='service_products', verbose_name=_('Рубрика'))
 
     class Meta:
         pass

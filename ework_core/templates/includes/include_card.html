@@ -1,0 +1,36 @@
+
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="card position-relative h-100 shadow-sm">
+
+        <!-- Обёртка изображения -->
+        <div class="position-relative">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top object-fit-cover" alt="{{ product.title }}" style="height: 180px;">
+          {% else %}
+            <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 180px;">
+              <i class="bi bi-image fs-1"></i>
+            </div>
+          {% endif %}
+
+          <!-- Кнопка избранного -->
+          <button type="button"
+                  class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
+                  {% comment %} hx-post="#"
+                  hx-swap="none" {% endcomment %}
+                  aria-label="Добавить в избранное">
+            <i class="bi bi-heart"></i>
+          </button>
+        </div>
+
+        <div class="card-body d-flex flex-column justify-content-between">
+          <h6 class="card-title text-truncate">{{ product.title }}</h6>
+          <p class="text-primary fw-semibold mb-2">{{ product.price }} ₽</p>
+
+          <div class="d-flex justify-content-between text-muted small">
+            <span><i class="bi bi-geo-alt"></i> {{ product.city }}</span>
+            <span>{{ product.created_at|date:"d.m.y" }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>

@@ -9,7 +9,7 @@
 
     <div class="modal-header">
         <h5 class="modal-title" id="createPostModalLabel">{% trans "Новая вакансия" %}</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans "Закрыть" %}"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
 
     <div class="modal-body">
@@ -47,9 +47,17 @@
             <div class="invalid-feedback">{{ form.city.errors|first }}</div>
         </div>
 
+
         <!-- Рубрика -->
         <div class="mb-3">
-            <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Рубрика" %}</label>
+            <label for="{{ form.rubric.id_for_label }}" class="form-label">{% trans "Рубрика" %}</label>
+            {% render_field form.rubric class="form-control" error_class=WIDGET_ERROR_CLASS %}
+            <div class="invalid-feedback">{{ form.rubric.errors|first }}</div>
+        </div>
+        
+        <!-- Подрубрика -->
+        <div class="mb-3">
+            <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Подрубрика" %}</label>
             {% render_field form.sub_rubric class="form-control" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.sub_rubric.errors|first }}</div>
         </div>

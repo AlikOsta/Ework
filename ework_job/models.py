@@ -1,10 +1,12 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from ework_post.models import AbsPost, AbsFavorite, AbsProductView
-from .choices import TYPE_OF_EMPLOYMENT_CHOICES, WORK_SCHEDULE_CHOICES, EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES 
+from .choices import WORK_SCHEDULE_CHOICES, EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES 
+from ework_rubric.models import SuperRubric
 
 
 class PostJob(AbsPost):
+    rubric = models.ForeignKey(SuperRubric, on_delete=models.PROTECT, related_name='job_products', verbose_name=_('Рубрика'))
     experience = models.IntegerField(choices=EXPERIENCE_CHOICES, default=0, verbose_name=_('Опыт работы')) 
     work_schedule = models.IntegerField(choices=WORK_SCHEDULE_CHOICES, default=0, verbose_name=_('График работы'))
     work_format = models.IntegerField(choices=WORK_FORMAT_CHOICES, default=0, verbose_name=_('Формат работы'))

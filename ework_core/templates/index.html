@@ -1,9 +1,13 @@
 {% extends "base.html" %}
+{% load static %}
 {% load i18n %}
 
 {% block title %}{% trans "Главная" %} | eWork{% endblock %}
 
 {% block content %}
-<h1>{% trans "Добро пожаловать на eWork!" %}</h1>
- 
+    {% include "partials/include_index.html" %}
 {% endblock %}
+
+{% block extra_scripts %}     
+    <script defer src="{% static 'js/main.js' %}"></script>
+{% endblock extra_scripts %}
