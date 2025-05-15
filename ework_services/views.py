@@ -13,7 +13,7 @@ class ServicesPostCreateView(BasePostCreateView):
     template_name = 'services/post_services_form.html'
 
     def get_success_url(self):
-        return reverse_lazy('home')
+        return reverse_lazy('core:home')
     
     
 

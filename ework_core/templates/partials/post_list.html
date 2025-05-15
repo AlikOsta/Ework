@@ -32,12 +32,24 @@
         </div>
     </div>
 
-<!-- Вакансии -->
-<div class="container">
-  <div class="row justify-content-center g-3">
-    {% for product in products %}
-        {% include "includes/include_card.html" %}
-    {% endfor %}
-  </div>
+<div class="row g-3">
+    {% if posts %}
+        {% for post in posts %}
+            <div class="col-6 col-md-4 col-lg-3" id="post-card-{{ post.pk }}">
+                {% include 'includes/include_card.html' %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5">
+            <div class="empty-icon mb-3">
+                <i class="bi bi-search text-muted fs-1"></i>
+            </div>
+            <h5 class="mb-3">Объявления не найдены</h5>
+            <p class="text-muted">
+                В данной категории пока нет объявлений
+            </p>
+        </div>
+    {% endif %}
 </div>
+
 

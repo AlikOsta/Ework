@@ -1,19 +1,16 @@
-from django.shortcuts import render, get_object_or_404, redirect
+
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 
 
 class BasePostListView(ListView):
     """Базовое представление для списка объявлений"""
-    template_name = 'post/post_list.html'
+    template_name = 'partials/post_list.html'
     context_object_name = 'posts'
     
     def get_queryset(self):
@@ -89,28 +86,13 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         kwargs['user'] = self.request.user
         return kwargs
     
-    # def form_valid(self, form):
-    #     form.instance.user = self.request.user
-    #     form.instance.status = 0 
-    #     messages.success(self.request, _('Объявление успешно создано и отправлено на модерацию'))
-    #     return super().form_valid(form)
-
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.user = self.request.user
         self.object.save()
-        
-        if self.request.headers.get('HX-Request'):
-            return HttpResponse(
-                '<div id="dialog"></div>'
-                '<script>'
-                'var modal = bootstrap.Modal.getInstance(document.getElementById("modal"));'
-                'if(modal) modal.hide();'
-                'window.location.href = "/";'
-                '</script>'
-            )
-        
+            
         return super().form_valid(form)
+
 
 class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     """Базовое представление для редактирования объявления"""
@@ -131,37 +113,3 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return super().form_valid(form)
 
 
-class BasePostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    """Базовое представление для удаления объявления"""
-    template_name = 'post/post_confirm_delete.html'
-    
-    def test_func(self):
-        post = self.get_object()
-        return self.request.user == post.user
-    
-    def get_success_url(self):
-        messages.success(self.request, _('Объявление успешно удалено'))
-        return reverse_lazy('profile')
-
-
-@login_required
-@require_POST
-def base_toggle_favorite(request, pk, favorite_model, post_model):
-    """Базовая функция для добавления/удаления из избранного"""
-    post = get_object_or_404(post_model, pk=pk)
-    
-    favorite, created = favorite_model.objects.get_or_create(
-        user=request.user,
-        product=post
-    )
-    
-    if not created:
-        favorite.delete()
-        is_favorite = False
-    else:
-        is_favorite = True
-    
-    return JsonResponse({
-        'success': True,
-        'is_favorite': is_favorite
-    })

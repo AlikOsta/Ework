@@ -7,8 +7,9 @@ app_name = 'core'
 
 urlpatterns = [
     path('modal-select-post/', views.modal_select_post, name='modal_select_post'),
-    path("favorites/", views.FavoritesView.as_view(), name='favorites'),
+    path("favorites/", views.FavoriteListView.as_view(), name='favorites'),
     path('post_list/<int:rubric_pk>/', views.post_list_by_rubric, name='post_list_by_rubric'),
+    path('fav/toggle/<int:post_pk>/', views.favorite_toggle, name='favorite_toggle'),
     path("", views.home, name='home'),
 ]
 

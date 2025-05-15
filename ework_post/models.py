@@ -56,7 +56,7 @@ class AbsPost(PolymorphicModel):
     
     def get_view_count(self) -> int:
         return self.views.count()
-    
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.image:
@@ -71,26 +71,26 @@ class AbsPost(PolymorphicModel):
 
 class Favorite(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='%(app_label)s_%(class)s_favorites', verbose_name=_("Автор"))
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    product = GenericForeignKey('content_type', 'object_id')
+    post = models.ForeignKey(AbsPost, on_delete=models.CASCADE, related_name='favorited_by')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
 
     class Meta:
         verbose_name = _("Избранное")
         verbose_name_plural = _("Избранные")
         ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'content_type', 'object_id'],
-                name='unique_user_favorite'
-            )
-        ]
+        unique_together = ('user', 'post')
 
     def __str__(self):
        return f"{self.user.username} → {self.product}"
     
-    
+    def favorite(self, pk):
+        self.post.add([pk])
+
+    def unfavorite(self, pk):
+        self.post.remove(pk)
+
+    def has_favorited(self, pk):
+        return self.post.filter(pk=pk).exists()
 
 
 class AbsProductView(models.Model):
