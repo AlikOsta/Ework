@@ -37,7 +37,8 @@ def post_list_by_rubric(request, rubric_pk):
     sub_ids = sub_rubrics.values_list('id', flat=True)
 
     posts = (AbsPost.objects
-             .filter(status=3, sub_rubric_id__in=sub_ids)
+            #  .filter(status=3, sub_rubric_id__in=sub_ids)
+             .filter(sub_rubric_id__in=sub_ids)
              .order_by('-created_at'))
 
     favorite_post_ids = []
@@ -92,5 +93,5 @@ def favorite_toggle(request, post_pk):
         'is_favorite': is_favorite,
         'favorite_post_ids': [post.pk] if is_favorite else []
     }
-    
+
     return render(request, 'partials/favorite_button.html', context)
