@@ -25,7 +25,7 @@
     <li class="nav-item">
         <a class="nav-link {% if forloop.first %}active{% endif %}" 
             href="#"
-            hx-get="{% url 'core:post_list' category.id %}" 
+            hx-get="{% url 'core:post_list_by_rubric' category.id %}" 
             hx-trigger="click"
             hx-target="#content-area" 
         >

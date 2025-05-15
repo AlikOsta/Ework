@@ -9,6 +9,9 @@ from django.core.validators import RegexValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
+from polymorphic.models import PolymorphicModel
+from polymorphic.managers import PolymorphicManager
+
 from .choices import STATUS_CHOICES
 from .utils_img import process_image
 from ework_locations.models import City
@@ -21,7 +24,8 @@ phone_regex = RegexValidator(
 )
 
 
-class AbsPost(models.Model):
+class AbsPost(PolymorphicModel):
+    objects = PolymorphicManager()
     title = models.CharField(max_length=200, verbose_name=_('Название'), help_text=_('Название объявления'))
     description = models.TextField(verbose_name=_('Описание'), help_text=_('Описание объявления'))
     image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), help_text=_('Изображение для объявления'),null=True, blank=True) 
@@ -37,7 +41,6 @@ class AbsPost(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
 
     class Meta:
-        abstract = True
         verbose_name = _("Объявление")
         verbose_name_plural = _("Объявления")
         ordering = ["-created_at"]
