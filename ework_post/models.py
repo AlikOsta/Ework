@@ -1,10 +1,13 @@
 from django.db import models
+from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from slugify import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.validators import RegexValidator
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 from .choices import STATUS_CHOICES
 from .utils_img import process_image
@@ -59,23 +62,32 @@ class AbsPost(models.Model):
                 self.image = processed
                 super().save(update_fields=['image'])
 
+    def clean(self):
+        pass
 
-class AbsFavorite(models.Model):
+
+class Favorite(models.Model):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='%(app_label)s_%(class)s_favorites', verbose_name=_("Автор"))
-    create_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата создания"))
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    product = GenericForeignKey('content_type', 'object_id')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
 
     class Meta:
-        abstract = True
         verbose_name = _("Избранное")
         verbose_name_plural = _("Избранные")
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'product'], name='unique_user_favorite')
-        ]
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'content_type', 'object_id'],
+                name='unique_user_favorite'
+            )
+        ]
 
-    def __str__(self) -> str:
-       return f"{self.user.username} - {self.product.title}"
-
+    def __str__(self):
+       return f"{self.user.username} → {self.product}"
+    
+    
 
 
 class AbsProductView(models.Model):

@@ -1,0 +1,11 @@
+{% load favorite_tags %}
+
+<button type="button"
+    class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm "
+        hx-post="{% url 'core:toggle_favorite' %}"
+        hx-vals='{"ct":"{{ product|get_ct }}","obj_id":"{{ product.pk }}"}'
+        hx-swap="outerHTML"
+        class="favorite-btn {% if product|get_is_fav:user %}is-fav{% endif %}"
+    aria-label="Добавить в избранное">
+<i class="bi bi-heart"></i>
+</button>

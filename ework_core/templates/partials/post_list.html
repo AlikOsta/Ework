@@ -1,0 +1,16 @@
+
+
+<!-- Категории -->
+
+
+{% include "includes/include_cat.html" %}
+
+<!-- Вакансии -->
+<div class="container">
+  <div class="row justify-content-center g-3">
+    {% for product in products %}
+        {% include "includes/include_card.html" %}
+    {% endfor %}
+  </div>
+</div>
+

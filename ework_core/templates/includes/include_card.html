@@ -1,3 +1,5 @@
+{% load favorite_tags %}
+
 
     <div class="col-6 col-md-4 col-lg-3">
       <div class="card position-relative h-100 shadow-sm">
@@ -5,21 +7,16 @@
         <!-- Обёртка изображения -->
         <div class="position-relative">
           {% if product.image %}
-            <img src="{{ product.image.url }}" class="card-img-top object-fit-cover" alt="{{ product.title }}" style="height: 180px;">
+            <img src="{{ product.image.url }}" class="card-img-top object-fit-cover" alt="{{ product.title }}" style="height: 150px;">
           {% else %}
-            <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 180px;">
+            <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 150px;">
               <i class="bi bi-image fs-1"></i>
             </div>
           {% endif %}
 
           <!-- Кнопка избранного -->
-          <button type="button"
-                  class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 rounded-circle shadow-sm"
-                  {% comment %} hx-post="#"
-                  hx-swap="none" {% endcomment %}
-                  aria-label="Добавить в избранное">
-            <i class="bi bi-heart"></i>
-          </button>
+          {% include 'partials/favorite_button.html' with product=product is_favorite=product|get_is_fav:user fav_count=product|get_fav_count %}
+
         </div>
 
         <div class="card-body d-flex flex-column justify-content-between">

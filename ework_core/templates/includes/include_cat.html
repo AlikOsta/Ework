@@ -1,11 +1,10 @@
     <!-- Категории -->
     <div class="mb-4">
-        <h5 class="mb-3 fw-bold">Категории</h5>
         <div class="categories-container">
             <div class="row flex-nowrap overflow-auto g-2 pb-2">
                 {% for category in categories %}
                 <div class="col-auto" style="min-width: 130px;">
-                    <a href="{% url 'app:category_detail' category.slug %}" class="text-decoration-none">
+                    <a href="#" class="text-decoration-none">
                         <div class="card h-100 border-0 position-relative overflow-hidden bg-light rounded-3">
                             <!-- Фоновое изображение занимает весь блок -->
                             <div class="position-absolute w-100 h-100 d-flex justify-content-end align-items-end p-2">

@@ -26,10 +26,6 @@ class SuperRubric(models.Model):
     def get_absolute_url(self):
         return reverse('category-detail', kwargs={'slug': self.slug})
     
-    def get_products(self):
-        products = self.products.filter(status=3)
-        return products
-    
 
 class SubRubric(models.Model):
     name = models.CharField(max_length=30, db_index=True, verbose_name=_('Название'), help_text=_('Название подрубрики'))
@@ -49,11 +45,6 @@ class SubRubric(models.Model):
     def get_absolute_url(self):
         return reverse('subcategory-detail', kwargs={'slug': self.slug})
 
-    def get_products(self):
-        products = self.products.filter(status=3)
-        return products
-
-    
     class Meta:
         verbose_name = _("Подрубрика")
         verbose_name_plural = _("Подрубрики")

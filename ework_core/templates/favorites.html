@@ -1,9 +1,17 @@
-
+{% load favorite_tags %}
 
 <div class="mt-3">
     <div id="products-container" class="row g-3" data-offset="{{ products|length }}" data-has-more="{{ has_more|lower }}">
 
-<!-- тут цыкл и карты -->
+        {% if favorites %}
+            <div class="row g-3">
+            {% for fav in favorites %}
+                {% with product=fav.product %}
+                {% include 'includes/include_card.html' %}
+                {% endwith %}
+            {% endfor %}
+            </div>
+        {% else%}
 
         <div class="col-12">
             <div class="empty-favorites text-center py-5">
@@ -24,6 +32,7 @@
                 </a>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 

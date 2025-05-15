@@ -7,7 +7,7 @@ from ework_rubric.models import SubRubric, SuperRubric
 class JobPostForm(BasePostForm):
     class Meta(BasePostForm.Meta):
         model = PostJob
-        fields = BasePostForm.Meta.fields + [ 'experience', 'work_schedule', 'work_format', 'rubric' ]
+        fields = BasePostForm.Meta.fields + [ 'experience', 'work_schedule', 'work_format']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,7 +17,6 @@ class JobPostForm(BasePostForm):
         except SuperRubric.DoesNotExist:
             qs = SubRubric.objects.none()
 
-        self.fields['rubric'].initial = job_rubric.pk
         self.fields['sub_rubric'].queryset = qs
         self.fields['sub_rubric'].empty_label = None
 

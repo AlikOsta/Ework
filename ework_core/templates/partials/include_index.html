@@ -20,30 +20,20 @@
         <div id="search-results" class="mt-2"></div>
     </div>
 
-    <ul id='myTab' class="nav nav-pills nav-fill" id="tab-navigation">
-            <li class="nav-item">
-                <a class="nav-link {% if forloop.first %}active{% endif %}" 
-                    href="#"
-                    hx-get="{% url 'jobs:job_list' %}" 
-                    hx-trigger="click delay:300ms"
-                    hx-target="#content-area" 
-                    hx-push-url="true"
-                >
-                    Вакансии
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if forloop.first %}active{% endif %}" 
-                    href="#"
-                    hx-get="{% url 'jobs:job_list' %}" 
-                    hx-trigger="click delay:300ms"
-                    hx-target="#content-area" 
-                    hx-push-url="true"
-                >
-                    Услуги
-                </a>
-            </li>
-    </ul>
+    <ul id='myTab' class="nav nav-pills nav-fill " id="tab-navigation">
+    {% for category in categories %}
+    <li class="nav-item">
+        <a class="nav-link {% if forloop.first %}active{% endif %}" 
+            href="#"
+            hx-get="{% url 'core:post_list' category.id %}" 
+            hx-trigger="click"
+            hx-target="#content-area" 
+        >
+            {{ category.name }}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
 
 
     <div id="content-area" class="mt-3">

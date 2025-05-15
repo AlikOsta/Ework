@@ -10,7 +10,6 @@ triggerTabList.forEach(triggerEl => {
 
 
 document.addEventListener('DOMContentLoaded', function() {
-
     const firstTab = document.querySelector('#myTab .nav-link.active');
     if (firstTab) {
         htmx.trigger(firstTab, 'click');
