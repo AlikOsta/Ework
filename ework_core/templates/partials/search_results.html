@@ -1,0 +1,28 @@
+{% if search_query %}
+    <div class="search-results-header mb-3">
+        <h5>Результаты поиска: "{{ search_query }}"</h5>
+        <p class="text-muted small">Найдено объявлений: {{ posts|length }}</p>
+    </div>
+{% endif %}
+
+<div class="row g-3">
+    {% if posts %}
+        {% for post in posts %}
+            <div class="col-6 col-md-4 col-lg-3" id="post-card-{{ post.pk }}">
+                {% include 'includes/include_card.html' %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5">
+            <div class="empty-icon mb-3">
+                <i class="bi bi-search text-muted fs-1"></i>
+            </div>
+            <h5 class="mb-3">Объявления не найдены</h5>
+            <p class="text-muted">
+                В данной категории пока нет объявлений
+            </p>
+        </div>
+    {% endif %}
+</div> 
+
+

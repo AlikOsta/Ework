@@ -1,36 +1,34 @@
-// const triggerTabList = document.querySelectorAll('#myTab a')
-// triggerTabList.forEach(triggerEl => {
-//   const tabTrigger = new bootstrap.Tab(triggerEl)
-
-//   triggerEl.addEventListener('click', event => {
-//     event.preventDefault()
-//     tabTrigger.show()
-//   })
-// })
-
-
-// document.addEventListener('DOMContentLoaded', function() {
-//     const firstTab = document.querySelector('#myTab .nav-link.active');
-//     if (firstTab) {
-//         htmx.trigger(firstTab, 'click');
-//     }
-// });
-
 
 function activateTab(tabElement, url) {
     document.querySelectorAll('#myTab .nav-link').forEach(tab => {
         tab.classList.remove('active');
     });
     tabElement.classList.add('active');
+    const searchInput = document.querySelector('input[name="q"]');
+    if (searchInput) {
+        searchInput.value = '';
+        const clearBtn = document.getElementById('clear-search-btn');
+        if (clearBtn) clearBtn.style.display = 'none';
+    }
+    const rubricId = tabElement.getAttribute('data-category-id');
+    const searchForm = document.getElementById('search-form');
+    if (searchForm) {
+        searchForm.setAttribute('data-active-rubric', rubricId);
+        const rubricIdInput = document.getElementById('search-rubric-id');
+        if (rubricIdInput) rubricIdInput.value = rubricId;
+    }
+
     htmx.ajax('GET', url, {target: '#content-area'});
+
     return false;
 }
 
-
 document.addEventListener('DOMContentLoaded', function() {
-    const firstTab = document.querySelector('#myTab .nav-link');
-    if (firstTab) {
-        const url = firstTab.getAttribute('data-url');
+    const activeTab = document.querySelector('#myTab .nav-link.active');
+    if (activeTab) {
+        const rubricId = activeTab.getAttribute('data-category-id');
+        document.getElementById('search-form').setAttribute('data-active-rubric', rubricId);
+        const url = activeTab.getAttribute('data-url');
         htmx.ajax('GET', url, {target: '#content-area'});
     }
 });
