@@ -2,28 +2,7 @@
 {% load i18n %}
 
 {% block content %}
-<div class="container mt-4">
-       <!-- Поисковая строка -->
-    <div class="search-container mt-4 mb-3">
-        <form id="search-form" class="search-form">
-            <div class="input-group shadow-sm rounded overflow-hidden">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="bi bi-search text-primary"></i>
-                </span>
-                <input type="text" 
-                    name="q" 
-                    class="form-control border-start-0 py-2"
-                    hx-get="/trigger_delay"
-                    hx-trigger="keyup changed delay:500ms"
-                    hx-target="#search-results"
-                    placeholder="Поиск..."
-                    aria-label="Поиск">
-                <button class="btn btn-primary d-none" type="submit">Найти</button>
-            </div>
-        </form>
-        <div id="search-results" class="mt-2"></div>
-    </div>
-    
+<div class="container mt-3">
     <div id="favorites-container" class="row g-3">
         {% if favorites %}
             {% for favorite in favorites %}
@@ -87,13 +66,5 @@
     </div>
 </div>
 
-<script>
-    document.body.addEventListener('htmx:beforeSwap', function(evt) {
-        const triggerHeader = evt.detail.xhr.getResponseHeader('HX-Trigger');
-        if (triggerHeader && triggerHeader.startsWith('remove-favorite-')) {
-            const postId = triggerHeader.split('remove-favorite-')[1];
-            const postCard = document.getElementById(`post-card-${postId}`);
-        }
-    });
-</script>
+
 {% endblock %}

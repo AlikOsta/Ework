@@ -1,0 +1,47 @@
+
+
+<div class="card vacancy-card shadow-sm mb-3">
+  <div class="card-body p-0">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <div>
+        <h4 class="card-title mb-1 fw-semibold">{{ post.title }}</h4>
+        <h5 class="text-primary mb-0">{{ post.price }} {{ post.currency }}</h5>
+      </div>
+      <button class="btn btn-outline-secondary btn-sm rounded-circle" aria-label="В избранное">
+        <i class="bi bi-heart"></i>
+      </button>
+    </div>
+
+    <!-- Теги опыта и удалёнки -->
+    <div class="mb-3">
+    <span class="badge bg-secondary me-1">{{ post.sub_rubric }}</span>
+    
+    {% if post.polymorphic_ctype.model == 'postjob' %}
+        <!-- Поля для категории "Работа" -->
+        <span class="badge bg-secondary me-1">
+        {{ post.get_experience_display }}
+        </span>
+        <span class="badge bg-secondary me-1">
+        {{ post.get_work_format_display }}
+        </span>
+        <span class="badge bg-secondary me-1">
+        {{ post.get_work_schedule_display }}
+        </span>
+    {% endif %}
+    </div>
+
+    <!-- Компания + рейтинг -->
+    <div class="d-flex align-items-center mb-2 company-rating">
+      <i class="bi bi-person-circle me-2 fs-5 text-secondary"></i>
+      <span class="me-2">{{ post.user }}</span>
+      <i class="bi bi-star-fill text-warning me-1"></i>
+      <small>{{ post.user.average_rating }}</small>
+    </div>
+
+    <!-- Локация -->
+    <div class="d-flex align-items-center text-muted">
+      <i class="bi bi-geo-alt-fill me-1"></i>
+      <small>{{ post.city }}</small>
+    </div>
+
+</div>

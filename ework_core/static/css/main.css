@@ -17,4 +17,11 @@ body {
 }
 
 
-
+.vacancy-card {
+    border-radius: 15px;
+    padding: 12px;
+  }
+  
+.vacancy-card-footer .btn {
+    min-width: 120px;
+  }

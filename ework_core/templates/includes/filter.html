@@ -1,0 +1,118 @@
+<!-- Блок фильтрации и сортировки -->
+<div class="mb-4">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <!-- Кнопка для открытия/закрытия фильтров на мобильных устройствах -->
+            <button class="btn btn-outline-primary d-md-none w-100 mb-3" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#filterCollapse" 
+                    aria-expanded="false" aria-controls="filterCollapse">
+                <i class="bi bi-funnel me-2"></i>Фильтры и сортировка
+            </button>
+            
+            <div class="collapse d-md-block" id="filterCollapse">
+                <form id="filter-form" hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}" 
+                      hx-target="#content-area">
+                    
+                    <div class="row g-3">
+                        <!-- Сортировка (общая для всех категорий) -->
+                        <div class="col-md-3">
+                            <label for="sort-select" class="form-label small text-muted">Сортировка</label>
+                            <select class="form-select form-select-sm" id="sort-select" name="sort">
+                                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Сначала новые</option>
+                                <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Сначала старые</option>
+                                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Цена: по возрастанию</option>
+                                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Цена: по убыванию</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Фильтр по цене (общий для всех категорий) -->
+                        <div class="col-md-4">
+                            <label class="form-label small text-muted">Цена</label>
+                            <div class="d-flex gap-2">
+                                <input type="number" class="form-control form-control-sm" 
+                                       placeholder="От" name="price_min" value="{{ price_min }}">
+                                <input type="number" class="form-control form-control-sm" 
+                                       placeholder="До" name="price_max" value="{{ price_max }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Фильтр по подкатегории (общий для всех категорий) -->
+                        <div class="col-md-5">
+                            <label for="subcategory-select" class="form-label small text-muted">Подкатегория</label>
+                            <select class="form-select form-select-sm" id="subcategory-select" name="sub_rubric">
+                                <option value="">Все подкатегории</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if sub_rubric == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {% comment %} <div class="col-md-6">
+                            <label for="service-rating" class="form-label small text-muted">Рейтинг исполнителя</label>
+                            <select class="form-select form-select-sm" id="service-rating" name="min_rating">
+                                <option value="">Любой рейтинг</option>
+                                <option value="4" {% if min_rating == '4' %}selected{% endif %}>От 4 звезд</option>
+                                <option value="4.5" {% if min_rating == '4.5' %}selected{% endif %}>От 4.5 звезд</option>
+                                <option value="5" {% if min_rating == '5' %}selected{% endif %}>Только 5 звезд</option>
+                            </select>
+                        </div> {% endcomment %}
+                        
+                        <!-- Дополнительные фильтры для категории "Работа" -->
+                        {% if category_slug == 'rabota' %}
+                        <div class="col-md-4">
+                            <label for="experience-select" class="form-label small text-muted">Опыт работы</label>
+                            <select class="form-select form-select-sm" id="experience-select" name="experience">
+                                <option value="">Любой опыт</option>
+                                <option value="0" {% if experience == '0' %}selected{% endif %}>Без опыта</option>
+                                <option value="1" {% if experience == '1' %}selected{% endif %}>От 1 года</option>
+                                <option value="2" {% if experience == '2' %}selected{% endif %}>От 2 лет</option>
+                                <option value="3" {% if experience == '3' %}selected{% endif %}>От 3 лет</option>
+                                <option value="5" {% if experience == '5' %}selected{% endif %}>От 5 лет</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="format-select" class="form-label small text-muted">Формат работы</label>
+                            <select class="form-select form-select-sm" id="format-select" name="work_format">
+                                <option value="">Любой формат</option>
+                                <option value="0" {% if work_format == '0' %}selected{% endif %}>Офис</option>
+                                <option value="1" {% if work_format == '1' %}selected{% endif %}>Удаленно</option>
+                                <option value="2" {% if work_format == '2' %}selected{% endif %}>Гибрид</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="schedule-select" class="form-label small text-muted">График работы</label>
+                            <select class="form-select form-select-sm" id="schedule-select" name="work_schedule">
+                                <option value="">Любой график</option>
+                                <option value="0" {% if work_schedule == '0' %}selected{% endif %}>Полный день</option>
+                                <option value="1" {% if work_schedule == '1' %}selected{% endif %}>Сменный график</option>
+                                <option value="2" {% if work_schedule == '2' %}selected{% endif %}>Гибкий график</option>
+                                <option value="3" {% if work_schedule == '3' %}selected{% endif %}>Вахтовый метод</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                        
+        
+                        
+                        <!-- Кнопки управления фильтрами -->
+                        <div class="col-12 d-flex justify-content-between">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                    hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}" 
+                                    hx-target="#content-area">
+                                <i class="bi bi-x-circle me-1"></i>Сбросить
+                            </button>
+                            
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="bi bi-funnel-fill me-1"></i>Применить
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

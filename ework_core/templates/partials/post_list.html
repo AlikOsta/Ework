@@ -1,12 +1,13 @@
 
 {% comment %} Категории {% endcomment %}
-{% include 'includes/include_cat.html' %}
+{% comment %} {% include 'includes/include_cat.html' %} {% endcomment %}
+{% include 'includes/filter.html' %}
 
 <div class="row g-3">
     {% if posts %}
         {% for post in posts %}
-            <div class="col-6 col-md-4 col-lg-3" id="post-card-{{ post.pk }}">
-                {% include 'includes/include_card.html' %}
+            <div class="" id="post-card-{{ post.pk }}">
+                {% include 'includes/card.html' %}
             </div>
         {% endfor %}
     {% else %}

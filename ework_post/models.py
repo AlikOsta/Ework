@@ -26,7 +26,7 @@ phone_regex = RegexValidator(
 
 class AbsPost(PolymorphicModel):
     objects = PolymorphicManager()
-    title = models.CharField(max_length=200, verbose_name=_('Название'), help_text=_('Название объявления'))
+    title = models.CharField(max_length=50, verbose_name=_('Название'), help_text=_('Название объявления'))
     description = models.TextField(verbose_name=_('Описание'), help_text=_('Описание объявления'))
     image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), help_text=_('Изображение для объявления'),null=True, blank=True) 
     price = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(9999999)], verbose_name=_('Сумма'), help_text=_('Укажите сумму'))
