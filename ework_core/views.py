@@ -133,11 +133,16 @@ class PostDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         
         if self.request.user.is_authenticated:
-            context['is_favorite'] = Favorite.objects.filter(
+            is_favorite = Favorite.objects.filter(
                 user=self.request.user, 
                 post=self.object
             ).exists()
-            context['favorite_post_ids'] = [self.object.pk]
+            
+            context['is_favorite'] = is_favorite
+            context['favorite_post_ids'] = [self.object.pk] if is_favorite else []
+        else:
+            context['is_favorite'] = False
+            context['favorite_post_ids'] = []
         
         return context
 
@@ -188,6 +193,7 @@ def favorite_toggle(request, post_pk):
     }
 
     return render(request, 'partials/favorite_button.html', context)
+
 
 
 
