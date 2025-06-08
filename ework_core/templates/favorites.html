@@ -1,37 +1,27 @@
-
 {% load i18n %}
 
 {% block content %}
 <div class="container mt-3">
-    <div id="favorites-container" class="row g-3">
-        {% if favorites %}
-            {% for favorite in favorites %}
-                {% with post=favorite.post is_favorite=True %}
-                    {% include 'includes/card.html' %}
-                {% endwith %}
-            {% endfor %}
-        {% else %}
-            <div class="col-12">
-                <div class="empty-favorites text-center py-5">
-                    <div class="empty-icon mb-3">
-                        <i class="bi bi-heart text-danger fs-1"></i>
-                    </div>
-                    <h5 class="mb-3">{% trans "Нет избранных объявлений" %}</h5>
-                    <p class="text-muted mb-4">
-                        {% trans "Добавляйте понравившиеся объявления в избранное, чтобы быстро находить их позже" %}
-                    </p>
-                    <button 
-                        type='button' 
-                        class="btn btn-primary" 
-                        hx-get="{% url 'core:home' %}" 
-                        hx-target="#main-content">
-                        <i class="bi bi-search me-2"></i>{% trans "Найти объявления" %}
-                    </button>
-                </div>
+    {% if posts %}
+        {% include 'includes/include_card.html' %}
+    {% else %}
+        <div class="empty-favorites text-center py-5">
+            <div class="empty-icon mb-3">
+                <i class="bi bi-heart text-danger fs-1"></i>
             </div>
-        {% endif %}
-    </div>
+            <h5 class="mb-3">{% trans "Нет избранных объявлений" %}</h5>
+            <p class="text-muted mb-4">
+                {% trans "Добавляйте понравившиеся объявления в избранное, чтобы быстро находить их позже" %}
+            </p>
+            <button 
+                type='button' 
+                class="btn btn-primary" 
+                hx-get="{% url 'core:home' %}" 
+                hx-target="#main-content"
+                hx-swap="innerHTML">
+                <i class="bi bi-search me-2"></i>{% trans "Найти объявления" %}
+            </button>
+        </div>
+    {% endif %}
 </div>
-
-
 {% endblock %}

@@ -13,7 +13,9 @@
           {% endif %}
 
           <div id="favorite-button-{{ post.pk }}">
-            {% include 'partials/favorite_button.html' %}
+            {% with is_favorite=is_favorite %}
+              {% include 'partials/favorite_button.html' %}
+            {% endwith %}
           </div>
         </div>
 

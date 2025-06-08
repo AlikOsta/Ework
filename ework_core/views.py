@@ -1,15 +1,16 @@
 
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from ework_rubric.models import SuperRubric, SubRubric
 from ework_post.models import AbsPost, Favorite
 from ework_post.views import BasePostListView
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 
 
 def home(request):
@@ -145,8 +146,20 @@ class FavoriteListView(LoginRequiredMixin, ListView):
             post__status=3 
         ).select_related('post')
     
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Создаем список постов из избранного
+        posts = [favorite.post for favorite in context['favorites']]
+        context['posts'] = posts
+        context['is_favorite'] = True
+        
+        return context
 
-@login_required
+
+    
+
+@require_POST
 def favorite_toggle(request, post_pk):
     post = get_object_or_404(AbsPost, pk=post_pk)
     
@@ -155,6 +168,7 @@ def favorite_toggle(request, post_pk):
         favorite.delete()
         is_favorite = False
         
+        # Проверяем, находимся ли мы на странице избранного
         is_favorites_page = request.headers.get('HX-Current-URL', '').endswith('/favorites/')
         if is_favorites_page:
             return HttpResponse("", headers={"HX-Trigger": f"remove-favorite-{post.pk}"})
@@ -163,6 +177,7 @@ def favorite_toggle(request, post_pk):
         Favorite.objects.create(user=request.user, post=post)
         is_favorite = True
 
+    # Возвращаем обновленную кнопку избранного
     context = {
         'post': post,
         'is_favorite': is_favorite,
@@ -170,6 +185,7 @@ def favorite_toggle(request, post_pk):
     }
 
     return render(request, 'partials/favorite_button.html', context)
+
 
 
 class SearchPostsView(BasePostListView):
