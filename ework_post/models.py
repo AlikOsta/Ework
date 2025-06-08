@@ -20,7 +20,7 @@ from ework_rubric.models import SubRubric, SuperRubric
 
 phone_regex = RegexValidator(
     regex=r'^\+?1?\d{9,15}$',
-    message=_("Номер телефона должен быть в формате: '+999999999'.")
+    message=_("Номер телефона должен быть в формате: '+7(xxx)xxx-xx-xx")
 )
 
 

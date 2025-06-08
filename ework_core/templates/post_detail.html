@@ -18,22 +18,31 @@
             {% if post.status == 0 %}
             <div class="alert alert-warning d-flex align-items-center">
                 <i class="bi bi-clock-history me-2 fs-5"></i>
-                <div>Объявление на модерации</div>
+                <div>
+                    {% trans "Объявление на модерации" %}
+                </div>
             </div>
             {% elif post.status == 1 %}
             <div class="alert alert-info d-flex align-items-center">
                 <i class="bi bi-check-circle me-2 fs-5"></i>
-                <div>Объявление одобрено, но не опубликовано</div>
+                <div>
+                    {% trans "Объявление одобрено, но не опубликовано" %}
+                </div>
             </div>
             {% elif post.status == 2 %}
             <div class="alert alert-danger d-flex align-items-center">
                 <i class="bi bi-x-circle me-2 fs-5"></i>
-                <div>Объявление отклонено</div>
+                <div>
+                    {% trans "Объявление отклонено" %}
+                </div>
             </div>
             {% elif post.status == 4 %}
             <div class="alert alert-secondary d-flex align-items-center">
                 <i class="bi bi-archive me-2 fs-5"></i>
-                <div>Объявление в архиве</div>
+                <div>
+                    {% trans "Объявление в архиве" %}
+                </div>
+                
             </div>
             {% endif %}
         </div>
@@ -71,15 +80,44 @@
 
         <!-- Описание -->
         <div class="product-description mb-4">
-            <h5 class="section-title fw-bold mb-3">Описание</h5>
+            <h5 class="section-title fw-bold mb-3">
+                {% trans "Описание" %}
+            </h5>
             <div class="description-content">
                 <p>{{ post.description }}</p>
             </div>
         </div>
+        <!-- Опыт работы -->
+        {% if post.experience %}
+        <div class="product-description mb-4">
+            <div class="description-content">
+                <p>{% trans "Опыт работы" %}: {{ post.experience }}</p>
+            </div>
+        </div>
+        {% endif %}
+        <!-- График работы -->
+        {% if post.work_schedule %}
+        <div class="product-description mb-4">
+            <div class="description-content">
+                <p>{% trans "График работы" %}: {{ post.work_schedule }}</p>
+            </div>
+        </div>
+        {% endif %}
+        <!-- Формат работы -->
+        {% if post.work_format %}
+        <div class="product-description mb-4">
+            <div class="description-content">
+                <p>{% trans "Формат работы" %}: {{ post.work_format }}</p>
+            </div>
+        </div>
+        {% endif %}
+
 
         <!-- Информация о продавце -->
         <div class="seller-info mb-4">
-            <h5 class="section-title fw-bold mb-3">Продавец</h5>
+            <h5 class="section-title fw-bold mb-3">
+                {% trans "Продавец" %}
+            </h5>
             <div class="card border-0 bg-light">
                 <div class="card-body p-3">
                     <div class="d-flex align-items-center">
@@ -94,7 +132,9 @@
                         </div>
                         <div>
                             <h6 class="mb-1">{{ post.author.first_name }}</h6>
-                            <p class="text-muted mb-0 small">На сайте с {{ post.author.date_joined|date:"d.m.Y" }}</p>
+                            <p class="text-muted mb-0 small">
+                                {% trans "На сайте с: " %}
+                                {{ post.author.date_joined|date:"d.m.Y" }}</p>
                         </div>
                     </div>
                 </div>
@@ -114,15 +154,64 @@
             </div>
         </div>
 
-        <!-- Кнопка "Связаться с продавцом" (только для не-автора) -->
         {% if user != post.author %}
-        <div class="contact-seller-button-container mb-5">
-            <button id="contactSellerBtn" class="btn btn-primary w-100 py-3 rounded-3 d-flex justify-content-center align-items-center">
-                <i class="bi bi-chat-dots-fill me-2"></i>
-                <span>Связаться с продавцом</span>
-            </button>
+        <div class="phone-reveal-container mb-3">
+            {% if post.user_phone%}
+                <!-- Ссылка с номером изначально скрыта -->
+                <a
+                id="phoneLink"
+                href="tel:{{ post.user_phone }}"
+                class="btn btn-success w-100 py-2 rounded-3 d-flex justify-content-center align-items-center d-none"
+                role="button"
+                aria-label="Позвонить продавцу"
+                >
+                <i class="bi bi-telephone-outbound me-2"></i>
+                {{ post.user_phone }}
+                </a>
+
+                <!-- Кнопка: при клике заменяется на ссылку -->
+                <button
+                class="btn btn-outline-primary w-100 py-2 rounded-3 d-flex justify-content-center align-items-center mt-0"
+                type="button"
+                onclick="
+                    var link = document.getElementById('phoneLink');
+                    link.classList.remove('d-none');
+                    this.replaceWith(link);
+                "
+                >
+                <i class="bi bi-telephone me-2"></i>
+                <span>
+                    {% trans "Показать номер телефона" %}
+                </span>
+                </button>
+            </div>
+            {% endif %}
+
+            <!-- Кнопка связи через чат -->
+            <div class="chat-button-container">
+                <button
+                    id="contactSellerBtn"
+                    type="button"
+                    class="btn btn-primary w-100 py-3 rounded-3 d-flex justify-content-center align-items-center"
+                    onclick="
+                    (function(){
+                        var detail = this.closest('.product-detail').dataset;
+                        var msg = 'Здравствуйте! Меня интересует «' + detail.productTitle +
+                                '» за ' + detail.productPrice + '. Ещё актуально?';
+                        window.open(
+                        'https://t.me/{{ post.user.username }}?text=' + encodeURIComponent(msg),
+                        '_blank'
+                        );
+                    }).call(this);
+                    "
+                    onmousedown="this.style.transform='scale(0.98)'; this.style.opacity='0.9';"
+                    onmouseup="this.style.transform='scale(1)'; this.style.opacity='1';"
+                >
+                    <i class="bi bi-chat-dots-fill me-2"></i>
+                    <span>{% trans "Связаться с продавцом" %}</span>
+                </button>
+            </div>
         </div>
-        {% endif %}
-        
-    </div>
+    {% endif %}
+
 </div>

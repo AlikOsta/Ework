@@ -34,24 +34,20 @@ class PostListByRubricView(BasePostListView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        
-        # Получаем параметры фильтрации (общие)
+
         price_min = self.request.GET.get('price_min')
         price_max = self.request.GET.get('price_max')
         sub_rubric = self.request.GET.get('sub_rubric')
         sort = self.request.GET.get('sort', 'newest')
-        
-        # Фильтр по цене
+
         if price_min and price_min.isdigit():
             queryset = queryset.filter(price__gte=int(price_min))
         if price_max and price_max.isdigit():
             queryset = queryset.filter(price__lte=int(price_max))
-            
-        # Фильтр по подрубрике
+
         if sub_rubric and sub_rubric.isdigit():
             queryset = queryset.filter(sub_rubric_id=sub_rubric)
             
-        # Получаем slug категории для определения специфичных фильтров
         rubric_pk = self.kwargs.get('rubric_pk')
         category_slug = None
         
@@ -62,20 +58,16 @@ class PostListByRubricView(BasePostListView):
             except SuperRubric.DoesNotExist:
                 pass
         
-        # Фильтры для категории "Работа"
         if category_slug == 'rabota':
             experience = self.request.GET.get('experience')
             work_format = self.request.GET.get('work_format')
             work_schedule = self.request.GET.get('work_schedule')
             
-            # Получаем ID объявлений типа PostJob
             from ework_job.models import PostJob
             job_ids = PostJob.objects.values_list('id', flat=True)
             
-            # Фильтруем только объявления типа PostJob
             job_queryset = queryset.filter(id__in=job_ids)
             
-            # Применяем дополнительные фильтры
             if experience and experience.isdigit():
                 job_queryset = job_queryset.filter(postjob__experience=experience)
             if work_format and work_format.isdigit():
@@ -83,17 +75,15 @@ class PostListByRubricView(BasePostListView):
             if work_schedule and work_schedule.isdigit():
                 job_queryset = job_queryset.filter(postjob__work_schedule=work_schedule)
                 
-            # Обновляем queryset только объявлениями типа PostJob
             queryset = job_queryset
                 
-        # Сортировка (общая для всех категорий)
         if sort == 'oldest':
             queryset = queryset.order_by('created_at')
         elif sort == 'price_asc':
             queryset = queryset.order_by('price')
         elif sort == 'price_desc':
             queryset = queryset.order_by('-price')
-        else:  # newest (по умолчанию)
+        else: 
             queryset = queryset.order_by('-created_at')
             
         return queryset
@@ -101,7 +91,6 @@ class PostListByRubricView(BasePostListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Добавляем параметры фильтрации в контекст
         context['price_min'] = self.request.GET.get('price_min', '')
         context['price_max'] = self.request.GET.get('price_max', '')
         context['sub_rubric'] = self.request.GET.get('sub_rubric', '')
@@ -109,22 +98,19 @@ class PostListByRubricView(BasePostListView):
         context['experience'] = self.request.GET.get('experience', '')
         context['work_format'] = self.request.GET.get('work_format', '')
         context['work_schedule'] = self.request.GET.get('work_schedule', '')
-        
-        # Определяем категорию и добавляем в контекст
+
         rubric_pk = self.kwargs.get('rubric_pk')
         if rubric_pk:
             try:
                 super_rubric = SuperRubric.objects.get(pk=rubric_pk)
                 context['category_slug'] = super_rubric.slug
                 context['rubric_pk'] = rubric_pk
-                
-                # Добавляем флаги для определения типа категории в шаблоне
+
                 context['is_job_category'] = super_rubric.slug == 'rabota'
                 context['is_service_category'] = super_rubric.slug == 'uslugi'
             except SuperRubric.DoesNotExist:
                 pass
         
-        # Добавляем избранные посты, если пользователь авторизован
         if self.request.user.is_authenticated:
             favorite_post_ids = Favorite.objects.filter(
                 user=self.request.user, 
@@ -134,10 +120,26 @@ class PostListByRubricView(BasePostListView):
         
         return context
 
+
 class PostDetailView(DetailView):
     model = AbsPost
     template_name = 'post_detail.html'
     context_object_name = 'post'
+
+    def get_queryset(self):
+        return AbsPost.objects.select_related('user', 'city', 'currency', 'sub_rubric')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        if self.request.user.is_authenticated:
+            context['is_favorite'] = Favorite.objects.filter(
+                user=self.request.user, 
+                post=self.object
+            ).exists()
+            context['favorite_post_ids'] = [self.object.pk]
+        
+        return context
 
 
 class FavoriteListView(LoginRequiredMixin, ListView):
@@ -154,16 +156,13 @@ class FavoriteListView(LoginRequiredMixin, ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Создаем список постов из избранного
+
         posts = [favorite.post for favorite in context['favorites']]
         context['posts'] = posts
         context['is_favorite'] = True
         
         return context
 
-
-    
 
 @require_POST
 def favorite_toggle(request, post_pk):
@@ -174,7 +173,6 @@ def favorite_toggle(request, post_pk):
         favorite.delete()
         is_favorite = False
         
-        # Проверяем, находимся ли мы на странице избранного
         is_favorites_page = request.headers.get('HX-Current-URL', '').endswith('/favorites/')
         if is_favorites_page:
             return HttpResponse("", headers={"HX-Trigger": f"remove-favorite-{post.pk}"})
@@ -183,7 +181,6 @@ def favorite_toggle(request, post_pk):
         Favorite.objects.create(user=request.user, post=post)
         is_favorite = True
 
-    # Возвращаем обновленную кнопку избранного
     context = {
         'post': post,
         'is_favorite': is_favorite,
@@ -264,6 +261,7 @@ def banner_view(request, banner_id):
     """Показ превью баннера в полноэкранном режиме"""
     banner = get_object_or_404(BannerPost, id=banner_id)
     return render(request, 'includes/banner_view.html', {'banner': banner})
+
 
 def banner_ad_info(request):
     return render(request, 'includes/banner_ad_modal.html', {'admin_telegram': '@newpunknot'})
