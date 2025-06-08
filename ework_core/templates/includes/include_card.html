@@ -2,29 +2,32 @@
   {% for post in posts %}
     <div class="col">
       <div class="card position-relative h-100 shadow-sm">
-        <!-- Обёртка изображения -->
-        <div class="position-relative">
-          {% if post.image %}
-            <img src="{{ post.image.url }}" class="card-img-top object-fit-cover" alt="{{ post.title }}" style="height: 150px;">
-          {% else %}
-            <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 150px;">
-              <i class="bi bi-image fs-1"></i>
+        <a href="#" 
+          hx-get="{% url 'core:product_detail' pk=post.pk %}"
+          hx-target="#dialog"
+          aria-label="пост">
+          <div class="position-relative">
+            {% if post.image %}
+              <img src="{{ post.image.url }}" class="card-img-top object-fit-cover" alt="{{ post.title }}" style="height: 150px;">
+            {% else %}
+              <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 150px;">
+                <i class="bi bi-image fs-1"></i>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="card-body d-flex flex-column justify-content-between">
+            <h6 class="card-title text-truncate">{{ post.title }}</h6>
+            <p class="text-primary fw-semibold mb-2">{{ post.price }} {{ post.currency.code }}</p>
+            <div class="d-flex justify-content-between text-muted small">
+              <span><i class="bi bi-geo-alt"></i> {{ post.city }}</span>
             </div>
-          {% endif %}
-
-          <div id="favorite-button-{{ post.pk }}">
-            {% with is_favorite=is_favorite %}
-              {% include 'partials/favorite_button.html' %}
-            {% endwith %}
           </div>
-        </div>
-
-        <div class="card-body d-flex flex-column justify-content-between">
-          <h6 class="card-title text-truncate">{{ post.title }}</h6>
-          <p class="text-primary fw-semibold mb-2">{{ post.price }} {{ post.currency.code }}</p>
-          <div class="d-flex justify-content-between text-muted small">
-            <span><i class="bi bi-geo-alt"></i> {{ post.city }}</span>
-          </div>
+        </a>
+        <div id="favorite-button-{{ post.pk }}">
+          {% with is_favorite=is_favorite %}
+            {% include 'partials/favorite_button.html' %}
+          {% endwith %}
         </div>
       </div>
     </div>

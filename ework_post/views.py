@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, CreateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q
@@ -67,43 +67,6 @@ class BasePostListView(ListView):
             context['search_query'] = search_query
             
         return context
-
-
-class BasePostDetailView(DetailView):
-    """Базовое представление для детальной страницы объявления"""
-    template_name = 'post/post_detail.html'
-    context_object_name = 'post'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        post = self.get_object()
-        similar_posts = self.model.objects.filter(
-            category=post.category, 
-            status=3
-        ).exclude(id=post.id)[:4]
-        
-        context['similar_posts'] = similar_posts
-        
-        if self.request.user.is_authenticated:
-            context['is_favorite'] = self.favorite_model.objects.filter(
-                user=self.request.user,
-                product=post
-            ).exists()
-            
-        return context
-    
-    def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
-        
-        if request.user.is_authenticated:
-            post = self.get_object()
-            self.view_model.objects.get_or_create(
-                user=request.user,
-                product=post
-            )
-            
-        return response
 
 
 class BasePostCreateView(LoginRequiredMixin, CreateView):

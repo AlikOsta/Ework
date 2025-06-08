@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, JsonResponse
+from django.views.generic import DetailView
 
 
 def home(request):
@@ -133,6 +134,10 @@ class PostListByRubricView(BasePostListView):
         
         return context
 
+class PostDetailView(DetailView):
+    model = AbsPost
+    template_name = 'post_detail.html'
+    context_object_name = 'post'
 
 
 class FavoriteListView(LoginRequiredMixin, ListView):
