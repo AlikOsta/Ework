@@ -48,16 +48,6 @@
                                 {% endfor %}
                             </select>
                         </div>
-
-                        {% comment %} <div class="col-md-6">
-                            <label for="service-rating" class="form-label small text-muted">Рейтинг исполнителя</label>
-                            <select class="form-select form-select-sm" id="service-rating" name="min_rating">
-                                <option value="">Любой рейтинг</option>
-                                <option value="4" {% if min_rating == '4' %}selected{% endif %}>От 4 звезд</option>
-                                <option value="4.5" {% if min_rating == '4.5' %}selected{% endif %}>От 4.5 звезд</option>
-                                <option value="5" {% if min_rating == '5' %}selected{% endif %}>Только 5 звезд</option>
-                            </select>
-                        </div> {% endcomment %}
                         
                         <!-- Дополнительные фильтры для категории "Работа" -->
                         {% if category_slug == 'rabota' %}

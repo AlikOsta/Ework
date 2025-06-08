@@ -34,8 +34,6 @@ class BasePostForm(forms.ModelForm):
         if first is not None:
             self.fields['sub_rubric'].initial = first.pk
 
-        # Проверяем, есть ли поле user_phone в форме
         if 'user_phone' in self.fields and self.user:
-            # Проверяем, есть ли у пользователя телефон напрямую
             if hasattr(self.user, 'phone') and self.user.phone:
                 self.fields['user_phone'].initial = self.user.phone

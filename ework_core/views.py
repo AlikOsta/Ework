@@ -82,36 +82,7 @@ class PostListByRubricView(BasePostListView):
                 
             # Обновляем queryset только объявлениями типа PostJob
             queryset = job_queryset
-        
-        # Фильтры для категории "Услуги"
-        elif category_slug == 'uslugi':
-            service_type = self.request.GET.get('service_type')
-            min_rating = self.request.GET.get('min_rating')
-            
-            # Получаем ID объявлений типа PostServices
-            from ework_services.models import PostServices
-            service_ids = PostServices.objects.values_list('id', flat=True)
-            
-            # Фильтруем только объявления типа PostServices
-            service_queryset = queryset.filter(id__in=service_ids)
-            
-            # Применяем дополнительные фильтры для услуг
-            # Примечание: эти фильтры нужно адаптировать под вашу модель
-            if service_type:
-                # Пример фильтрации по типу услуги (нужно адаптировать)
-                if service_type == 'personal':
-                    service_queryset = service_queryset.filter(postservices__is_business=False)
-                elif service_type == 'business':
-                    service_queryset = service_queryset.filter(postservices__is_business=True)
-            
-            if min_rating and min_rating.replace('.', '', 1).isdigit():
-                # Фильтрация по рейтингу исполнителя
-                min_rating_float = float(min_rating)
-                service_queryset = service_queryset.filter(user__average_rating__gte=min_rating_float)
-            
-            # Обновляем queryset только объявлениями типа PostServices
-            queryset = service_queryset
-        
+                
         # Сортировка (общая для всех категорий)
         if sort == 'oldest':
             queryset = queryset.order_by('created_at')
@@ -135,8 +106,6 @@ class PostListByRubricView(BasePostListView):
         context['experience'] = self.request.GET.get('experience', '')
         context['work_format'] = self.request.GET.get('work_format', '')
         context['work_schedule'] = self.request.GET.get('work_schedule', '')
-        context['service_type'] = self.request.GET.get('service_type', '')
-        context['min_rating'] = self.request.GET.get('min_rating', '')
         
         # Определяем категорию и добавляем в контекст
         rubric_pk = self.kwargs.get('rubric_pk')
@@ -168,7 +137,7 @@ class FavoriteListView(LoginRequiredMixin, ListView):
     model = Favorite
     template_name = 'favorites.html'
     context_object_name = 'favorites'
-    paginate_by = 10
+    paginate_by = 50
 
     def get_queryset(self):
         return Favorite.objects.filter(
@@ -219,6 +188,7 @@ class SearchPostsView(BasePostListView):
                 context = {
                     'categories': sub_rubrics,
                     'posts': posts,
+                    'rubric_pk': rubric_id,
                 }
                 return render(request, 'partials/post_list.html', context)
             else:
@@ -227,8 +197,7 @@ class SearchPostsView(BasePostListView):
                 }
                 return render(request, "partials/include_index.html", context)
         
-        # Этот return должен быть на том же уровне отступа, что и if
-        return super().get(request, *args, **kwargs)
+        return super().get(request, *args, **kwargs) 
     
     def get_queryset(self):
         queryset = AbsPost.objects.filter(status=3)

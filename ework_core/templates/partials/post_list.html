@@ -5,11 +5,9 @@
 
 <div class="row g-3">
     {% if posts %}
-        {% for post in posts %}
             <div class="" id="post-card-{{ post.pk }}">
-                {% include 'includes/card.html' %}
+                {% include 'includes/include_card.html' %}
             </div>
-        {% endfor %}
     {% else %}
         <div class="col-12 text-center py-5">
             <div class="empty-icon mb-3">

@@ -44,16 +44,9 @@
             {% render_field form.city class="form-control" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.city.errors|first }}</div>
         </div>
-
-        <!-- Рубрика -->
-        <div class="mb-3">
-            <label for="{{ form.rubric.id_for_label }}" class="form-label">{% trans "Рубрика" %}</label>
-            {% render_field form.rubric class="form-control" error_class=WIDGET_ERROR_CLASS %}
-            <div class="invalid-feedback">{{ form.rubric.errors|first }}</div>
-        </div>
         
         <div class="mb-3">
-            <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Подрубрика" %}</label>
+            <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Категория" %}</label>
             {% render_field form.sub_rubric class="form-control" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.sub_rubric.errors|first }}</div>
         </div>

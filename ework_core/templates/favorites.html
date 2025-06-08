@@ -7,40 +7,7 @@
         {% if favorites %}
             {% for favorite in favorites %}
                 {% with post=favorite.post is_favorite=True %}
-                    <div id="post-card-{{ post.pk }}" class="col-6 col-md-4 col-lg-3">
-                        <div class="card position-relative h-100 shadow-sm">
-                            <div class="position-relative">
-                                {% if post.image %}
-                                    <img src="{{ post.image.url }}" class="card-img-top object-fit-cover" alt="{{ post.title }}" style="height: 150px;">
-                                {% else %}
-                                    <div class="d-flex justify-content-center align-items-center bg-light text-muted" style="height: 150px;">
-                                        <i class="bi bi-image fs-1"></i>
-                                    </div>
-                                {% endif %}
-
-                                <div id="favorite-button-{{ post.pk }}">
-                                    <button 
-                                        hx-post="{% url 'core:favorite_toggle' post.pk %}" 
-                                        hx-target="#favorite-button-{{ post.pk }}" 
-                                        hx-swap="outerHTML"
-                                        class="btn position-absolute top-0 end-0 m-2 btn-danger rounded-circle p-1"
-                                        style="width: 32px; height: 32px;">
-                                        <i class="bi bi-heart-fill" style="font-size: 1rem;"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="card-body d-flex flex-column justify-content-between">
-                                <h6 class="card-title text-truncate">{{ post.title }}</h6>
-                                <p class="text-primary fw-semibold mb-2">{{ post.price }} {{ post.currency.code }}</p>
-
-                                <div class="d-flex justify-content-between text-muted small">
-                                    <span><i class="bi bi-geo-alt"></i> {{ post.city }}</span>
-                                    <span>{{ post.created_at|date:"d.m.y" }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% include 'includes/card.html' %}
                 {% endwith %}
             {% endfor %}
         {% else %}
