@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
 from ework_rubric.models import SuperRubric, SubRubric
-from ework_post.models import AbsPost, Favorite
+from ework_post.models import AbsPost, Favorite, BannerPost
 from ework_post.views import BasePostListView
 from django.views.decorators.http import require_POST
 from django.db.models import Q
@@ -16,6 +16,7 @@ from django.http import HttpResponse, JsonResponse
 def home(request):
     context = {
         "categories" : SuperRubric.objects.all(),
+        'banners': BannerPost.objects.all(),
     }
 
     if request.headers.get("HX-Request"):
@@ -252,3 +253,12 @@ class SearchPostsView(BasePostListView):
                 pass
         
         return context
+
+
+def banner_view(request, banner_id):
+    """Показ превью баннера в полноэкранном режиме"""
+    banner = get_object_or_404(BannerPost, id=banner_id)
+    return render(request, 'includes/banner_view.html', {'banner': banner})
+
+def banner_ad_info(request):
+    return render(request, 'includes/banner_ad_modal.html', {'admin_telegram': '@newpunknot'})

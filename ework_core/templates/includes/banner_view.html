@@ -1,0 +1,140 @@
+<div class="modal-content p-0 border-0 bg-transparent">
+  <style>
+    /* Принудительно делаем модальное окно полноразмерным */
+    #modal.story-modal .modal-dialog {
+      margin: 20px !important;
+      max-width: none !important;
+      width: calc(100vw - 40px) !important;
+      height: calc(100vh - 40px) !important;
+    }
+    
+    #modal.story-modal .modal-content {
+      height: 100% !important;
+      min-height: calc(100vh - 40px) !important;
+    }
+
+    /* Анимация прогресс-бара */
+    @keyframes fillBar {
+      from { width: 0%; }
+      to { width: 100%; }
+    }
+
+    .story-progress-animated {
+      animation: fillBar 10s linear forwards;
+    }
+
+    /* Темный фон */
+    #modal.story-modal {
+      background-color: rgba(0,0,0,0.9) !important;
+    }
+  </style>
+
+  <div class="w-100 h-100 d-flex flex-column position-relative rounded-4 overflow-hidden"
+       style="background-image: url('{{ banner.image.url }}'); background-size: cover; background-position: center; min-height: calc(100vh - 40px);">
+
+    <div class="position-absolute top-0 start-0 w-100 px-3 pt-3 z-2">
+      <div class="d-flex align-items-center gap-3">
+        <!-- Прогресс-бар -->
+        <div class="progress flex-grow-1" style="height: 4px;">
+          <div id="story-progress-bar" class="progress-bar bg-primary" role="progressbar"
+              style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        
+        <!-- Кнопка закрытия -->
+        <button type="button" class="btn btn-sm btn-dark rounded-circle flex-shrink-0" 
+                data-bs-dismiss="modal" aria-label="Закрыть"
+                style="width: 32px; height: 32px; padding: 0;">
+          <i class="bi bi-x-lg text-white"></i>
+        </button>
+      </div>
+    </div>
+
+
+
+    <!-- Контент -->
+    <div class="mt-auto w-100 text-center text-white px-4 pb-4 pt-5 z-2"
+         style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);">
+
+      {% if banner.title %}
+        <h5 class="mb-3">{{ banner.title }}</h5>
+      {% endif %}
+
+      {% if banner.description %}
+        <h5 class="mb-3">{{ banner.description }}</h5>
+      {% endif %}
+
+      <a class="btn btn-light rounded-pill px-4 py-2 fw-semibold"
+         href="{{ banner.link }}"
+         target="_blank">
+        Подробнее
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+(function() {
+  
+  if (window.storyTimers) {
+    window.storyTimers.forEach(timer => clearTimeout(timer));
+    window.storyTimers = [];
+  } else {
+    window.storyTimers = [];
+  }
+  
+  const modalElement = document.getElementById('modal');
+  if (modalElement) {
+    modalElement.classList.add('story-modal');
+  }
+
+  const progressBar = document.getElementById('story-progress-bar');
+  if (progressBar) {
+    const progressTimer = setTimeout(() => {
+      progressBar.classList.add('story-progress-animated');
+    }, 500);
+    
+    window.storyTimers.push(progressTimer);
+  }
+
+  const closeTimer = setTimeout(() => {
+    
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    if (modal) {
+      modal.hide();
+      return;
+    }
+    
+    const closeButton = document.querySelector('[data-bs-dismiss="modal"]');
+    if (closeButton) {
+      closeButton.click();
+      return;
+    }
+
+    if (modalElement) {
+      modalElement.style.display = 'none';
+      modalElement.classList.remove('show');
+      document.body.classList.remove('modal-open');
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
+    }
+  }, 10000);
+  
+  window.storyTimers.push(closeTimer);
+
+  const cleanupTimers = function() {
+    if (window.storyTimers) {
+      window.storyTimers.forEach(timer => clearTimeout(timer));
+      window.storyTimers = [];
+    }
+  };
+
+  if (modalElement) {
+    modalElement.addEventListener('hidden.bs.modal', cleanupTimers, { once: true });
+    modalElement.addEventListener('hide.bs.modal', cleanupTimers, { once: true });
+  }
+})();
+</script>

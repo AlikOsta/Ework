@@ -11,6 +11,12 @@ urlpatterns = [
     path('post_list/<int:rubric_pk>/', views.PostListByRubricView.as_view(), name='post_list_by_rubric'),
     path('fav/toggle/<int:post_pk>/', views.favorite_toggle, name='favorite_toggle'),
     path('search/', views.SearchPostsView.as_view(), name='search'),
+
+    path('banner-ad-info/', views.banner_ad_info, name='banner_ad_info'),
+    path('banner/<int:banner_id>/', views.banner_view, name='banner_view'),
+
     path("", views.home, name='home'),
+
+
 ]
 

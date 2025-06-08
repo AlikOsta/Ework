@@ -112,3 +112,29 @@ class AbsProductView(models.Model):
         return f"{self.product.title} - {self.user.username}"
 
 
+class BannerPost(models.Model):
+    title = models.CharField(max_length=50, verbose_name=_("Заголовок"), db_index=True)
+    description = models.TextField(verbose_name=_('Описание'), blank=True, null=True)
+    link = models.URLField(max_length=200, verbose_name=_('Ссылка'), blank=True, null=True)
+    image = models.ImageField(upload_to='banner/', verbose_name=_('Изображение'), help_text=_('Изображение для баннера'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    is_active = models.BooleanField(default=True, verbose_name=_("Активно"))
+
+    class Meta:
+        verbose_name = _("Баннер")
+        verbose_name_plural = _("Баннеры")
+        ordering = ["-created_at"]
+    
+    def __str__(self) -> str:
+        return self.title
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image:
+            processed = process_image(self.image, self.pk)
+            if processed != self.image:
+                self.image = processed
+                super().save(update_fields=['image'])
+    
+    
+
