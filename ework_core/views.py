@@ -12,6 +12,8 @@ from django.views.generic import ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import DetailView
+from ework_locations.models import City
+from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHEDULE_CHOICES
 
 
 def home(request):
@@ -29,25 +31,35 @@ def modal_select_post(request):
     return render(request, 'partials/modal_select_post.html')
 
 
+
 class PostListByRubricView(BasePostListView):
     paginate_by = 50
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
+        # Общие фильтры
         price_min = self.request.GET.get('price_min')
         price_max = self.request.GET.get('price_max')
         sub_rubric = self.request.GET.get('sub_rubric')
+        city = self.request.GET.get('city')
         sort = self.request.GET.get('sort', 'newest')
 
+        # Фильтр по цене
         if price_min and price_min.isdigit():
             queryset = queryset.filter(price__gte=int(price_min))
         if price_max and price_max.isdigit():
             queryset = queryset.filter(price__lte=int(price_max))
 
+        # Фильтр по подрубрике
         if sub_rubric and sub_rubric.isdigit():
             queryset = queryset.filter(sub_rubric_id=sub_rubric)
             
+        # Фильтр по городу
+        if city and city.isdigit():
+            queryset = queryset.filter(city_id=city)
+            
+        # Получаем slug категории для определения специфичных фильтров
         rubric_pk = self.kwargs.get('rubric_pk')
         category_slug = None
         
@@ -58,16 +70,20 @@ class PostListByRubricView(BasePostListView):
             except SuperRubric.DoesNotExist:
                 pass
         
+        # Фильтры для категории "Работа"
         if category_slug == 'rabota':
             experience = self.request.GET.get('experience')
             work_format = self.request.GET.get('work_format')
             work_schedule = self.request.GET.get('work_schedule')
             
+            # Получаем ID объявлений типа PostJob
             from ework_job.models import PostJob
             job_ids = PostJob.objects.values_list('id', flat=True)
             
+            # Фильтруем только объявления типа PostJob
             job_queryset = queryset.filter(id__in=job_ids)
             
+            # Применяем дополнительные фильтры
             if experience and experience.isdigit():
                 job_queryset = job_queryset.filter(postjob__experience=experience)
             if work_format and work_format.isdigit():
@@ -77,13 +93,14 @@ class PostListByRubricView(BasePostListView):
                 
             queryset = job_queryset
                 
+        # Сортировка
         if sort == 'oldest':
             queryset = queryset.order_by('created_at')
         elif sort == 'price_asc':
             queryset = queryset.order_by('price')
         elif sort == 'price_desc':
             queryset = queryset.order_by('-price')
-        else: 
+        else:
             queryset = queryset.order_by('-created_at')
             
         return queryset
@@ -94,18 +111,25 @@ class PostListByRubricView(BasePostListView):
         context['price_min'] = self.request.GET.get('price_min', '')
         context['price_max'] = self.request.GET.get('price_max', '')
         context['sub_rubric'] = self.request.GET.get('sub_rubric', '')
+        context['selected_city'] = self.request.GET.get('city', '')
         context['sort'] = self.request.GET.get('sort', 'newest')
         context['experience'] = self.request.GET.get('experience', '')
         context['work_format'] = self.request.GET.get('work_format', '')
         context['work_schedule'] = self.request.GET.get('work_schedule', '')
-
+        
+        context['cities'] = City.objects.all()
+        
+        context['experience_choices'] = EXPERIENCE_CHOICES
+        context['work_format_choices'] = WORK_FORMAT_CHOICES
+        context['work_schedule_choices'] = WORK_SCHEDULE_CHOICES
+        
         rubric_pk = self.kwargs.get('rubric_pk')
         if rubric_pk:
             try:
                 super_rubric = SuperRubric.objects.get(pk=rubric_pk)
                 context['category_slug'] = super_rubric.slug
                 context['rubric_pk'] = rubric_pk
-
+                
                 context['is_job_category'] = super_rubric.slug == 'rabota'
                 context['is_service_category'] = super_rubric.slug == 'uslugi'
             except SuperRubric.DoesNotExist:

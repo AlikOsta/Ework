@@ -1,7 +1,6 @@
 {% load static %}
 {% load i18n %}
-
- {% load django_htmx %}
+{% load django_htmx %}
 
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE }}">
@@ -33,6 +32,21 @@
 <body hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
 
     {% csrf_token %}
+
+    <div class="language-switcher position-fixed top-0 end-0 m-2" style="z-index: 1050;">
+        <form action="{% url 'set_language' %}" method="post" class="d-inline">
+            {% csrf_token %}
+            <select name="language" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_available_languages as LANGUAGES %}
+                {% for lang_code, lang_name in LANGUAGES %}
+                    <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
+                        {% if lang_code == 'ru' %}🇷🇺 RU{% elif lang_code == 'uk' %}🇺🇦 UK{% else %}{{ lang_name }}{% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
 
     <main>
         <div id="main-content">
@@ -97,7 +111,6 @@
 
   </nav>
 </footer>
-
 
   {% comment %} <script src="https://telegram.org/js/telegram-web-app.js"></script>s {% endcomment %}
 

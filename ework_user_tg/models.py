@@ -18,7 +18,7 @@ class TelegramUser(AbstractUser):
     photo_url = models.URLField(blank=True, null=True, verbose_name=_("URL фото"), help_text=_("URL на фото")) #добавить путь и заглушку
     language =  models.CharField(max_length=5, default='ru', verbose_name=_("Язык"), help_text=_("Язык"))
     city = models.ForeignKey(City, on_delete=models.PROTECT, verbose_name=_("Город"),help_text=_("Город"), null=True, blank=True)
-    average_rating = models.FloatField(default=4.7, verbose_name=_("Средний рейтинг"), help_text=_("Средний рейтинг"))
+    average_rating = models.FloatField(default=0, verbose_name=_("Средний рейтинг"), help_text=_("Средний рейтинг"))
     rating_count = models.PositiveIntegerField(default=0, verbose_name=_("Кол-во отзывов"), help_text=_("Кол-во отзывов"))
     phone = models.CharField(max_length=15, blank=True, unique=True, null=True, verbose_name=_("Номер телефона"), help_text=_("Номер телефона"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))    
@@ -42,7 +42,7 @@ class TelegramUser(AbstractUser):
     @property
     def average_rating(self) -> float:
         """Возвращает средний рейтинг пользователя"""
-        return self.received_ratings.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 4.7
+        return self.received_ratings.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0
     
     @property
     def ratings_count(self) -> int:

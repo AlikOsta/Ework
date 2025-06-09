@@ -1,12 +1,13 @@
-<!-- Блок фильтрации и сортировки -->
+{% load i18n %}
+
 <div class="mb-4">
     <div class="card shadow-sm">
         <div class="card-body">
-            <!-- Кнопка для открытия/закрытия фильтров на мобильных устройствах -->
             <button class="btn btn-outline-primary d-md-none w-100 mb-3" type="button" 
                     data-bs-toggle="collapse" data-bs-target="#filterCollapse" 
                     aria-expanded="false" aria-controls="filterCollapse">
-                <i class="bi bi-funnel me-2"></i>Фильтры и сортировка
+                <i class="bi bi-funnel me-2"></i>
+                {% trans "Фильтры и сортировка" %}
             </button>
             
             <div class="collapse d-md-block" id="filterCollapse">
@@ -14,20 +15,18 @@
                       hx-target="#content-area">
                     
                     <div class="row g-3">
-                        <!-- Сортировка (общая для всех категорий) -->
                         <div class="col-md-3">
-                            <label for="sort-select" class="form-label small text-muted">Сортировка</label>
+                            <label for="sort-select" class="form-label small text-muted">{% trans "Сортировка" %}</label>
                             <select class="form-select form-select-sm" id="sort-select" name="sort">
-                                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Сначала новые</option>
-                                <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Сначала старые</option>
-                                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Цена: по возрастанию</option>
-                                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Цена: по убыванию</option>
+                                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>{% trans "Сначала новые" %}</option>
+                                <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>{% trans "Сначала старые" %}</option>
+                                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>{% trans "Цена: по возрастанию" %}</option>
+                                <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>{% trans "Цена: по убыванию" %}</option>
                             </select>
                         </div>
-                        
-                        <!-- Фильтр по цене (общий для всех категорий) -->
-                        <div class="col-md-4">
-                            <label class="form-label small text-muted">Цена</label>
+
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">{% trans "Цена" %}</label>
                             <div class="d-flex gap-2">
                                 <input type="number" class="form-control form-control-sm" 
                                        placeholder="От" name="price_min" value="{{ price_min }}">
@@ -35,68 +34,78 @@
                                        placeholder="До" name="price_max" value="{{ price_max }}">
                             </div>
                         </div>
-                        
-                        <!-- Фильтр по подкатегории (общий для всех категорий) -->
-                        <div class="col-md-5">
-                            <label for="subcategory-select" class="form-label small text-muted">Подкатегория</label>
+
+                        <div class="col-md-3">
+                            <label for="city-select" class="form-label small text-muted">{% trans "Город" %}</label>
+                            <select class="form-select form-select-sm" id="city-select" name="city">
+                                <option value="">{% trans "Все города" %}</option>
+                                {% for city in cities %}
+                                <option value="{{ city.id }}" {% if selected_city == city.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ city.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="subcategory-select" class="form-label small text-muted">{% trans "Категории" %}</label>
                             <select class="form-select form-select-sm" id="subcategory-select" name="sub_rubric">
-                                <option value="">Все подкатегории</option>
+                                <option value="">{% trans "Все категории" %}</option>
                                 {% for category in categories %}
-                                <option value="{{ category.id }}" {% if sub_rubric == category.id %}selected{% endif %}>
+                                <option value="{{ category.id }}" {% if sub_rubric == category.id|stringformat:"s" %}selected{% endif %}>
                                     {{ category.name }}
                                 </option>
                                 {% endfor %}
                             </select>
                         </div>
-                        
-                        <!-- Дополнительные фильтры для категории "Работа" -->
+
                         {% if category_slug == 'rabota' %}
                         <div class="col-md-4">
-                            <label for="experience-select" class="form-label small text-muted">Опыт работы</label>
+                            <label for="experience-select" class="form-label small text-muted">{% trans "Опыт работы" %}</label>
                             <select class="form-select form-select-sm" id="experience-select" name="experience">
-                                <option value="">Любой опыт</option>
-                                <option value="0" {% if experience == '0' %}selected{% endif %}>Без опыта</option>
-                                <option value="1" {% if experience == '1' %}selected{% endif %}>От 1 года</option>
-                                <option value="2" {% if experience == '2' %}selected{% endif %}>От 2 лет</option>
-                                <option value="3" {% if experience == '3' %}selected{% endif %}>От 3 лет</option>
-                                <option value="5" {% if experience == '5' %}selected{% endif %}>От 5 лет</option>
+                                <option value="">{% trans "Не имеет значения" %}</option>
+                                {% for choice_value, choice_label in experience_choices %}
+                                <option value="{{ choice_value }}" {% if experience == choice_value|stringformat:"s" %}selected{% endif %}>
+                                    {{ choice_label }}
+                                </option>
+                                {% endfor %}
                             </select>
                         </div>
                         
                         <div class="col-md-4">
-                            <label for="format-select" class="form-label small text-muted">Формат работы</label>
+                            <label for="format-select" class="form-label small text-muted">{% trans "Формат работы" %}</label>
                             <select class="form-select form-select-sm" id="format-select" name="work_format">
-                                <option value="">Любой формат</option>
-                                <option value="0" {% if work_format == '0' %}selected{% endif %}>Офис</option>
-                                <option value="1" {% if work_format == '1' %}selected{% endif %}>Удаленно</option>
-                                <option value="2" {% if work_format == '2' %}selected{% endif %}>Гибрид</option>
+                                <option value="">{% trans "Любой формат" %}</option>
+                                {% for choice_value, choice_label in work_format_choices %}
+                                <option value="{{ choice_value }}" {% if work_format == choice_value|stringformat:"s" %}selected{% endif %}>
+                                    {{ choice_label }}
+                                </option>
+                                {% endfor %}
                             </select>
                         </div>
                         
                         <div class="col-md-4">
-                            <label for="schedule-select" class="form-label small text-muted">График работы</label>
+                            <label for="schedule-select" class="form-label small text-muted">{% trans "График работы" %}</label>
                             <select class="form-select form-select-sm" id="schedule-select" name="work_schedule">
-                                <option value="">Любой график</option>
-                                <option value="0" {% if work_schedule == '0' %}selected{% endif %}>Полный день</option>
-                                <option value="1" {% if work_schedule == '1' %}selected{% endif %}>Сменный график</option>
-                                <option value="2" {% if work_schedule == '2' %}selected{% endif %}>Гибкий график</option>
-                                <option value="3" {% if work_schedule == '3' %}selected{% endif %}>Вахтовый метод</option>
+                                <option value="">{% trans "Любой график" %}</option>
+                                {% for choice_value, choice_label in work_schedule_choices %}
+                                <option value="{{ choice_value }}" {% if work_schedule == choice_value|stringformat:"s" %}selected{% endif %}>
+                                    {{ choice_label }}
+                                </option>
+                                {% endfor %}
                             </select>
                         </div>
                         {% endif %}
                         
-        
-                        
-                        <!-- Кнопки управления фильтрами -->
                         <div class="col-12 d-flex justify-content-between">
                             <button type="button" class="btn btn-sm btn-outline-secondary" 
                                     hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}" 
                                     hx-target="#content-area">
-                                <i class="bi bi-x-circle me-1"></i>Сбросить
+                                <i class="bi bi-x-circle me-1"></i>{% trans "Сбросить" %}
                             </button>
                             
                             <button type="submit" class="btn btn-sm btn-primary">
-                                <i class="bi bi-funnel-fill me-1"></i>Применить
+                                <i class="bi bi-funnel-fill me-1"></i>{% trans "Применить" %}
                             </button>
                         </div>
                     </div>
@@ -105,4 +114,3 @@
         </div>
     </div>
 </div>
-

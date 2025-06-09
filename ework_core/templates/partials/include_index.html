@@ -1,4 +1,4 @@
-
+{% load i18n %}
 
 <div class="mb-3 container">
 
@@ -24,7 +24,7 @@
                     hx-trigger="keyup changed delay:500ms"
                     hx-target="#content-area"
                     hx-include="#search-rubric-id" 
-                    placeholder="Поиск..."
+                    placeholder="{% trans "Поиск..." %}"
                     aria-label="Поиск">
                 <input type="hidden" name="rubric_id" id="search-rubric-id">
                 <button type="button" 
@@ -34,7 +34,7 @@
                         onclick="clearSearchInput()">
                     <i class="bi bi-x"></i>
                 </button>
-                <button type="submit" class="btn btn-primary d-none">Найти</button>
+                <button type="submit" class="btn btn-primary d-none">{% trans "Найти" %}</button>
             </div>
         </form>
     </div>

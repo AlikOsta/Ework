@@ -1,6 +1,7 @@
+{% load i18n %}
+
 <div class="modal-content p-0 border-0 bg-transparent">
   <style>
-    /* Принудительно делаем модальное окно полноразмерным */
     #modal.story-modal .modal-dialog {
       margin: 20px !important;
       max-width: none !important;
@@ -13,7 +14,6 @@
       min-height: calc(100vh - 40px) !important;
     }
 
-    /* Анимация прогресс-бара */
     @keyframes fillBar {
       from { width: 0%; }
       to { width: 100%; }
@@ -23,7 +23,6 @@
       animation: fillBar 10s linear forwards;
     }
 
-    /* Темный фон */
     #modal.story-modal {
       background-color: rgba(0,0,0,0.9) !important;
     }
@@ -34,13 +33,10 @@
 
     <div class="position-absolute top-0 start-0 w-100 px-3 pt-3 z-2">
       <div class="d-flex align-items-center gap-3">
-        <!-- Прогресс-бар -->
         <div class="progress flex-grow-1" style="height: 4px;">
           <div id="story-progress-bar" class="progress-bar bg-primary" role="progressbar"
               style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-        
-        <!-- Кнопка закрытия -->
         <button type="button" class="btn btn-sm btn-dark rounded-circle flex-shrink-0" 
                 data-bs-dismiss="modal" aria-label="Закрыть"
                 style="width: 32px; height: 32px; padding: 0;">
@@ -49,9 +45,6 @@
       </div>
     </div>
 
-
-
-    <!-- Контент -->
     <div class="mt-auto w-100 text-center text-white px-4 pb-4 pt-5 z-2"
          style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);">
 
@@ -66,7 +59,8 @@
       <a class="btn btn-light rounded-pill px-4 py-2 fw-semibold"
          href="{{ banner.link }}"
          target="_blank">
-        Подробнее
+         {% trans "Подробнее" %}
+        
       </a>
     </div>
 

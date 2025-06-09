@@ -64,18 +64,16 @@
                 
                 
                 <!-- Кнопка избранного поверх фото -->
-                {% if user.is_authenticated and user != post.author %}
                 <div id="favorite-button-{{ post.pk }}">
                     {% include 'partials/favorite_button.html' %}
                 </div>
-                {% endif %}
             </div>
         </div>
 
         <!-- Информация о товаре -->
-        <div class="product-info mb-4">
-            <h4 class="product-title mb-2">{{ post.title }}</h4>
-            <h3 class="product-price fw-bold mb-3">{{ post.price }} {{ post.currency }}</h3>
+        <div class="product-info">
+            <h4 class="product-title mb-4">{{ post.title }}</h4>
+            <h3 class="product-price fw-bold mb-4 text-primary">{{ post.price }} {{ post.currency }}</h3>
         </div>
 
         <!-- Описание -->
@@ -87,27 +85,37 @@
                 <p>{{ post.description }}</p>
             </div>
         </div>
-        <!-- Опыт работы -->
-        {% if post.experience %}
-        <div class="product-description mb-4">
-            <div class="description-content">
-                <p>{% trans "Опыт работы" %}: {{ post.experience }}</p>
-            </div>
-        </div>
-        {% endif %}
-        <!-- График работы -->
-        {% if post.work_schedule %}
-        <div class="product-description mb-4">
-            <div class="description-content">
-                <p>{% trans "График работы" %}: {{ post.work_schedule }}</p>
-            </div>
-        </div>
-        {% endif %}
-        <!-- Формат работы -->
-        {% if post.work_format %}
-        <div class="product-description mb-4">
-            <div class="description-content">
-                <p>{% trans "Формат работы" %}: {{ post.work_format }}</p>
+           <!-- Дополнительные поля для работы -->
+        {% if post.postjob %}
+        <div class="job-details">
+            <h5 class="section-title fw-bold mb-3">{% trans "Детали вакансии" %}</h5>
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body p-3">
+                            {% if post.postjob.experience is not None %}
+                            <div class="mb-2">
+                                <strong>{% trans "Опыт работы" %}:</strong>
+                                <span class="text-muted">{{ post.postjob.get_experience_display }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if post.postjob.work_schedule is not None %}
+                            <div class="mb-2">
+                                <strong>{% trans "График работы" %}:</strong>
+                                <span class="text-muted">{{ post.postjob.get_work_schedule_display }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if post.postjob.work_format is not None %}
+                            <div class="mb-0">
+                                <strong>{% trans "Формат работы" %}:</strong>
+                                <span class="text-muted">{{ post.postjob.get_work_format_display }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         {% endif %}
@@ -122,8 +130,8 @@
                 <div class="card-body p-3">
                     <div class="d-flex align-items-center">
                         <div class="seller-avatar me-3">
-                            {% if post.author.photo_url %}
-                                <img src="{{ post.author.photo_url }}" alt="{{ post.author.username }}" class="rounded-circle" width="50" height="50">
+                            {% if post.user.photo_url %}
+                                <img src="{{ post.user.photo_url }}" alt="{{ post.user.username }}" class="rounded-circle" width="50" height="50">
                             {% else %}
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                                     <i class="bi bi-person-fill fs-4"></i>
@@ -131,10 +139,19 @@
                             {% endif %}
                         </div>
                         <div>
-                            <h6 class="mb-1">{{ post.author.first_name }}</h6>
+                            {% if post.user.first_name %}
+                            <h6 class="mb-1">{{ post.user.first_name }}</h6>
+                            {% else %}
+                            <h6 class="mb-1">{{ post.user.username }}</h6>
+                            {% endif %}
+                            <p class="text-muted mb-0 small">
+                                {% trans "Рейтинг: " %}
+                                {{ post.user.average_rating}}/{{ post.user.ratings_count}}
+                                <i class="bi bi-star-fill text-warning"></i>
+                            </p>
                             <p class="text-muted mb-0 small">
                                 {% trans "На сайте с: " %}
-                                {{ post.author.date_joined|date:"d.m.Y" }}</p>
+                                {{ post.user.date_joined|date:"d.m.y" }}</p>
                         </div>
                     </div>
                 </div>

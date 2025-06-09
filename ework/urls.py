@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),
     path('admin/', admin.site.urls),
     path('users/', include('ework_user_tg.urls', namespace='users')),
     path('rosetta/', include('rosetta.urls')),
