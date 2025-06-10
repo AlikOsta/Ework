@@ -295,3 +295,6 @@ def banner_view(request, banner_id):
 
 def banner_ad_info(request):
     return render(request, 'includes/banner_ad_modal.html', {'admin_telegram': '@newpunknot'})
+
+def premium(request):
+    return render(request, 'premium.html')

@@ -1,0 +1,25 @@
+<!-- base.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+</head>
+<body>
+  <form id="telegram-init-form" method="POST" hx-swap="none" hx-trigger="none"
+        action="{% url 'user:telegram_login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="initData" id="telegram-init-data-field" />
+  </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      Telegram.WebApp.ready();
+      document.getElementById("telegram-init-data-field").value = Telegram.WebApp.initData;
+      document.getElementById("telegram-init-form").submit();
+    });
+  </script>
+
+  <div id="main-content"></div>
+</body>
+</html>

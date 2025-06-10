@@ -16,6 +16,8 @@ urlpatterns = [
     path('banner-ad-info/', views.banner_ad_info, name='banner_ad_info'),
     path('banner/<int:banner_id>/', views.banner_view, name='banner_view'),
 
+    path('premium/', views.premium, name='premium'),
+
     path("", views.home, name='home'),
 
 

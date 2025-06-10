@@ -93,7 +93,7 @@
 
     <button type="button"
             class="flex-fill btn bg-transparent border-0 d-flex flex-column align-items-center text-muted text-center"
-            hx-get="#"
+            hx-get="{% url 'core:premium' %}"
             hx-target="#main-content"
             aria-label="Тарифы">
       <i class="bi bi-send fs-4"></i>
@@ -102,7 +102,7 @@
 
     <button type="button"
             class="flex-fill btn bg-transparent border-0 d-flex flex-column align-items-center text-muted text-center"
-            hx-get="#"
+            hx-get="{% url 'user:author_profile' user.id %}"
             hx-target="#main-content"
             aria-label="Профиль">
       <i class="bi bi-person fs-4"></i>

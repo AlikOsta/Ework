@@ -1,0 +1,139 @@
+
+{% load static %}
+{% load i18n %}
+
+{% block content %}
+<div class="container mt-3">
+    <!-- Профиль пользователя -->
+    <div class="profile-header mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-start">
+                    <div class="profile-avatar me-3">
+                        {% if author.photo_url %}
+                            <img src="{{ author.photo_url }}" alt="{{ author.username }}" class="rounded-circle" width="100" height="100">
+                        {% else %}
+                            <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                <i class="bi bi-person-fill fs-1"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="profile-info flex-grow-1">
+                        <h4 class="mb-1 fw-bold">
+                            {% if author.first_name %}
+                                {{ author.first_name }}
+                                {% if author.last_name %}{{ author.last_name }}{% endif %}
+                            {% else %}
+                                {{ author.username }}
+                            {% endif %}
+                        </h4>
+                        <p class="text-muted mb-1">
+                            <i class="bi bi-telegram me-1"></i>@{{ author.username }}
+                        </p>
+                        <p class="text-muted mb-1">
+                            <i class="bi bi-star-fill me-1 text-warning"></i> 
+                            {% trans "Рейтинг" %}: {{ author.average_rating|floatformat:1 }} ({{ author.ratings_count }})
+                        </p>
+                        <p class="text-muted mb-1">
+                            <i class="bi bi-calendar3 me-1"></i> 
+                            {% trans "На сайте с" %} {{ author.date_joined|date:"d.m.Y" }}
+                        </p>
+                        {% if author.city %}
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-geo-alt me-1"></i> {{ author.city }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if is_own_profile %}
+                <div class="mt-3">
+                    <button type="button" 
+                            class="btn btn-outline-primary w-100"
+                            hx-get="{% url 'user:profile_edit' %}" 
+                            hx-target="#dialog">
+                        <i class="bi bi-pencil me-2"></i>{% trans "Редактировать профиль" %}
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="stats-section mb-4">
+        <div class="row g-3">
+            <div class="col-4">
+                <div class="card text-center">
+                    <div class="card-body py-3">
+                        <h5 class="card-title mb-1">{{ posts_count }}</h5>
+                        <p class="card-text small text-muted mb-0">{% trans "Объявлений" %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card text-center">
+                    <div class="card-body py-3">
+                        <h5 class="card-title mb-1">{{ author.ratings_count }}</h5>
+                        <p class="card-text small text-muted mb-0">{% trans "Отзывов" %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card text-center">
+                    <div class="card-body py-3">
+                        <h5 class="card-title mb-1">{{ author.average_rating|floatformat:1 }}</h5>
+                        <p class="card-text small text-muted mb-0">{% trans "Рейтинг" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Объявления пользователя -->
+    <div class="posts-section">
+        <h5 class="mb-3">{% trans "Объявления" %}</h5>
+        
+        {% if posts %}
+            {% include 'includes/include_card.html' %}
+            
+            <!-- Пагинация -->
+            {% if is_paginated %}
+            <nav aria-label="{% trans 'Навигация по страницам' %}" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Предыдущая" %}</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_obj.number }} {% trans "из" %} {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% trans "Следующая" %}</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-posts text-center py-5">
+                <div class="empty-icon mb-3">
+                    <i class="bi bi-file-earmark-text text-muted fs-1"></i>
+                </div>
+                <h6 class="mb-3">{% trans "Нет объявлений" %}</h6>
+                <p class="text-muted mb-0">
+                    {% if is_own_profile %}
+                        {% trans "Вы еще не создали ни одного объявления" %}
+                    {% else %}
+                        {% trans "Пользователь еще не создал ни одного объявления" %}
+                    {% endif %}
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

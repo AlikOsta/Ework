@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ author.username }}{% endblock %}
+
+
+{% block content %}
+    {% include 'user_ework/author_profile.html' %}
+{% endblock %}

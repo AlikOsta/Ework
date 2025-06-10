@@ -48,6 +48,22 @@ class TelegramUser(AbstractUser):
     def ratings_count(self) -> int:
         """Возвращает количество полученных оценок"""
         return self.received_ratings.count()
+    
+    def get_full_name(self):
+        """Возвращает полное имя или username"""
+        if self.first_name and self.last_name:
+            return f"{self.first_name} {self.last_name}"
+        elif self.first_name:
+            return self.first_name
+        return self.username
+    
+    def get_tg_name(self):
+        """Возвращает имя для отображения в Telegram формате"""
+        return f"@{self.username}" if self.username else f"ID: {self.telegram_id}"
+    
+    def get_avatar_url(self):
+        """Возвращает URL аватара или заглушку"""
+        return self.photo_url 
 
 
 class UserRating(models.Model):
