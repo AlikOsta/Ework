@@ -22,6 +22,8 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
+
+
 @method_decorator(login_required(login_url='user:telegram_auth'), name='dispatch')
 class AuthorProfileView(ListView):
     """Представление профиля автора с его объявлениями"""
