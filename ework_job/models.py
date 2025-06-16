@@ -1,8 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from ework_post.models import AbsPost, AbsProductView
+from ework_post.models import AbsPost
 from .choices import WORK_SCHEDULE_CHOICES, EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES 
-from ework_rubric.models import SuperRubric
 
 
 class PostJob(AbsPost):
@@ -14,11 +13,6 @@ class PostJob(AbsPost):
         pass
 
 
-class ProductViewJob(AbsProductView):
-    product = models.ForeignKey("PostJob", on_delete=models.CASCADE, related_name='job_views', verbose_name=_("Объявление"))
-
-    class Meta:
-        pass
     
 
 
