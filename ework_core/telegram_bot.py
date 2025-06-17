@@ -3,11 +3,6 @@ import asyncio
 import html
 
 
-YOUR_PERSONAL_CHAT_ID = 7727039536
-
-TELEGRAM_BOT_TOKEN = "7662590757:AAHpuX8hKUO8aCk3nGWsedA286qh0G0OAzw"
-
-
 async def send_telegram_message(token, chat_id, message, parse_mode='HTML'):
     bot = Bot(token=token)
     try:
@@ -21,8 +16,3 @@ async def send_telegram_message(token, chat_id, message, parse_mode='HTML'):
     finally:
         await bot.session.close()
         print("Закрытие сессии")
-
-
-if __name__ == "__main__":
-    message = "Тестовое сообщение"
-    asyncio.run(send_telegram_message(TELEGRAM_BOT_TOKEN, YOUR_PERSONAL_CHAT_ID, message))

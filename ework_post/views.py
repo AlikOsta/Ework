@@ -280,6 +280,16 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             self.object.full_clean() 
             self.object.save()
             messages.success(self.request, self.success_message)
+            
+            if self.request.headers.get('HX-Request'):
+                return HttpResponse(
+                    status=200,
+                    headers={
+                        'HX-Trigger': 'closeModal',
+                        'HX-Redirect': str(self.get_success_url())
+                    }
+                )
+            
             return super().form_valid(form)
         except ValidationError as e:
             form.add_error(None, e)
@@ -288,6 +298,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         """URL для перенаправления после успешного создания"""
         return reverse_lazy('core:home')
+
 
 
 class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
