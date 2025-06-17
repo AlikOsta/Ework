@@ -16,6 +16,8 @@ import json
 from ework_post.models import AbsPost, Favorite
 from .forms import UserProfileForm
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import translation
+
 
 logger = logging.getLogger(__name__)
 
@@ -231,26 +233,35 @@ class AuthorProfileView(ListView):
             }
 
 
-@login_required(login_url='user:telegram_auth')
 def profile_edit(request):
     """Функция-представление для редактирования профиля"""
     if request.method == 'POST':
         form = UserProfileForm(request.POST, instance=request.user)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            
+            # Обрабатываем смену языка
+            new_language = form.cleaned_data.get('language')
+            if new_language and new_language != request.LANGUAGE_CODE:
+                # Сохраняем язык в сессии
+                request.session[translation.LANGUAGE_SESSION_KEY] = new_language
+                # Активируем новый язык
+                translation.activate(new_language)
+            
             if request.headers.get('HX-Request'):
                 return HttpResponse(
                     status=200,
                     headers={
                         'HX-Trigger': 'closeModal',
-                        'HX-Redirect': reverse('user:author_profile', kwargs={'author_id': request.user.id})
+                        'HX-Redirect': reverse('users:author_profile', kwargs={'author_id': request.user.id})
                     }
                 )
-            return redirect('user:author_profile', author_id=request.user.id)
+            return redirect('users:author_profile', author_id=request.user.id)
     else:
         form = UserProfileForm(instance=request.user)
     
     return render(request, 'user_ework/profile_edit.html', {'form': form})
+
 
 
 class Index(TemplateView):

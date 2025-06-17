@@ -15,7 +15,7 @@
                         <img src="{{ user.photo_url }}" alt="{{ user.username }}" class="rounded-circle" width="80" height="80">
                     {% else %}
                         <div class="avatar-placeholder rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                            <i class="bi bi-person-fill fs-3"></i>
+                            <i class="material-icons text-muted" style="font-size: 48px;">person</i>
                         </div>
                     {% endif %}
                 </div>
@@ -29,10 +29,10 @@
                         {% endif %}
                     </h5>
                     <p class="text-muted mb-1 small">
-                        <i class="bi bi-telegram me-1"></i>@{{ user.username }}
+                        <i class="material-icons me-1" style="font-size: 1em; vertical-align: text-bottom;">telegram</i>@{{ user.username }}
                     </p>
                     <p class="text-muted mb-0 small">
-                        <i class="bi bi-calendar3 me-1"></i> 
+                        <i class="material-icons me-1" style="font-size: 1em; vertical-align: text-bottom;">schedule</i> 
                         {% trans "На сайте с" %} {{ user.date_joined|date:"d.m.Y" }}
                     </p>
                 </div>
@@ -41,7 +41,7 @@
 
         <!-- Форма редактирования -->
         <form method="post" 
-              hx-post="{% url 'user:profile_edit' %}" 
+              hx-post="{% url 'users:profile_edit' %}" 
               hx-target="this" 
               hx-swap="outerHTML">
             {% csrf_token %}
@@ -81,6 +81,18 @@
                 {% endif %}
             </div>
             {% endif %}
+
+            <!-- Добавляем поле выбора языка -->
+            <div class="mb-3">
+                <label for="{{ form.language.id_for_label }}" class="form-label">{{ form.language.label }}</label>
+                {{ form.language }}
+                {% if form.language.errors %}
+                <div class="text-danger mt-1 small">{{ form.language.errors.0 }}</div>
+                {% endif %}
+                <div class="form-text">
+                    {% trans "Выберите предпочитаемый язык интерфейса" %}
+                </div>
+            </div>
             
             <div class="text-muted small mb-3">
                 {% trans "Некоторые данные профиля можно изменить только в Telegram." %}

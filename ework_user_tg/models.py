@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.db.models import Avg
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.conf import settings
 
 from ework_locations.models import City
 
@@ -16,7 +17,8 @@ class TelegramUser(AbstractUser):
     first_name = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Имя"), help_text=_("Имя"))
     last_name = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Фамилия"), help_text=_("Фамилия"))
     photo_url = models.URLField(blank=True, null=True, verbose_name=_("URL фото"), help_text=_("URL на фото")) #добавить путь и заглушку
-    language =  models.CharField(max_length=5, default='ru', verbose_name=_("Язык"), help_text=_("Язык"))
+    language = models.CharField( max_length=10, choices=settings.LANGUAGES, default='ru', verbose_name=_('Язык интерфейса')
+    )
     city = models.ForeignKey(City, on_delete=models.PROTECT, verbose_name=_("Город"),help_text=_("Город"), null=True, blank=True)
     average_rating = models.FloatField(default=0, verbose_name=_("Средний рейтинг"), help_text=_("Средний рейтинг"))
     rating_count = models.PositiveIntegerField(default=0, verbose_name=_("Кол-во отзывов"), help_text=_("Кол-во отзывов"))

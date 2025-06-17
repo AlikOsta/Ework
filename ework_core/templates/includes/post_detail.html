@@ -103,7 +103,7 @@
                                 <img src="{{ post.user.photo_url }}" alt="{{ post.user.username }}" class="rounded-circle" width="50" height="50">
                             {% else %}
                                 <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                    <i class="bi bi-person-fill fs-4"></i>
+                                    <i class="material-icons text-muted">person</i>
                                 </div>
                             {% endif %}
                         </div>
@@ -116,7 +116,7 @@
                             <p class="text-muted mb-0 small">
                                 {% trans "Рейтинг: " %}
                                 {{ post.user.average_rating}}/{{ post.user.ratings_count}}
-                                <i class="bi bi-star-fill text-warning"></i>
+                                <i class="material-icons text-warning" style="font-size: 1em;">star</i>
                             </p>
                             <p class="text-muted mb-0 small">
                                 {% trans "На сайте с: " %}
@@ -130,11 +130,11 @@
         <div class="product-info mb-4">
             <div class="product-meta d-flex flex-wrap mb-3">
                 <div class="me-4 mb-2 d-flex align-items-center">
-                    <i class="bi bi-geo-alt text-muted me-2"></i>
+                    <i class="material-icons text-muted me-2">location_on</i>
                     <span>{{ post.city }}</span>
                 </div>
                 <div class="me-4 mb-2 d-flex align-items-center">
-                    <i class="bi bi-clock text-muted me-2"></i>
+                    <i class="material-icons text-muted me-2">schedule</i>
                     <span>{{ post.created_at|date:"d.m.y" }}</span>
                 </div>
             </div>
@@ -151,7 +151,7 @@
                 role="button"
                 aria-label="Позвонить продавцу"
                 >
-                <i class="bi bi-telephone-outbound me-2"></i>
+                <i class="material-icons me-2">phone</i>
                 {{ post.user_phone }}
                 </a>
 
@@ -165,7 +165,7 @@
                     this.replaceWith(link);
                 "
                 >
-                <i class="bi bi-telephone me-2"></i>
+                <i class="material-icons me-2">phone</i>
                 <span>
                     {% trans "Показать номер телефона" %}
                 </span>
@@ -193,7 +193,7 @@
                     onmousedown="this.style.transform='scale(0.98)'; this.style.opacity='0.9';"
                     onmouseup="this.style.transform='scale(1)'; this.style.opacity='1';"
                 >
-                    <i class="bi bi-chat-dots-fill me-2"></i>
+                    <i class="material-icons me-2">chat</i>
                     <span>{% trans "Связаться с продавцом" %}</span>
                 </button>
             </div>
