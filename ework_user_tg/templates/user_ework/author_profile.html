@@ -27,19 +27,20 @@
                             {% endif %}
                         </h4>
                         <p class="text-muted mb-1">
-                            <i class="bi bi-telegram me-1"></i>@{{ author.username }}
+                            <i class="material-icons me-1" style="font-size: 1em; vertical-align: text-bottom;">telegram</i>@{{ author.username }}
                         </p>
                         <p class="text-muted mb-1">
-                            <i class="bi bi-star-fill me-1 text-warning"></i> 
+                            <i class="material-icons text-warning me-1" style="font-size: 1em; vertical-align: text-bottom;">star</i>
                             {% trans "Рейтинг" %}: {{ author.average_rating|floatformat:1|default:"0.0" }} ({{ author.ratings_count|default:"0" }})
                         </p>
                         <p class="text-muted mb-1">
-                            <i class="bi bi-calendar3 me-1"></i> 
-                            {% trans "На сайте с" %} {{ author.date_joined|date:"d.m.Y" }}
+                            <i class="material-icons text-muted me-2" style="font-size: 1em; vertical-align: text-bottom;">schedule</i>
+                            {% trans "На сайте с" %} {{ author.date_joined|date:"d.m.y" }}
                         </p>
                         {% if author.city %}
                         <p class="text-muted mb-0">
-                            <i class="bi bi-geo-alt me-1"></i> {{ author.city }}
+                            <i class="material-icons text-muted me-2" style="font-size: 1em; vertical-align: text-bottom;">location_on</i>
+                            {{ author.city }}
                         </p>
                         {% endif %}
                     </div>
@@ -51,7 +52,7 @@
                             class="btn btn-outline-primary w-100"
                             hx-get="{% url 'user:profile_edit' %}" 
                             hx-target="#dialog">
-                        <i class="bi bi-pencil me-2"></i>{% trans "Редактировать профиль" %}
+                        <i class="material-icons me-2" style="font-size: 1em; vertical-align: text-bottom;">edit</i>{% trans "Редактировать профиль" %}
                     </button>
                 </div>
                 {% endif %}
@@ -102,7 +103,7 @@
         <!-- Опубликованные объявления (статус 3) -->
         <div class="tab-pane fade show active" id="published" role="tabpanel" aria-labelledby="published-tab">
             {% if published_products %}
-            <div class="row g-3">
+            <div class="row g-3 mb-5">
                 {% for product in published_products %}
                 <div class="col-6">
                     <div class="position-relative">
@@ -115,7 +116,7 @@
             <div class="col-12">
                 <div class="empty-favorites text-center py-5">
                     <div class="mb-3">
-                        <i class="bi bi-megaphone text-primary fs-1"></i>
+                        <i class="material-icons text-primary" style="font-size: 48px;">campaign</i>
                     </div>
                     <h5 class="mb-3">{% trans "У вас нет опубликованных объявлений" %}</h5>
                     <p class="text-muted mb-4">{% trans "Создайте новое объявление или дождитесь одобрения модератора" %}</p>
@@ -123,7 +124,7 @@
                         hx-get="{% url 'core:modal_select_post' %}" 
                         hx-target="#dialog" 
                         aria-label="Создать пост">
-                        <i class="bi bi-plus-lg me-2"></i>{% trans "Создать объявление" %}
+                        <i class="material-icons me-2" style="font-size: 1em; vertical-align: text-bottom;">add</i>{% trans "Создать объявление" %}
                     </a>
                 </div>
             </div>
@@ -133,11 +134,14 @@
         <!-- Объявления на модерации (статус 0 и 1) -->
         <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
             {% if pending_products or approved_products %} 
-            <div class="row g-3">
+            <div class="row g-3 mb-5">
                 <!-- Одобренные, но не опубликованные (статус 1) -->
                 {% for product in approved_products %}
                 <div class="col-6">
                     <div class="position-relative">
+                        <div class="badge bg-success position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                            {% trans "Одобрено" %}
+                        </div>
                         {% include 'user_ework/card.html' with product=product show_controls=False status="approved" %}
                     </div>
                 </div>
@@ -147,6 +151,9 @@
                 {% for product in pending_products %}
                 <div class="col-6">
                     <div class="position-relative">
+                        <div class="badge bg-warning position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                            {% trans "На проверке" %}
+                        </div>
                         {% include 'user_ework/card.html' with product=product show_controls=False status="pending" %}
                     </div>
                 </div>
@@ -155,7 +162,7 @@
             {% else %}
             <div class="empty-state text-center py-4">
                 <div class="empty-icon mb-3">
-                    <i class="bi bi-hourglass-split text-warning fs-1"></i>
+                    <i class="material-icons text-warning" style="font-size: 48px;">hourglass_empty</i>
                 </div>
                 <h5 class="mb-2">{% trans "У вас нет объявлений на модерации" %}</h5>
                 <p class="text-muted mb-3">{% trans "Все ваши объявления уже проверены модераторами" %}</p>
@@ -166,7 +173,7 @@
         <!-- Архивные объявления (статус 4) -->
         <div class="tab-pane fade" id="archived" role="tabpanel" aria-labelledby="archived-tab">
             {% if archived_products %}
-            <div class="row g-3">
+            <div class="row g-3 mb-5">
                 {% for product in archived_products %}
                 <div class="col-6">
                     <div class="position-relative">
@@ -178,7 +185,7 @@
             {% else %}
             <div class="empty-state text-center py-4">
                 <div class="empty-icon mb-3">
-                    <i class="bi bi-archive text-secondary fs-1"></i>
+                    <i class="material-icons text-secondary" style="font-size: 48px;">archive</i>
                 </div>
                 <h5 class="mb-2">{% trans "У вас нет архивных объявлений" %}</h5>
                 <p class="text-muted mb-3">{% trans "Здесь будут отображаться объявления, которые вы перенесли в архив" %}</p>
@@ -189,7 +196,7 @@
         <!-- Заблокированные объявления (статус 2) -->
         <div class="tab-pane fade" id="rejected" role="tabpanel" aria-labelledby="rejected-tab">
             {% if rejected_products %}
-            <div class="row g-3">
+            <div class="row g-3 mb-5">
                 {% for product in rejected_products %}
                 <div class="col-6">
                     <div class="position-relative">
@@ -204,7 +211,7 @@
             {% else %}
             <div class="empty-state text-center py-4">
                 <div class="empty-icon mb-3">
-                    <i class="bi bi-x-circle text-danger fs-1"></i>
+                    <i class="material-icons text-danger" style="font-size: 48px;">cancel</i>
                 </div>
                 <h5 class="mb-2">{% trans "У вас нет заблокированных объявлений" %}</h5>
                 <p class="text-muted mb-3">{% trans "Отлично! Все ваши объявления соответствуют правилам сервиса" %}</p>
@@ -220,7 +227,7 @@
     </div>
     
     {% if published_products %}
-    <div class="row g-3">
+    <div class="row g-3 mb-5">
         {% for product in published_products %}
         <div class="col-6">
             {% include 'user_ework/card.html' with product=product show_controls=False status="public" %}
@@ -230,12 +237,12 @@
     {% else %}
     <div class="empty-state text-center py-4">
         <div class="empty-icon mb-3">
-            <i class="bi bi-inbox text-muted fs-1"></i>
+            <i class="material-icons text-muted" style="font-size: 48px;">inbox</i>
         </div>
         <h5 class="mb-2">{% trans "У пользователя пока нет объявлений" %}</h5>
         <p class="text-muted mb-3">{% trans "Возможно, они появятся позже" %}</p>
         <a href="{% url 'core:home' %}" class="btn btn-primary">
-            <i class="bi bi-search me-2"></i>{% trans "Смотреть все объявления" %}
+            <i class="material-icons me-2" style="font-size: 1em; vertical-align: text-bottom;">search</i>{% trans "Смотреть все объявления" %}
         </a>
     </div>
     {% endif %}
