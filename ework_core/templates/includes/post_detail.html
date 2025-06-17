@@ -12,42 +12,6 @@
         data-product-title="{{ post.title|escapejs }}"
         data-product-price="{{ post.price }} {{ post.currency }}">
 
-        <!-- Статус объявления (только для автора) -->
-        {% if user == post.author and post.status != 3 %}
-        <div class="mb-3">
-            {% if post.status == 0 %}
-            <div class="alert alert-warning d-flex align-items-center">
-                <i class="bi bi-clock-history me-2 fs-5"></i>
-                <div>
-                    {% trans "Объявление на модерации" %}
-                </div>
-            </div>
-            {% elif post.status == 1 %}
-            <div class="alert alert-info d-flex align-items-center">
-                <i class="bi bi-check-circle me-2 fs-5"></i>
-                <div>
-                    {% trans "Объявление одобрено, но не опубликовано" %}
-                </div>
-            </div>
-            {% elif post.status == 2 %}
-            <div class="alert alert-danger d-flex align-items-center">
-                <i class="bi bi-x-circle me-2 fs-5"></i>
-                <div>
-                    {% trans "Объявление отклонено" %}
-                </div>
-            </div>
-            {% elif post.status == 4 %}
-            <div class="alert alert-secondary d-flex align-items-center">
-                <i class="bi bi-archive me-2 fs-5"></i>
-                <div>
-                    {% trans "Объявление в архиве" %}
-                </div>
-                
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
-
         <!-- Изображение с кнопкой избранного -->
         <div class="product-gallery mb-4">
             <div class="main-image-container rounded overflow-hidden position-relative">

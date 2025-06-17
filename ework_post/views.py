@@ -1,6 +1,6 @@
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
@@ -325,12 +325,33 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         """Обработка валидной формы"""
         # При обновлении отправляем на модерацию
         form.instance.status = 0  # Не проверено
+        form.save()
+        
         messages.success(self.request, self.success_message)
-        return super().form_valid(form)
+        
+        # Если это HTMX запрос, возвращаем специальный ответ
+        if self.request.headers.get('HX-Request'):
+            return HttpResponse(
+                status=200,
+                headers={
+                    'HX-Trigger': 'closeModal',
+                    'HX-Redirect': reverse('user:author_profile', kwargs={'author_id': self.request.user.id})
+                }
+            )
+        
+        return redirect(self.get_success_url())
+    
+    def form_invalid(self, form):
+        """Обработка невалидной формы"""
+        # Для HTMX запросов возвращаем форму с ошибками
+        if self.request.headers.get('HX-Request'):
+            return self.render_to_response(self.get_context_data(form=form))
+        return super().form_invalid(form)
     
     def get_success_url(self):
         """URL для перенаправления после успешного обновления"""
         return reverse_lazy('user:author_profile', kwargs={'author_id': self.request.user.id})
+
 
 
 class BasePostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
@@ -444,21 +465,4 @@ class PostSearchMixin:
             'user', 'city', 'currency', 'sub_rubric'
         ).order_by('-created_at')
 
-
-# Устаревшие классы для обратной совместимости
-# TODO: Удалить после обновления всех наследников
-
-class BasePostListView_Legacy(BasePostListView):
-    """Устаревший класс - используйте BasePostListView"""
-    pass
-
-
-class BasePostCreateView_Legacy(BasePostCreateView):
-    """Устаревший класс - используйте BasePostCreateView"""
-    pass
-
-
-class BasePostUpdateView_Legacy(BasePostUpdateView):
-    """Устаревший класс - используйте BasePostUpdateView"""
-    pass
 

@@ -22,8 +22,6 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-
-
 @method_decorator(login_required(login_url='user:telegram_auth'), name='dispatch')
 class AuthorProfileView(ListView):
     """Представление профиля автора с его объявлениями"""
@@ -37,6 +35,7 @@ class AuthorProfileView(ListView):
         super().setup(request, *args, **kwargs)
         self._author = None
         self._is_own_profile = None
+        self._posts_by_status = None
 
     def get_author(self):
         """Получает автора с кэшированием"""
@@ -61,34 +60,97 @@ class AuthorProfileView(ListView):
                 self._is_own_profile = False
         return self._is_own_profile
 
+    def get_posts_by_status(self):
+        """Получает посты автора, сгруппированные по статусам"""
+        if self._posts_by_status is None:
+            author = self.get_author()
+            is_own = self.is_own_profile()
+            
+            # Базовый queryset для всех постов автора
+            base_queryset = AbsPost.objects.filter(
+                user=author,
+                is_deleted=False  # Исключаем удаленные посты
+            ).select_related('user', 'city', 'currency', 'sub_rubric').order_by('-created_at')
+            
+            if is_own:
+                # Для собственного профиля получаем посты всех статусов
+                self._posts_by_status = {
+                    'published': list(base_queryset.filter(status=3)),  # Опубликованные
+                    'pending': list(base_queryset.filter(status=0)),    # На модерации (не проверено)
+                    'approved': list(base_queryset.filter(status=1)),   # Одобрено, но не опубликовано
+                    'rejected': list(base_queryset.filter(status=2)),   # Заблокированные
+                    'archived': list(base_queryset.filter(status=4)),   # В архиве
+                }
+            else:
+                # Для чужого профиля показываем только опубликованные
+                self._posts_by_status = {
+                    'published': list(base_queryset.filter(status=3)),
+                    'pending': [],
+                    'approved': [],
+                    'rejected': [],
+                    'archived': [],
+                }
+        
+        return self._posts_by_status
+
     def get_queryset(self):
-        """Получает объявления автора"""
-        author = self.get_author()
-        return AbsPost.objects.filter(
-            user=author,  
-            status=3  
-        ).select_related('user', 'city', 'currency', 'sub_rubric').order_by('-created_at')
+        """Получает объявления для основного списка (опубликованные)"""
+        posts_by_status = self.get_posts_by_status()
+        return posts_by_status['published']
     
     def get_context_data(self, **kwargs):
         try:
             context = super().get_context_data(**kwargs)
             author = self.get_author()
             is_own_profile = self.is_own_profile()
+            posts_by_status = self.get_posts_by_status()
             
+            # Основные данные профиля
             context.update({
                 'author': author,
                 'is_own_profile': is_own_profile,
-                'posts_count': self.get_queryset().count(),
             })
             
+            # Посты по статусам
+            context.update({
+                'published_products': posts_by_status['published'],
+                'pending_products': posts_by_status['pending'],
+                'approved_products': posts_by_status['approved'],
+                'rejected_products': posts_by_status['rejected'],
+                'archived_products': posts_by_status['archived'],
+            })
+            
+            # Счетчики для бейджей
+            context.update({
+                'published_count': len(posts_by_status['published']),
+                'pending_count': len(posts_by_status['pending']) + len(posts_by_status['approved']),
+                'rejected_count': len(posts_by_status['rejected']),
+                'archived_count': len(posts_by_status['archived']),
+                'total_posts_count': sum(len(posts) for posts in posts_by_status.values()),
+            })
+            
+            # Избранные посты для текущего пользователя
             if self.request.user.is_authenticated:
-                favorite_post_ids = Favorite.objects.filter(
-                    user=self.request.user,
-                    post__in=context['posts']
-                ).values_list('post_id', flat=True)
-                context['favorite_post_ids'] = list(favorite_post_ids)
+                all_posts = []
+                for posts_list in posts_by_status.values():
+                    all_posts.extend(posts_list)
+                
+                if all_posts:
+                    favorite_post_ids = Favorite.objects.filter(
+                        user=self.request.user,
+                        post__in=all_posts
+                    ).values_list('post_id', flat=True)
+                    context['favorite_post_ids'] = list(favorite_post_ids)
+                else:
+                    context['favorite_post_ids'] = []
             else:
                 context['favorite_post_ids'] = []
+            
+            # Дополнительная статистика профиля
+            if is_own_profile:
+                context.update({
+                    'profile_stats': self.get_profile_stats(author, posts_by_status),
+                })
             
             return context
             
@@ -97,12 +159,79 @@ class AuthorProfileView(ListView):
             return {
                 'author': self.get_author(), 
                 'is_own_profile': False,
-                'posts': [],
-                'posts_count': 0,
-                'favorite_post_ids': []
+                'published_products': [],
+                'pending_products': [],
+                'approved_products': [],
+                'rejected_products': [],
+                'archived_products': [],
+                'published_count': 0,
+                'pending_count': 0,
+                'rejected_count': 0,
+                'archived_count': 0,
+                'total_posts_count': 0,
+                'favorite_post_ids': [],
+                'profile_stats': {},
+            }
+    
+    def get_profile_stats(self, author, posts_by_status):
+        """Получает дополнительную статистику профиля"""
+        try:
+            from ework_post.models import PostView
+            from django.contrib.contenttypes.models import ContentType
+            from django.db.models import Count, Sum
+            
+            # Все посты пользователя
+            all_posts = []
+            for posts_list in posts_by_status.values():
+                all_posts.extend(posts_list)
+            
+            stats = {
+                'total_posts': len(all_posts),
+                'total_views': 0,
+                'total_favorites': 0,
+                'avg_price': 0,
+            }
+            
+            if all_posts:
+                # Подсчет просмотров
+                post_ids = [post.pk for post in all_posts]
+                content_types = ContentType.objects.get_for_models(*[type(post) for post in all_posts]).values()
+                
+                total_views = PostView.objects.filter(
+                    content_type__in=content_types,
+                    object_id__in=post_ids
+                ).count()
+                
+                # Подсчет избранных
+                total_favorites = Favorite.objects.filter(post__in=all_posts).count()
+                
+                # Средняя цена (только для опубликованных)
+                published_posts = posts_by_status['published']
+                if published_posts:
+                    prices = [post.price for post in published_posts if post.price]
+                    avg_price = sum(prices) / len(prices) if prices else 0
+                else:
+                    avg_price = 0
+                
+                stats.update({
+                    'total_views': total_views,
+                    'total_favorites': total_favorites,
+                    'avg_price': round(avg_price, 2),
+                })
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Error calculating profile stats: {e}")
+            return {
+                'total_posts': 0,
+                'total_views': 0,
+                'total_favorites': 0,
+                'avg_price': 0,
             }
 
 
+@login_required(login_url='user:telegram_auth')
 def profile_edit(request):
     """Функция-представление для редактирования профиля"""
     if request.method == 'POST':

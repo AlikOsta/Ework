@@ -1,4 +1,3 @@
-
 {% load static %}
 {% load i18n %}
 
@@ -22,7 +21,7 @@
                         <h4 class="mb-1 fw-bold">
                             {% if author.first_name %}
                                 {{ author.first_name }}
-                                {% if author.last_name %}{{ author.last_name }}{% endif %}
+                                {% if author.last_name %} {{ author.last_name }}{% endif %}
                             {% else %}
                                 {{ author.username }}
                             {% endif %}
@@ -32,7 +31,7 @@
                         </p>
                         <p class="text-muted mb-1">
                             <i class="bi bi-star-fill me-1 text-warning"></i> 
-                            {% trans "Рейтинг" %}: {{ author.average_rating|floatformat:1 }} ({{ author.ratings_count }})
+                            {% trans "Рейтинг" %}: {{ author.average_rating|floatformat:1|default:"0.0" }} ({{ author.ratings_count|default:"0" }})
                         </p>
                         <p class="text-muted mb-1">
                             <i class="bi bi-calendar3 me-1"></i> 
@@ -60,50 +59,187 @@
         </div>
     </div>
 
-    <!-- Объявления пользователя -->
-    <div class="posts-section">
-        <h5 class="mb-3">{% trans "Объявления" %}</h5>
-        
-        {% if posts %}
-            {% include 'includes/include_card.html' %}
-            
-            <!-- Пагинация -->
-            {% if is_paginated %}
-            <nav aria-label="{% trans 'Навигация по страницам' %}" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">{% trans "Предыдущая" %}</a>
-                        </li>
+    <!-- Вкладки для собственного профиля -->
+    {% if is_own_profile %}
+    <div class="profile-tabs mb-4">
+        <ul class="nav nav-pills nav-fill" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="published-tab" data-bs-toggle="tab" data-bs-target="#published" type="button" role="tab" aria-controls="published" aria-selected="true">
+                    {% trans "Опубликованные" %}
+                    {% if published_count > 0 %}
+                    <span class="badge bg-primary ms-1">{{ published_count }}</span>
                     {% endif %}
-                    
-                    <li class="page-item active">
-                        <span class="page-link">{{ page_obj.number }} {% trans "из" %} {{ page_obj.paginator.num_pages }}</span>
-                    </li>
-                    
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">{% trans "Следующая" %}</a>
-                        </li>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="false">
+                    {% trans "На модерации" %}
+                    {% if pending_count > 0 %}
+                    <span class="badge bg-warning text-dark ms-1">{{ pending_count }}</span>
                     {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-        {% else %}
-            <div class="empty-posts text-center py-5">
-                <div class="empty-icon mb-3">
-                    <i class="bi bi-file-earmark-text text-muted fs-1"></i>
-                </div>
-                <h6 class="mb-3">{% trans "Нет объявлений" %}</h6>
-                <p class="text-muted mb-0">
-                    {% if is_own_profile %}
-                        {% trans "Вы еще не создали ни одного объявления" %}
-                    {% else %}
-                        {% trans "Пользователь еще не создал ни одного объявления" %}
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="archived-tab" data-bs-toggle="tab" data-bs-target="#archived" type="button" role="tab" aria-controls="archived" aria-selected="false">
+                    {% trans "Архив" %}
+                    {% if archived_count > 0 %}
+                    <span class="badge bg-secondary ms-1">{{ archived_count }}</span>
                     {% endif %}
-                </p>
-            </div>
-        {% endif %}
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab" aria-controls="rejected" aria-selected="false">
+                    {% trans "Заблокированные" %}
+                    {% if rejected_count > 0 %}
+                    <span class="badge bg-danger ms-1">{{ rejected_count }}</span>
+                    {% endif %}
+                </button>
+            </li>
+        </ul>
     </div>
+
+    <div class="tab-content" id="profileTabsContent">
+        <!-- Опубликованные объявления (статус 3) -->
+        <div class="tab-pane fade show active" id="published" role="tabpanel" aria-labelledby="published-tab">
+            {% if published_products %}
+            <div class="row g-3">
+                {% for product in published_products %}
+                <div class="col-6">
+                    <div class="position-relative">
+                        {% include 'user_ework/card.html' with product=product show_controls=True status="published" %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="empty-favorites text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-megaphone text-primary fs-1"></i>
+                    </div>
+                    <h5 class="mb-3">{% trans "У вас нет опубликованных объявлений" %}</h5>
+                    <p class="text-muted mb-4">{% trans "Создайте новое объявление или дождитесь одобрения модератора" %}</p>
+                    <a href="{% url 'core:modal_select_post' %}" class="btn btn-primary"
+                        hx-get="{% url 'core:modal_select_post' %}" 
+                        hx-target="#dialog" 
+                        aria-label="Создать пост">
+                        <i class="bi bi-plus-lg me-2"></i>{% trans "Создать объявление" %}
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Объявления на модерации (статус 0 и 1) -->
+        <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
+            {% if pending_products or approved_products %} 
+            <div class="row g-3">
+                <!-- Одобренные, но не опубликованные (статус 1) -->
+                {% for product in approved_products %}
+                <div class="col-6">
+                    <div class="position-relative">
+                        {% include 'user_ework/card.html' with product=product show_controls=False status="approved" %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- На модерации (статус 0) -->
+                {% for product in pending_products %}
+                <div class="col-6">
+                    <div class="position-relative">
+                        {% include 'user_ework/card.html' with product=product show_controls=False status="pending" %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state text-center py-4">
+                <div class="empty-icon mb-3">
+                    <i class="bi bi-hourglass-split text-warning fs-1"></i>
+                </div>
+                <h5 class="mb-2">{% trans "У вас нет объявлений на модерации" %}</h5>
+                <p class="text-muted mb-3">{% trans "Все ваши объявления уже проверены модераторами" %}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Архивные объявления (статус 4) -->
+        <div class="tab-pane fade" id="archived" role="tabpanel" aria-labelledby="archived-tab">
+            {% if archived_products %}
+            <div class="row g-3">
+                {% for product in archived_products %}
+                <div class="col-6">
+                    <div class="position-relative">
+                        {% include 'user_ework/card.html' with product=product show_controls=True status="archived" %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state text-center py-4">
+                <div class="empty-icon mb-3">
+                    <i class="bi bi-archive text-secondary fs-1"></i>
+                </div>
+                <h5 class="mb-2">{% trans "У вас нет архивных объявлений" %}</h5>
+                <p class="text-muted mb-3">{% trans "Здесь будут отображаться объявления, которые вы перенесли в архив" %}</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Заблокированные объявления (статус 2) -->
+        <div class="tab-pane fade" id="rejected" role="tabpanel" aria-labelledby="rejected-tab">
+            {% if rejected_products %}
+            <div class="row g-3">
+                {% for product in rejected_products %}
+                <div class="col-6">
+                    <div class="position-relative">
+                        <div class="badge bg-danger position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                            {% trans "Заблокировано" %}
+                        </div>
+                        {% include 'user_ework/card.html' with product=product show_controls=True status="rejected" %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state text-center py-4">
+                <div class="empty-icon mb-3">
+                    <i class="bi bi-x-circle text-danger fs-1"></i>
+                </div>
+                <h5 class="mb-2">{% trans "У вас нет заблокированных объявлений" %}</h5>
+                <p class="text-muted mb-3">{% trans "Отлично! Все ваши объявления соответствуют правилам сервиса" %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- Для чужого профиля показываем только опубликованные объявления -->
+    <div class="mb-3">
+        <h5 class="section-title mb-3">{% trans "Объявления пользователя" %}</h5>
+    </div>
+    
+    {% if published_products %}
+    <div class="row g-3">
+        {% for product in published_products %}
+        <div class="col-6">
+            {% include 'user_ework/card.html' with product=product show_controls=False status="public" %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state text-center py-4">
+        <div class="empty-icon mb-3">
+            <i class="bi bi-inbox text-muted fs-1"></i>
+        </div>
+        <h5 class="mb-2">{% trans "У пользователя пока нет объявлений" %}</h5>
+        <p class="text-muted mb-3">{% trans "Возможно, они появятся позже" %}</p>
+        <a href="{% url 'core:home' %}" class="btn btn-primary">
+            <i class="bi bi-search me-2"></i>{% trans "Смотреть все объявления" %}
+        </a>
+    </div>
+    {% endif %}
+    {% endif %}
 </div>
+
 {% endblock %}

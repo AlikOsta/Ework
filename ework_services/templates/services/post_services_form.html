@@ -6,11 +6,24 @@
     {% csrf_token %}
 
     <div class="modal-header">
-        <h5 class="modal-title" id="createPostModalLabel">{% trans "Разместить услугу" %}</h5>
+        <h5 class="modal-title" id="createPostModalLabel">
+            {% if object %}
+                {% trans "Редактировать услугу" %}
+            {% else %}
+                {% trans "Разместить услугу" %}
+            {% endif %}
+        </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
 
     <div class="modal-body">
+        <!-- Отображение общих ошибок формы -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
         <!-- Основная информация -->
         <div class="mb-3">
             <label for="{{ form.title.id_for_label }}" class="form-label">{% trans "Название услуги" %}</label>
@@ -51,7 +64,7 @@
             <div class="invalid-feedback">{{ form.sub_rubric.errors|first }}</div>
         </div>
 
-                <!-- Телефон для связи -->
+        <!-- Телефон для связи -->
         <div class="mb-3">
             <label for="{{ form.user_phone.id_for_label }}" class="form-label">{% trans "Телефон для связи" %}</label>
             {% render_field form.user_phone class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="+7 (XXX) XXX-XX-XX" %}
@@ -59,15 +72,17 @@
             <div class="form-text">{% trans "Укажите номер телефона для связи с вами" %}</div>
         </div>
 
-    <!-- Кнопки управления -->
+        <!-- Кнопки управления -->
         <div class="d-grid gap-3 d-md-flex justify-content-md-end">
-            <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</a>
-            <button type="submit" class="btn btn-primary">{% trans "Опубликовать" %}</button>
+            <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</button>
+            <button type="submit" class="btn btn-primary">
+                {% if object %}
+                    {% trans "Сохранить изменения" %}
+                {% else %}
+                    {% trans "Опубликовать" %}
+                {% endif %}
+            </button>
         </div> 
-
     </div>
-
 </form>
-
 {% endwith %}
-

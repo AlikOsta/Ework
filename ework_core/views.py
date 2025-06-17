@@ -1,8 +1,11 @@
+from django.contrib import messages 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import gettext_lazy as _ 
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView
@@ -249,3 +252,74 @@ def get_post_views_stats(post):
         unique_viewers=Count('user', distinct=True)
     )
     return stats
+
+
+@login_required
+@require_POST
+def change_post_status(request, pk, status):
+    """Изменение статуса поста"""
+    post = get_object_or_404(AbsPost, pk=pk, user=request.user)
+    
+    # Проверяем допустимые переходы статусов
+    allowed_transitions = {
+        3: [4],  # Из опубликованного можно перевести в архив
+        4: [0],  # Из архива можно отправить на модерацию
+    }
+    
+    if post.status in allowed_transitions and status in allowed_transitions[post.status]:
+        post.status = status
+        post.save()
+        
+        status_messages = {
+            0: _('Объявление отправлено на модерацию'),
+            4: _('Объявление перемещено в архив'),
+        }
+        
+        if status in status_messages:
+            messages.success(request, status_messages[status])
+    else:
+        messages.error(request, _('Недопустимое изменение статуса'))
+    
+    return redirect('user:author_profile', author_id=request.user.id)
+
+
+@login_required
+def post_edit(request, pk):
+    """Редактирование поста"""
+    post = get_object_or_404(AbsPost, pk=pk, user=request.user)
+    
+    try:
+        job_post = post.postjob
+        return redirect('job:post_edit', pk=pk)
+    except:
+        pass
+    
+    try:
+        services_post = post.postservices
+        return redirect('services:post_edit', pk=pk)
+    except:
+        pass
+    
+    messages.error(request, _('Неизвестный тип объявления'))
+    return redirect('user:author_profile', author_id=request.user.id)
+
+
+
+@login_required
+def post_delete_confirm(request, pk):
+    """Подтверждение удаления поста"""
+    post = get_object_or_404(AbsPost, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        post.is_deleted = True
+        post.save()
+        messages.success(request, _('Объявление успешно удалено'))
+        
+        if request.headers.get('HX-Request'):
+            return HttpResponse(
+                status=200,
+                headers={'HX-Redirect': reverse('user:author_profile', kwargs={'author_id': request.user.id})}
+            )
+        return redirect('user:author_profile', author_id=request.user.id)
+    
+    return render(request, 'includes/post_delete_confirm.html', {'post': post})

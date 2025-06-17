@@ -1,0 +1,41 @@
+{% load i18n %}
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title">{% trans "Подтверждение удаления" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    
+    <div class="modal-body">
+        <div class="text-center mb-3">
+            <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+        </div>
+        <h6 class="text-center mb-3">{% trans "Вы уверены, что хотите удалить это объявление?" %}</h6>
+        <div class="card">
+            <div class="card-body p-3">
+                <h6 class="card-title mb-1">{{ post.title }}</h6>
+                <p class="card-text text-muted small mb-0">{{ post.price }} {{ post.currency.code }}</p>
+            </div>
+        </div>
+        <div class="alert alert-warning mt-3">
+            <small>
+                <i class="bi bi-info-circle me-1"></i>
+                {% trans "Это действие нельзя отменить. Объявление будет удалено навсегда." %}
+            </small>
+        </div>
+    </div>
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            {% trans "Отмена" %}
+        </button>
+        <!-- Исправляем форму - добавляем правильный action -->
+        <form method="post" action="{% url 'core:post_delete_confirm' post.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash me-1"></i>
+                {% trans "Удалить" %}
+            </button>
+        </form>
+    </div>
+</div>

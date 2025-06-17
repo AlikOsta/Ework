@@ -20,5 +20,10 @@ class JobPostUpdateView(BasePostUpdateView):
     model = PostJob
     form_class = JobPostForm
     template_name = 'job/post_job_form.html'
-    category_slug = 'rabota'
     success_message = _('Вакансия успешно обновлена и отправлена на модерацию')
+    
+    def get_form_kwargs(self):
+        """Переопределяем чтобы не передавать category_slug"""
+        kwargs = super(BasePostUpdateView, self).get_form_kwargs()  
+        kwargs['user'] = self.request.user
+        return kwargs

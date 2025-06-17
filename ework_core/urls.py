@@ -17,6 +17,10 @@ urlpatterns = [
 
     path('premium/', views.premium, name='premium'),
 
+    path('post/<int:pk>/status/<int:status>/', views.change_post_status, name='change_post_status'),
+    path('post/<int:pk>/edit/', views.post_edit, name='post_edit'),
+    path('post/<int:pk>/delete/', views.post_delete_confirm, name='post_delete_confirm'),
+
     path("", views.home, name='home'),
 
 ]
