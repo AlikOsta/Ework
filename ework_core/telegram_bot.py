@@ -1,23 +1,26 @@
 from aiogram import Bot
 import asyncio
-from aiogram.enums import ParseMode
+import html
+
 
 YOUR_PERSONAL_CHAT_ID = 7727039536
 
 TELEGRAM_BOT_TOKEN = "7662590757:AAHpuX8hKUO8aCk3nGWsedA286qh0G0OAzw"
 
 
-async def send_telegram_message(token, chat_id, message, parse_mode=ParseMode.MARKDOWN_V2):
+async def send_telegram_message(token, chat_id, message, parse_mode='HTML'):
+    bot = Bot(token=token)
     try:
-        bot = Bot(token=token)
-        print("Сообщение отправлено")
+        if parse_mode == 'HTML':
+            message = html.escape(message)
+        
         await bot.send_message(chat_id=chat_id, text=message, parse_mode=parse_mode)
+        print("Сообщение отправлено")
     except Exception as e:
         print(f"Ошибка при отправке сообщения: {e}")
-        raise
     finally:
-        print("Закрытие сессии")
         await bot.session.close()
+        print("Закрытие сессии")
 
 
 if __name__ == "__main__":
