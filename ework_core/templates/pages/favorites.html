@@ -24,7 +24,6 @@
             {% endif %}
           </div>
           <div class="card-body p-2">
-            <!-- Название обрезается одной строкой -->
             <h5 class="card-title mb-1 text-truncate" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post.title }}</h5>
             <p class="card-price mb-1">{{ post.price }} {{ post.currency.code }}</p>
             <p class="card-location mb-0">
@@ -32,7 +31,6 @@
               {{ post.city }}
             </p>
           </div>
-          <!-- Кнопка избранного -->
           {% if user.is_authenticated %}
           <button type="button"
                   data-post-id="{{ post.pk }}"

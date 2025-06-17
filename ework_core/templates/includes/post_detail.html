@@ -52,18 +52,27 @@
         <div class="product-gallery mb-4">
             <div class="main-image-container rounded overflow-hidden position-relative">
                 {% if post.image %}
-                <img src="{{ post.image.url }}" 
+                <img src="{{ post.image.url }}"
                     width="300"
-                    class="img-fluid w-100 main-product-image" 
+                    class="img-fluid w-100 main-product-image"
                     alt="{{ post.title }}">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center" style="height: 100px;">
+                    <i class="material-icons text-muted" style="font-size: 100px;">image</i>
+                </div>
                 {% endif %}
                 
-                
-                <!-- Кнопка избранного поверх фото -->
-                <div id="favorite-button-{{ post.pk }}">
-                    
-                </div>
+                {% if user.is_authenticated %}
+                <button type="button"
+                        data-post-id="{{ post.pk }}"
+                        data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
+                        class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in favorite_post_ids %}text-danger{% else %}text-muted{% endif %}"
+                        aria-label="Избранное">
+                    <i class="material-icons">{% if post.pk in favorite_post_ids %}favorite{% else %}favorite_border{% endif %}</i>
+                </button>
+                {% endif %}
             </div>
+
         </div>
 
         <!-- Информация о товаре -->
