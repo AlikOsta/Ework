@@ -18,6 +18,7 @@ from ework_locations.models import City
 from ework_currency.models import Currency
 from ework_rubric.models import SubRubric, SuperRubric
 
+
 phone_regex = RegexValidator(
     regex=r'^\+?1?\d{9,15}$',
     message=_("Номер телефона должен быть в формате: '+7(xxx)xxx-xx-xx'")
