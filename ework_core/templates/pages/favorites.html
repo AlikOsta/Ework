@@ -1,28 +1,69 @@
 {% load i18n %}
 
-{% block content %}
-<div class="container mt-3">
+<div class="favorites-page mt-3 container">
+  <div id="products-container"
+        class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4"
+       data-offset="{{ posts|length }}"
+       data-has-more="{{ has_more|lower }}">
+
     {% if posts %}
-        {% include 'includes/include_card.html' %}
-    {% else %}
-        <div class="empty-favorites text-center py-5">
-            <div class="empty-icon mb-3">
-                <i class="bi bi-heart text-danger fs-1"></i>
-            </div>
-            <h5 class="mb-3">{% trans "Нет избранных объявлений" %}</h5>
-            <p class="text-muted mb-4">
-                {% trans "Добавляйте понравившиеся объявления в избранное, чтобы быстро находить их позже" %}
+      {% for post in posts %}
+      <div class="col">
+        <div class="card h-100 position-relative">
+          <div class="card-img-top-placeholder"
+            hx-get="{% url 'core:product_detail' pk=post.pk %}"
+            hx-target="#dialog"
+            aria-label="пост">
+            {% if post.image %}
+            <img src="{{ post.image.url }}"
+                 class="card-img-top object-fit-cover"
+                 alt="{{ post.title }}"
+                 style="height: 150px;">
+            {% else %}
+            <i class="material-icons text-muted" style="font-size: 48px;">image</i>
+            {% endif %}
+          </div>
+          <div class="card-body p-2">
+            <!-- Название обрезается одной строкой -->
+            <h5 class="card-title mb-1 text-truncate" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post.title }}</h5>
+            <p class="card-price mb-1">{{ post.price }} {{ post.currency.code }}</p>
+            <p class="card-location mb-0">
+              <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">location_on</i>
+              {{ post.city }}
             </p>
-            <button 
-                type='button' 
-                class="btn btn-primary" 
-                hx-get="{% url 'core:home' %}" 
-                hx-target="#main-content"
-                hx-push-url = "true"
-                hx-swap="innerHTML">
-                <i class="bi bi-search me-2"></i>{% trans "Найти объявления" %}
-            </button>
+          </div>
+          <!-- Кнопка избранного -->
+          {% if user.is_authenticated %}
+          <button type="button"
+                  data-post-id="{{ post.pk }}"
+                  data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
+                  class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn text-danger"
+                  aria-label="Избранное">
+            <i class="material-icons ">favorite</i>
+          </button>
+          {% endif %}
         </div>
+      </div>
+      {% endfor %}
+
+    {% else %}
+      <div class="col-12">
+        <div class="empty-favorites text-center py-5">
+          <div class="empty-icon mb-3">
+            <i class="material-icons text-danger" style="font-size: 48px;">favorite_border</i>
+          </div>
+          <h5 class="mb-3 text-dark">{% trans "Нет избранных объявлений" %}</h5>
+          <p class="text-muted mb-4">
+            {% trans "Добавляйте понравившиеся объявления в избранное, чтобы быстро находить их позже" %}
+          </p>
+          <a href="{% url 'core:home' %}"
+             class="btn btn-primary d-flex justify-content-center align-items-center">
+            <i class="material-icons me-2">search</i>
+            {% trans "Найти объявления" %}
+          </a>
+        </div>
+      </div>
     {% endif %}
+
+  </div>
 </div>
-{% endblock %}

@@ -5,7 +5,6 @@
 {% if posts %}
 <div class="tab-content" id="myTabContent">
   <div class="tab-pane fade show active" id="work" role="tabpanel" aria-labelledby="work-tab">
-    <!-- Контейнер для карточек: 1 колонка на xs, 2 на sm, 3 на md -->
     <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
       {% for post in posts %}
       <div class="col">
@@ -33,12 +32,15 @@
             </p>
           </div>
           <!-- Кнопка избранного -->
+          {% if user.is_authenticated %}
           <button type="button"
                   data-post-id="{{ post.pk }}"
-                  class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in user_favorites %}text-danger{% else %}text-muted{% endif %}"
+                  data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
+                  class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in favorite_post_ids %}text-danger{% else %}text-muted{% endif %}"
                   aria-label="Избранное">
-            <i class="material-icons">{% if post.pk in user_favorites %}favorite{% else %}favorite_border{% endif %}</i>
+            <i class="material-icons">{% if post.pk in favorite_post_ids %}favorite{% else %}favorite_border{% endif %}</i>
           </button>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -48,7 +50,7 @@
 {% else %}
     <div class="col-12 text-center py-5">
         <div class="empty-icon mb-3">
-            <i class="bi bi-search text-muted fs-1"></i>
+            <i class="material-icons text-muted fs-1">search</i>
         </div>
         <h5 class="mb-3">
             {% trans "Объявления не найдены" %}
@@ -58,20 +60,3 @@
         </p>
     </div>
 {% endif %}
-
-<!-- Скрипт для переключения состояния избранного -->
-<script>
-  document.addEventListener('click', function(e) {
-    const btn = e.target.closest('.favorite-btn');
-    if (!btn) return;
-    const icon = btn.querySelector('i.material-icons');
-    const isFav = btn.classList.toggle('text-danger');
-    if (isFav) {
-      icon.textContent = 'favorite';
-    } else {
-      btn.classList.add('text-muted');
-      icon.textContent = 'favorite_border';
-    }
-    // TODO: отправить AJAX-запрос на сервер для сохранения состояния
-  });
-</script>

@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
@@ -23,7 +24,7 @@ def home(request):
 
 
 def modal_select_post(request):
-    return render(request, 'partials/modal_select_post.html')
+    return render(request, 'includes/modal_select_post.html')
 
 
 class PostListByRubricView(BasePostListView):
@@ -186,44 +187,46 @@ class PostDetailView(DetailView):
         return context
 
 
-class FavoriteListView(LoginRequiredMixin, ListView):
-    model = Favorite
+class FavoriteListView(ListView):
+    model = AbsPost
     template_name = 'pages/favorites.html'
-    context_object_name = 'favorites'
-    paginate_by = 50
+    context_object_name = 'posts'
 
     def get_queryset(self):
-        return Favorite.objects.filter(
-            user=self.request.user,
-            post__status=3
-        ).select_related('post')
+        return AbsPost.objects.filter(
+            favorited_by__user=self.request.user,
+            status=3
+        ).select_related('city','currency','user').prefetch_related('favorited_by').distinct()
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['posts'] = [f.post for f in context['favorites']]
-        context['is_favorite'] = True
-        return context
+        ctx = super().get_context_data(**kwargs)
+        total = self.get_queryset().count()
+        ctx.update({
+            'title': 'Избранное',
+            'has_more': total > len(ctx['posts']),
+        })
+        return ctx
 
 
-@login_required
 @require_POST
-def favorite_toggle(request, post_pk):
+def toggle_favorite(request, post_pk):
     post = get_object_or_404(AbsPost, pk=post_pk)
     fav, created = Favorite.objects.get_or_create(user=request.user, post=post)
     if not created:
         fav.delete()
-        is_fav = False
+        is_favorite = False
     else:
-        is_fav = True
+        is_favorite = True
 
-    is_fav_page = request.headers.get('HX-Current-URL', '').endswith('/favorites/')
-    if not is_fav and is_fav_page:
-        return render(request, 'partials/favorite_button.html', {'post': post, 'is_favorite': is_fav, 'favorite_post_ids': []})
-    return render(request, 'partials/favorite_button.html', {
-        'post': post,
-        'is_favorite': is_fav,
-        'favorite_post_ids': [post.pk] if is_fav else []
-    })
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'is_favorite': is_favorite,
+            'post_id': post.pk
+        })
+    
+    return redirect('core:post_list_by_rubric', rubric_pk=post.sub_rubric.super_rubric.pk)
+
 
 
 def banner_view(request, banner_id):
