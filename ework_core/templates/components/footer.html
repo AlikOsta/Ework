@@ -1,0 +1,101 @@
+<footer id="main-footer">
+  <div style="height: 40px;"></div>
+  <nav class="footer-nav">
+    <div class="container-fluid px-0">
+      <div class="row g-0">
+        <!-- Домой -->
+        <div class="col">
+          <a
+            class="nav-link"
+            href="/"
+            data-path="{% url 'core:home' %}">
+            <i class="material-icons">home</i>
+            <span>Домой</span>
+          </a>
+        </div>
+
+        <div class="col">
+          <a
+            class="nav-link"
+            href="#"
+            data-path="{% url 'core:favorites' %}"
+            hx-get="{% url 'core:favorites' %}"
+            hx-trigger="click"
+            hx-push-url="true"
+            hx-target="#main-content"
+            hx-swap="innerHTML"
+            aria-label="Избранное"
+          >
+            <i class="material-icons">favorite_border</i>
+            <span>Избранное</span>
+          </a>
+        </div>
+
+        <!-- Создать пост -->
+        <div class="col d-flex justify-content-center">
+          <a
+            class="nav-link create-button"
+            href="#"
+            data-path="{% url 'core:modal_select_post' %}"
+            hx-get="{% url 'core:modal_select_post' %}"
+            hx-target="#dialog"
+            aria-label="Создать пост"
+          >
+            <i class="material-icons text-white">add</i>
+          </a>
+        </div>
+
+        <!-- Тарифы -->
+        <div class="col">
+          <a
+            class="nav-link"
+            href="#"
+            data-path="{% url 'core:premium' %}"
+            hx-get="{% url 'core:premium' %}"
+            hx-push-url="true"
+            hx-target="#main-content"
+            hx-swap="innerHTML"
+            aria-label="Тарифы"
+          >
+            <i class="material-icons">credit_card</i>
+            <span>Тарифы</span>
+          </a>
+        </div>
+
+        <!-- Профиль -->
+        <div class="col">
+          <a
+            class="nav-link"
+            href="#"
+            data-path="{% url 'user:author_profile' user.id %}"
+            hx-get="{% url 'user:author_profile' user.id %}"
+            hx-push-url="true"
+            hx-target="#main-content"
+            hx-swap="innerHTML"
+            aria-label="Профиль"
+          >
+            <i class="material-icons">person_outline</i>
+            <span>Профиль</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</footer>
+
+<script>
+  // Функция для обновления active-класса в навигации
+  function updateActiveNav() {
+    const path = window.location.pathname;
+    document.querySelectorAll('.footer-nav .nav-link').forEach(a => {
+      const targetPath = a.getAttribute('data-path');
+      a.classList.toggle('active', targetPath === path);
+    });
+  }
+
+  // Инициализация при загрузке страницы
+  document.addEventListener('DOMContentLoaded', updateActiveNav);
+
+  // После каждого HTMX-запроса, который меняет URL
+  document.body.addEventListener('htmx:afterSettle', updateActiveNav);
+</script>

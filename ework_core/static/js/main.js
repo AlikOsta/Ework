@@ -1,4 +1,3 @@
-
 function activateTab(tabElement, url) {
     document.querySelectorAll('#myTab .nav-link').forEach(tab => {
         tab.classList.remove('active');
@@ -24,10 +23,23 @@ function activateTab(tabElement, url) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем обработчики событий для табов
+    document.querySelectorAll('#myTab .nav-link').forEach(tab => {
+        tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.getAttribute('data-url');
+            activateTab(this, url);
+        });
+    });
+
+    // Загружаем контент для активного таба
     const activeTab = document.querySelector('#myTab .nav-link.active');
     if (activeTab) {
         const rubricId = activeTab.getAttribute('data-category-id');
-        document.getElementById('search-form').setAttribute('data-active-rubric', rubricId);
+        const searchForm = document.getElementById('search-form');
+        if (searchForm) {
+            searchForm.setAttribute('data-active-rubric', rubricId);
+        }
         const url = activeTab.getAttribute('data-url');
         htmx.ajax('GET', url, {target: '#content-area'});
     }

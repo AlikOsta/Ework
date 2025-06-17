@@ -1,0 +1,70 @@
+{% load i18n %}
+
+<div class="search-container mt-4 mb-3">
+  <form id="search-form" class="search-form">
+    <div class="input-group shadow-sm rounded overflow-hidden position-relative">
+      <span class="input-group-text bg-white border-end-0">
+        <i class="material-icons">search</i>
+      </span>
+      <input type="text"
+             id="search-input"
+             name="q"
+             class="form-control border-start-0 py-2"
+             placeholder="{% trans "Поиск..." %}"
+             aria-label="Поиск">
+      <button type="button"
+              id="clear-search-btn"
+              class="btn bg-transparent position-absolute end-0 me-2"
+              style="display: none; z-index: 5;"
+              onclick="clearSearchInput()">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+    let searchTimeout;
+
+    function toggleClearButton() {
+        if (searchInput.value.trim()) {
+            clearBtn.style.display = 'block';
+        } else {
+            clearBtn.style.display = 'none';
+        }
+    }
+
+    function performSearch() {
+        const activeTab = document.querySelector('#myTab .nav-link.active');
+        if (!activeTab) return;
+
+        const categoryId = activeTab.dataset.categoryId;
+        const searchQuery = searchInput.value.trim();
+        
+        const url = new URL(activeTab.dataset.url, window.location.origin);
+        if (searchQuery) {
+            url.searchParams.set('q', searchQuery);
+        }
+        
+        htmx.ajax('GET', url.toString(), {
+            target: '#content-area'
+        });
+    }
+    searchInput.addEventListener('input', function() {
+        toggleClearButton();
+        
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(performSearch, 500);
+    });
+    window.clearSearchInput = function() {
+        searchInput.value = '';
+        toggleClearButton();
+        performSearch(); 
+    };
+
+    toggleClearButton();
+});
+</script>

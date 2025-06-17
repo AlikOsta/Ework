@@ -3,13 +3,12 @@
 <div class="mb-4">
     <div class="card shadow-sm">
         <div class="card-body">
-            <button class="btn btn-outline-primary d-md-none w-100 mb-3" type="button" 
-                    data-bs-toggle="collapse" data-bs-target="#filterCollapse" 
-                    aria-expanded="false" aria-controls="filterCollapse">
-                <i class="bi bi-funnel me-2"></i>
-                {% trans "Фильтры и сортировка" %}
-            </button>
-            
+        <button class="btn btn-outline-primary d-md-none w-100 mb-1 d-flex align-items-center justify-content-center" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#filterCollapse" 
+                aria-expanded="false" aria-controls="filterCollapse">
+            <i class="material-icons me-2">filter_list</i>
+            {% trans "Фильтры и сортировка" %}
+        </button>
             <div class="collapse d-md-block" id="filterCollapse">
                 <form id="filter-form" hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}" 
                       hx-target="#content-area">

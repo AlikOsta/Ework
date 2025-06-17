@@ -1,0 +1,77 @@
+{% load i18n %}
+
+{% include 'components/filter.html' %}
+
+{% if posts %}
+<div class="tab-content" id="myTabContent">
+  <div class="tab-pane fade show active" id="work" role="tabpanel" aria-labelledby="work-tab">
+    <!-- Контейнер для карточек: 1 колонка на xs, 2 на sm, 3 на md -->
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
+      {% for post in posts %}
+      <div class="col">
+        <div class="card h-100 position-relative">
+          <div class="card-img-top-placeholder"
+            hx-get="{% url 'core:product_detail' pk=post.pk %}"
+            hx-target="#dialog"
+            aria-label="пост">
+            {% if post.image %}
+            <img src="{{ post.image.url }}"
+                 class="card-img-top object-fit-cover"
+                 alt="{{ post.title }}"
+                 style="height: 150px;">
+            {% else %}
+            <i class="material-icons text-muted" style="font-size: 48px;">image</i>
+            {% endif %}
+          </div>
+          <div class="card-body p-2">
+            <!-- Название обрезается одной строкой -->
+            <h5 class="card-title mb-1 text-truncate" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post.title }}</h5>
+            <p class="card-price mb-1">{{ post.price }} {{ post.currency.code }}</p>
+            <p class="card-location mb-0">
+              <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">location_on</i>
+              {{ post.city }}
+            </p>
+          </div>
+          <!-- Кнопка избранного -->
+          <button type="button"
+                  data-post-id="{{ post.pk }}"
+                  class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in user_favorites %}text-danger{% else %}text-muted{% endif %}"
+                  aria-label="Избранное">
+            <i class="material-icons">{% if post.pk in user_favorites %}favorite{% else %}favorite_border{% endif %}</i>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+    <div class="col-12 text-center py-5">
+        <div class="empty-icon mb-3">
+            <i class="bi bi-search text-muted fs-1"></i>
+        </div>
+        <h5 class="mb-3">
+            {% trans "Объявления не найдены" %}
+        </h5>
+        <p class="text-muted">
+            {% trans "По вашему запросу ничего не найдено." %}
+        </p>
+    </div>
+{% endif %}
+
+<!-- Скрипт для переключения состояния избранного -->
+<script>
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.favorite-btn');
+    if (!btn) return;
+    const icon = btn.querySelector('i.material-icons');
+    const isFav = btn.classList.toggle('text-danger');
+    if (isFav) {
+      icon.textContent = 'favorite';
+    } else {
+      btn.classList.add('text-muted');
+      icon.textContent = 'favorite_border';
+    }
+    // TODO: отправить AJAX-запрос на сервер для сохранения состояния
+  });
+</script>

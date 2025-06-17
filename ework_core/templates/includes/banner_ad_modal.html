@@ -8,9 +8,6 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body text-center">
-        <div class="mb-4">
-            <i class="bi bi-megaphone fs-1 text-primary"></i>
-        </div>
         <h5 class="mb-3">
             {% trans "Заинтересованы в размещении рекламы?" %}
             
@@ -20,9 +17,10 @@
         </p>
     </div>
     <div class="modal-footer justify-content-center">
-        <a href="https://t.me/{{ admin_telegram|cut:'@' }}" class="btn btn-primary" target="_blank">
-            <i class="bi bi-telegram me-2"></i>
+        <a href="https://t.me/{{ admin_telegram|cut:'@' }}" class="btn btn-primary d-flex align-items-center" target="_blank">
+            <i class="material-icons me-2">send</i>
             {% trans "Написать администратору" %}
         </a>
     </div>
+
 </div>

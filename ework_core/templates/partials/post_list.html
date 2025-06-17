@@ -1,11 +1,16 @@
 {% load i18n %}
-{% include 'includes/filter.html' %}
+{% include 'components/filter.html' %}
 
 <div class="row g-3">
     {% if posts %}
+
+        <div class="tab-content" id="myTabContent">
             <div class="mb-4" id="post-card-{{ post.pk }}">
-                {% include 'includes/include_card.html' %}
+                {% comment %} Карточки Работа {% endcomment %}
+                {% include "components/card.html" %}
             </div>
+        </div>
+
     {% else %}
         <div class="col-12 text-center py-5">
             <div class="empty-icon mb-3">

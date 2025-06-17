@@ -1,18 +1,15 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.views.generic import ListView, DetailView
+from django.db.models import Q, Count
 
 from ework_rubric.models import SuperRubric, SubRubric
-from ework_post.models import AbsPost, Favorite, BannerPost, PostView  # Добавили PostView
+from ework_post.models import AbsPost, Favorite, BannerPost, PostView
 from ework_post.views import BasePostListView
-from django.views.decorators.http import require_POST
-from django.db.models import Q
-
-from django.views.generic import ListView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse, JsonResponse
-from django.views.generic import DetailView
 from ework_locations.models import City
 from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHEDULE_CHOICES
 
@@ -20,12 +17,9 @@ from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHE
 def home(request):
     context = {
         "categories": SuperRubric.objects.all(),
-        'banners': BannerPost.objects.all(),
+        "banners": BannerPost.objects.all(),
     }
-
-    if request.headers.get("HX-Request"):
-        return render(request, "partials/include_index.html", context)
-    return render(request, "index.html", context)
+    return render(request, "pages/index.html", context)
 
 
 def modal_select_post(request):
@@ -33,263 +27,206 @@ def modal_select_post(request):
 
 
 class PostListByRubricView(BasePostListView):
+    template_name = 'components/card.html'
     paginate_by = 50
 
+    def dispatch(self, request, *args, **kwargs):
+        self.super_rubric = None
+        rubric_pk = self.kwargs.get('rubric_pk')
+        if rubric_pk:
+            self.super_rubric = SuperRubric.objects.filter(pk=rubric_pk).first()
+        self.is_job_category = bool(self.super_rubric and self.super_rubric.slug == 'rabota')
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
-        queryset = super().get_queryset()
+        qs = super().get_queryset().select_related('user', 'city', 'currency', 'sub_rubric')
+        
+        # Фильтрация по рубрике
+        if self.super_rubric:
+            qs = qs.filter(sub_rubric__super_rubric=self.super_rubric)
+        
+        # Поиск
+        search_query = self.request.GET.get('q', '').strip()
+        if search_query:
+            qs = qs.filter(Q(title__icontains=search_query) | Q(description__icontains=search_query))
+        
+        # Остальные фильтры
+        qs = self.filter_price(qs)
+        qs = self.filter_sub_rubric(qs)
+        qs = self.filter_city(qs)
+        if self.is_job_category:
+            qs = self.filter_job(qs)
+        
+        return self.sort_queryset(qs)
+
+    def filter_price(self, qs):
         price_min = self.request.GET.get('price_min')
         price_max = self.request.GET.get('price_max')
-        sub_rubric = self.request.GET.get('sub_rubric')
-        city = self.request.GET.get('city')
-        sort = self.request.GET.get('sort', 'newest')
         if price_min and price_min.isdigit():
-            queryset = queryset.filter(price__gte=int(price_min))
+            qs = qs.filter(price__gte=int(price_min))
         if price_max and price_max.isdigit():
-            queryset = queryset.filter(price__lte=int(price_max))
-        if sub_rubric and sub_rubric.isdigit():
-            queryset = queryset.filter(sub_rubric_id=sub_rubric)
-        if city and city.isdigit():
-            queryset = queryset.filter(city_id=city)
-        rubric_pk = self.kwargs.get('rubric_pk')
-        category_slug = None
-        
-        if rubric_pk:
-            try:
-                super_rubric = SuperRubric.objects.get(pk=rubric_pk)
-                category_slug = super_rubric.slug
-            except SuperRubric.DoesNotExist:
-                pass
-        
-        if category_slug == 'rabota':
-            experience = self.request.GET.get('experience')
-            work_format = self.request.GET.get('work_format')
-            work_schedule = self.request.GET.get('work_schedule')
-            from ework_job.models import PostJob
-            job_ids = PostJob.objects.values_list('id', flat=True)
-            job_queryset = queryset.filter(id__in=job_ids)
-            if experience and experience.isdigit():
-                job_queryset = job_queryset.filter(postjob__experience=experience)
-            if work_format and work_format.isdigit():
-                job_queryset = job_queryset.filter(postjob__work_format=work_format)
-            if work_schedule and work_schedule.isdigit():
-                job_queryset = job_queryset.filter(postjob__work_schedule=work_schedule)
-                
-            queryset = job_queryset
+            qs = qs.filter(price__lte=int(price_max))
+        return qs
 
-        if sort == 'oldest':
-            queryset = queryset.order_by('created_at')
-        elif sort == 'price_asc':
-            queryset = queryset.order_by('price')
-        elif sort == 'price_desc':
-            queryset = queryset.order_by('-price')
-        else:
-            queryset = queryset.order_by('-created_at')
-            
-        return queryset
-    
+    def filter_sub_rubric(self, qs):
+        sub_rubric = self.request.GET.get('sub_rubric')
+        if sub_rubric and sub_rubric.isdigit():
+            qs = qs.filter(sub_rubric_id=int(sub_rubric))
+        return qs
+
+    def filter_city(self, qs):
+        city = self.request.GET.get('city')
+        if city and city.isdigit():
+            qs = qs.filter(city_id=int(city))
+        return qs
+
+    def filter_job(self, qs):
+        from ework_job.models import PostJob
+        job_ids = PostJob.objects.values_list('id', flat=True)
+        qs = qs.filter(id__in=job_ids)
+        params = {
+            'postjob__experience': self.request.GET.get('experience'),
+            'postjob__work_format': self.request.GET.get('work_format'),
+            'postjob__work_schedule': self.request.GET.get('work_schedule'),
+        }
+        for field, value in params.items():
+            if value and value.isdigit():
+                qs = qs.filter(**{field: int(value)})
+        return qs
+
+    def sort_queryset(self, qs):
+        sort = self.request.GET.get('sort', 'newest')
+        ordering = {
+            'oldest': 'created_at',
+            'price_asc': 'price',
+            'price_desc': '-price',
+        }.get(sort, '-created_at')
+        return qs.order_by(ordering)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        context['price_min'] = self.request.GET.get('price_min', '')
-        context['price_max'] = self.request.GET.get('price_max', '')
-        context['sub_rubric'] = self.request.GET.get('sub_rubric', '')
-        context['selected_city'] = self.request.GET.get('city', '')
-        context['sort'] = self.request.GET.get('sort', 'newest')
-        context['experience'] = self.request.GET.get('experience', '')
-        context['work_format'] = self.request.GET.get('work_format', '')
-        context['work_schedule'] = self.request.GET.get('work_schedule', '')
+        # Получаем подкатегории для текущей рубрики
+        if self.super_rubric:
+            context['categories'] = SubRubric.objects.filter(super_rubric=self.super_rubric)
+        else:
+            context['categories'] = []
         
-        context['cities'] = City.objects.all()
-        
-        context['experience_choices'] = EXPERIENCE_CHOICES
-        context['work_format_choices'] = WORK_FORMAT_CHOICES
-        context['work_schedule_choices'] = WORK_SCHEDULE_CHOICES
-        
-        rubric_pk = self.kwargs.get('rubric_pk')
-        if rubric_pk:
-            try:
-                super_rubric = SuperRubric.objects.get(pk=rubric_pk)
-                context['category_slug'] = super_rubric.slug
-                context['rubric_pk'] = rubric_pk
-                
-                context['is_job_category'] = super_rubric.slug == 'rabota'
-                context['is_service_category'] = super_rubric.slug == 'uslugi'
-            except SuperRubric.DoesNotExist:
-                pass
-        
+        # Preserve filters in context
+        context.update({
+            'search_query': self.request.GET.get('q', ''),
+            'price_min': self.request.GET.get('price_min', ''),
+            'price_max': self.request.GET.get('price_max', ''),
+            'sub_rubric': self.request.GET.get('sub_rubric', ''),
+            'selected_city': self.request.GET.get('city', ''),
+            'sort': self.request.GET.get('sort', 'newest'),
+            'experience': self.request.GET.get('experience', ''),
+            'work_format': self.request.GET.get('work_format', ''),
+            'work_schedule': self.request.GET.get('work_schedule', ''),
+            'cities': City.objects.all(),
+            'experience_choices': EXPERIENCE_CHOICES,
+            'work_format_choices': WORK_FORMAT_CHOICES,
+            'work_schedule_choices': WORK_SCHEDULE_CHOICES,
+            'rubric_pk': getattr(self.super_rubric, 'pk', None),
+            'category_slug': getattr(self.super_rubric, 'slug', ''),
+            'is_job_category': self.is_job_category,
+            'is_service_category': bool(self.super_rubric and self.super_rubric.slug == 'uslugi'),
+        })
         if self.request.user.is_authenticated:
-            favorite_post_ids = Favorite.objects.filter(
-                user=self.request.user, 
+            fav_ids = Favorite.objects.filter(
+                user=self.request.user,
                 post__in=context['posts']
             ).values_list('post_id', flat=True)
-            context['favorite_post_ids'] = favorite_post_ids
-        
+            context['favorite_post_ids'] = list(fav_ids)
         return context
 
 
 class PostDetailView(DetailView):
     model = AbsPost
-    template_name = 'post_detail.html'
+    template_name = 'includes/post_detail.html'
     context_object_name = 'post'
 
     def get_queryset(self):
         return AbsPost.objects.select_related('user', 'city', 'currency', 'sub_rubric')
 
     def get_object(self, queryset=None):
-        """Получить объект и записать просмотр"""
         obj = super().get_object(queryset)
-
-        if self.request.user.is_authenticated and obj.user != self.request.user:
-            content_type = ContentType.objects.get_for_model(obj)
+        if self.request.user.is_authenticated and obj.user_id != self.request.user.id:
+            ct = ContentType.objects.get_for_model(obj)
             PostView.objects.get_or_create(
                 user=self.request.user,
-                content_type=content_type,
+                content_type=ct,
                 object_id=obj.pk,
                 defaults={'created_at': timezone.now()}
             )
-        
         return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
+        stats = PostView.objects.filter(
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk
+        ).aggregate(
+            total_views=Count('id'),
+            unique_viewers=Count('user', distinct=True)
+        )
+        context.update({
+            'view_count': stats['total_views'],
+            'unique_viewers': stats['unique_viewers'],
+            'is_favorite': False,
+            'favorite_post_ids': []
+        })
         if self.request.user.is_authenticated:
-            is_favorite = Favorite.objects.filter(
-                user=self.request.user, 
+            fav = Favorite.objects.filter(
+                user=self.request.user,
                 post=self.object
             ).exists()
-            
-            context['is_favorite'] = is_favorite
-            context['favorite_post_ids'] = [self.object.pk] if is_favorite else []
-        else:
-            context['is_favorite'] = False
-            context['favorite_post_ids'] = []
-        
-        content_type = ContentType.objects.get_for_model(self.object)
-        context['view_count'] = PostView.objects.filter(
-            content_type=content_type,
-            object_id=self.object.pk
-        ).count()
-        
+            context['is_favorite'] = fav
+            context['favorite_post_ids'] = [self.object.pk] if fav else []
         return context
 
 
 class FavoriteListView(LoginRequiredMixin, ListView):
     model = Favorite
-    template_name = 'favorites.html'
+    template_name = 'pages/favorites.html'
     context_object_name = 'favorites'
     paginate_by = 50
 
     def get_queryset(self):
         return Favorite.objects.filter(
             user=self.request.user,
-            post__status=3 
+            post__status=3
         ).select_related('post')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        posts = [favorite.post for favorite in context['favorites']]
-        context['posts'] = posts
+        context['posts'] = [f.post for f in context['favorites']]
         context['is_favorite'] = True
-        
         return context
 
 
+@login_required
 @require_POST
 def favorite_toggle(request, post_pk):
     post = get_object_or_404(AbsPost, pk=post_pk)
-    
-    try:
-        favorite = Favorite.objects.get(user=request.user, post=post)
-        favorite.delete()
-        is_favorite = False
-        
-        is_favorites_page = request.headers.get('HX-Current-URL', '').endswith('/favorites/')
-        if is_favorites_page:
-            return HttpResponse("", headers={"HX-Trigger": f"remove-favorite-{post.pk}"})
-        
-    except Favorite.DoesNotExist:
-        Favorite.objects.create(user=request.user, post=post)
-        is_favorite = True
+    fav, created = Favorite.objects.get_or_create(user=request.user, post=post)
+    if not created:
+        fav.delete()
+        is_fav = False
+    else:
+        is_fav = True
 
-    context = {
+    is_fav_page = request.headers.get('HX-Current-URL', '').endswith('/favorites/')
+    if not is_fav and is_fav_page:
+        return render(request, 'partials/favorite_button.html', {'post': post, 'is_favorite': is_fav, 'favorite_post_ids': []})
+    return render(request, 'partials/favorite_button.html', {
         'post': post,
-        'is_favorite': is_favorite,
-        'favorite_post_ids': [post.pk] if is_favorite else []
-    }
-
-    return render(request, 'partials/favorite_button.html', context)
-
-
-class SearchPostsView(BasePostListView):
-    """Представление для поиска объявлений"""
-    template_name = 'partials/search_results.html'
-    
-    def get(self, request, *args, **kwargs):
-        if not request.GET.get('q'):
-            rubric_id = request.GET.get('rubric_id')
-            if rubric_id:
-                super_rubric = SuperRubric.objects.get(pk=rubric_id)
-                sub_rubrics = SubRubric.objects.filter(super_rubric=super_rubric)
-                sub_ids = sub_rubrics.values_list('id', flat=True)
-                posts = AbsPost.objects.filter(status=3, sub_rubric_id__in=sub_ids).order_by('-created_at')
-                
-                context = {
-                    'categories': sub_rubrics,
-                    'posts': posts,
-                    'rubric_pk': rubric_id,
-                }
-                return render(request, 'partials/post_list.html', context)
-            else:
-                context = {
-                    "categories": SuperRubric.objects.all(),
-                }
-                return render(request, "partials/include_index.html", context)
-        
-        return super().get(request, *args, **kwargs) 
-    
-    def get_queryset(self):
-        queryset = AbsPost.objects.filter(status=3)
-        search_query = self.request.GET.get('q', '')
-        rubric_id = self.request.GET.get('rubric_id')
-        
-        if rubric_id and rubric_id.isdigit():
-            try:
-                super_rubric = SuperRubric.objects.get(pk=rubric_id)
-                sub_rubrics = SubRubric.objects.filter(super_rubric=super_rubric)
-                sub_ids = sub_rubrics.values_list('id', flat=True)
-                queryset = queryset.filter(sub_rubric_id__in=sub_ids)
-            except SuperRubric.DoesNotExist:
-                pass
-        
-        if search_query:
-            queryset = queryset.filter(
-                Q(title__icontains=search_query) | 
-                Q(description__icontains=search_query)
-            )
-        
-        return queryset.order_by('-created_at')
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['search_query'] = self.request.GET.get('q', '')
-        
-        rubric_id = self.request.GET.get('rubric_id')
-        if rubric_id:
-            try:
-                super_rubric = SuperRubric.objects.get(pk=rubric_id)
-                sub_rubrics = SubRubric.objects.filter(super_rubric=super_rubric)
-                context['categories'] = sub_rubrics
-                context['active_rubric_id'] = rubric_id
-            except SuperRubric.DoesNotExist:
-                pass
-        
-        return context
+        'is_favorite': is_fav,
+        'favorite_post_ids': [post.pk] if is_fav else []
+    })
 
 
 def banner_view(request, banner_id):
-    """Показ превью баннера в полноэкранном режиме"""
     banner = get_object_or_404(BannerPost, id=banner_id)
     return render(request, 'includes/banner_view.html', {'banner': banner})
 
@@ -299,19 +236,13 @@ def banner_ad_info(request):
 
 
 def premium(request):
-    return render(request, 'premium.html')
+    return render(request, 'pages/premium.html')
 
 
 def get_post_views_stats(post):
-    """Получить статистику просмотров для поста"""
-    content_type = ContentType.objects.get_for_model(post)
-    return {
-        'total_views': PostView.objects.filter(
-            content_type=content_type,
-            object_id=post.pk
-        ).count(),
-        'unique_viewers': PostView.objects.filter(
-            content_type=content_type,
-            object_id=post.pk
-        ).values('user').distinct().count()
-    }
+    ct = ContentType.objects.get_for_model(post)
+    stats = PostView.objects.filter(content_type=ct, object_id=post.pk).aggregate(
+        total_views=Count('id'),
+        unique_viewers=Count('user', distinct=True)
+    )
+    return stats

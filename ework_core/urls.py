@@ -10,7 +10,6 @@ urlpatterns = [
     path("favorites/", views.FavoriteListView.as_view(), name='favorites'),
     path('post_list/<int:rubric_pk>/', views.PostListByRubricView.as_view(), name='post_list_by_rubric'),
     path('fav/toggle/<int:post_pk>/', views.favorite_toggle, name='favorite_toggle'),
-    path('search/', views.SearchPostsView.as_view(), name='search'),
     path('product/<int:pk>/', views.PostDetailView.as_view(), name='product_detail'),
 
     path('banner-ad-info/', views.banner_ad_info, name='banner_ad_info'),
@@ -19,7 +18,6 @@ urlpatterns = [
     path('premium/', views.premium, name='premium'),
 
     path("", views.home, name='home'),
-
 
 ]
 
