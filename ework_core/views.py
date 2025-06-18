@@ -16,6 +16,7 @@ from ework_post.models import AbsPost, Favorite, BannerPost, PostView
 from ework_post.views import BasePostListView
 from ework_locations.models import City
 from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHEDULE_CHOICES
+from ework_premium.models import Package
 
 
 def home(request):
@@ -242,7 +243,11 @@ def banner_ad_info(request):
 
 
 def premium(request):
-    return render(request, 'pages/premium.html')
+    packages = Package.objects.filter(is_active=True).order_by('order')
+    context = {
+        'packages': packages
+    }
+    return render(request, 'pages/premium.html', context)
 
 
 def get_post_views_stats(post):
