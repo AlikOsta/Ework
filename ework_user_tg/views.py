@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
+BOT_TOKEN = "7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g"
 
 @method_decorator(login_required(login_url='user:telegram_auth'), name='dispatch')
 class AuthorProfileView(ListView):
@@ -281,8 +282,7 @@ def telegram_login(request):
             logger.error("telegram_login: Нет initData")
             return JsonResponse({'status': 'error', 'error': 'Нет initData'}, status=400)
 
-        bot_token = getattr(settings, 'TELEGRAM_BOT_TOKEN', None)
-        print(bot_token)
+        bot_token = BOT_TOKEN
 
         if not verify_init_data(init_data, bot_token):
             logger.error("telegram_login: Неправильная подпись initData")
@@ -317,3 +317,15 @@ def telegram_login(request):
     except Exception:
         logger.exception("telegram_login: Внутренняя ошибка")
         return redirect('user:telegram_auth')
+
+
+# Настройки для Telegram Mini App
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False  # Важно! Позволяет JavaScript получить доступ к cookie
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_NAME = 'csrftoken'
+
+# Разрешить работу в iframe
+X_FRAME_OPTIONS = 'ALLOWALL'
+SECURE_FRAME_DENY = False

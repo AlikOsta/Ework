@@ -17,6 +17,7 @@ from .utils_img import process_image
 from ework_locations.models import City
 from ework_currency.models import Currency
 from ework_rubric.models import SubRubric, SuperRubric
+from ework_premium.models import Package
 
 
 phone_regex = RegexValidator(
@@ -42,6 +43,7 @@ class AbsPost(PolymorphicModel):
     updated_at = models.DateTimeField( auto_now=True,  verbose_name=_("Дата обновления"))
     is_deleted = models.BooleanField( default=False, db_index=True, verbose_name=_("Удалено"), help_text=_("Мягкое удаление"))
     deleted_at = models.DateTimeField( null=True, blank=True, verbose_name=_("Дата удаления"))
+    package = models.ForeignKey(Package, on_delete=models.PROTECT, null=True, blank=True, verbose_name=_('Тариф'), help_text=_('Тариф объявления'))
 
     class Meta:
         verbose_name = _("Объявление")

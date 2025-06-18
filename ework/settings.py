@@ -9,7 +9,31 @@ SECRET_KEY = "dd"
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '6e89-181-97-30-161.ngrok-free.app',  # Ваш ngrok домен
+    '*.ngrok-free.app',  # Или все ngrok домены
+]
+
+# Настройки CSRF для Telegram Mini App
+CSRF_COOKIE_DOMAIN = None  # Убираем ограничение домена
+CSRF_COOKIE_SECURE = True  # Для HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Важно! Позволяет JS доступ к cookie
+CSRF_COOKIE_SAMESITE = None  # Убираем SameSite ограничения
+CSRF_USE_SESSIONS = True  # Используем сессии вместо cookie
+CSRF_COOKIE_AGE = None
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://6e89-181-97-30-161.ngrok-free.app',
+    'https://*.ngrok-free.app',
+]
+
+# Настройки сессий для Telegram Mini App
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SAMESITE = None
+SESSION_SAVE_EVERY_REQUEST = True
 
 INSTALLED_APPS = [
     'django.contrib.admin',

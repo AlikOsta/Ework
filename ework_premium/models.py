@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from datetime import timedelta, datetime
 from django.utils import timezone
+import uuid
+from ework_currency.models import Currency
 
 User = get_user_model()
 
@@ -13,14 +15,14 @@ class Package(models.Model):
 
     PACKAGE_TYPES = [
         ('FREE_WEEKLY', _('Бесплатная публикация')),
-        ('STANDARD', _('Стандартная публикация')),
-        ('PREMIUM_PHOTO', _('Публикация с фото')),
+        ('PAID', _('Платная публикация')),
     ]
 
     name = models.CharField(max_length=50, unique=True, verbose_name=_("Название тарифа"), help_text=_("Название тарифа"))
-    package_type = models.CharField(_('Тип пакета'), max_length=20, choices=PACKAGE_TYPES, default='FREE_WEEKLY', help_text=_("Тип пакета"))
     description = models.TextField(verbose_name=_("Описание тарифа"), help_text=_("Описание тарифа"))
+    package_type = models.CharField(_('Тип пакета'), max_length=20, choices=PACKAGE_TYPES, default='FREE_WEEKLY', help_text=_("Тип пакета"))
     price_per_post = models.DecimalField(max_digits=8, decimal_places=2, verbose_name=_("Цена за объявление"), help_text=_("Цена за объявление"))
+    currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Валюта"), help_text=_("Валюта"))
     highlight_color = models.CharField(max_length=7, blank=True,verbose_name=_("HEX-код цвета для выделения объявления"), help_text=_("HEX-код цвета для выделения объявления"))
     icon_flag = models.CharField(max_length=50, blank=True, verbose_name=_("Имя CSS-класса или значка (например, ⭐️ для Премиум)"), help_text=_("Имя CSS-класса или значка (например, ⭐️ для Премиум)"))
     allows_photo = models.BooleanField(default=False, verbose_name=_("Разрешены фото"))
@@ -36,55 +38,64 @@ class Package(models.Model):
     def __str__(self):
         return self.name
 
-class PostPayment(models.Model):
-    """Оплата за конкретное объявление"""
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.OneToOneField('ework_post.AbsPost', on_delete=models.CASCADE)
-    package = models.ForeignKey(Package, on_delete=models.CASCADE)
-    payment_transaction = models.ForeignKey("PaymentTransaction", on_delete=models.SET_NULL, null=True)
-    is_paid = models.BooleanField(default=False)
-    created_at = models.DateTimeField( auto_now_add=True,  db_index=True,  verbose_name=_("Дата создания")) 
+    def is_free(self):
+        """Проверить, является ли тариф бесплатным"""
+        return self.package_type == 'FREE_WEEKLY'
+
+    def is_paid(self):
+        """Проверить, является ли тариф платным"""
+        return self.package_type == 'PAID'
 
 
-class PaymentTransaction(models.Model):
-    """История платежных транзакций"""
-    
-    STATUS_CHOICES = [
-        ('PENDING', _('Ожидает оплаты')),
-        ('PROCESSING', _('Обрабатывается')),
-        ('COMPLETED', _('Завершена')),
-        ('FAILED', _('Ошибка')),
-        ('CANCELLED', _('Отменена')),
-        ('REFUNDED', _('Возвращена')),
+class Payment(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', _('Ожидает оплаты')),
+        ('paid', _('Оплачено')),
+        ('failed', _('Ошибка оплаты')),
+        ('cancelled', _('Отменено')),
     ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
-    package = models.ForeignKey(Package, on_delete=models.CASCADE)
-    amount = models.DecimalField(_('Сумма'), max_digits=10, decimal_places=2)
-    currency = models.CharField(_('Валюта'), max_length=3)
-    status = models.CharField(_('Статус'), max_length=20, choices=STATUS_CHOICES, default='PENDING')
-    telegram_payment_charge_id = models.CharField(_('Telegram Payment ID'), max_length=255, blank=True)
-    provider_payment_charge_id = models.CharField(_('Provider Payment ID'), max_length=255, blank=True)
-    invoice_payload = models.TextField(_('Payload инвойса'), blank=True)
-    telegram_data = models.JSONField(_('Данные от Telegram'), default=dict, blank=True)
-    created_at = models.DateTimeField( auto_now_add=True,  db_index=True,  verbose_name=_("Дата создания")) 
-    completed_at = models.DateTimeField(_('Завершена'), null=True, blank=True)
-    
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("Пользователь"))
+    package = models.ForeignKey(Package, on_delete=models.CASCADE, verbose_name=_("Тариф"))
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Сумма"))
+    order_id = models.CharField(max_length=100, unique=True, verbose_name=_("ID заказа"))
+    status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default="pending", verbose_name=_("Статус"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))
+    paid_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата оплаты"))
+    telegram_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа Telegram"))
+    telegram_provider_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа провайдера"))
+
     class Meta:
-        verbose_name = _('Платежная транзакция')
-        verbose_name_plural = _('Платежные транзакции')
+        verbose_name = _("Платеж")
+        verbose_name_plural = _("Платежи")
         ordering = ['-created_at']
-    
+
     def __str__(self):
-        return f"{self.user.username} - {self.amount} {self.currency} ({self.status})"
-    
-    def mark_completed(self, telegram_data=None):
-        """Отметить транзакцию как завершенную"""
-        self.status = 'COMPLETED'
-        self.completed_at = timezone.now()
-        if telegram_data:
-            self.telegram_data = telegram_data
-        self.save()
+        return f"Платеж {self.order_id} - {self.user.username}"
+
+    @classmethod
+    def generate_order_id(cls, user_id):
+        """Генерировать уникальный ID заказа"""
+        return f"{user_id}_{int(timezone.now().timestamp())}_{uuid.uuid4().hex[:8]}"
+
+    def mark_as_paid(self, telegram_charge_id=None, provider_charge_id=None):
+        """Отметить платеж как оплаченный"""
+        self.status = 'paid'
+        self.paid_at = timezone.now()
+        if telegram_charge_id:
+            self.telegram_payment_charge_id = telegram_charge_id
+        if provider_charge_id:
+            self.telegram_provider_payment_charge_id = provider_charge_id
+        self.save(update_fields=['status', 'paid_at', 'telegram_payment_charge_id', 'telegram_provider_payment_charge_id'])
+
+    def mark_as_failed(self):
+        """Отметить платеж как неудачный"""
+        self.status = 'failed'
+        self.save(update_fields=['status'])
+
+    def get_payload(self):
+        """Получить payload для Telegram"""
+        return f"{self.user.id}&&&{self.id}"
 
 
 class FreePostRecord(models.Model):
@@ -93,14 +104,13 @@ class FreePostRecord(models.Model):
     """
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='free_posts')
     week_start = models.DateField(help_text="Дата понедельника этой недели")
-    created_at = models.DateTimeField( auto_now_add=True,  db_index=True,  verbose_name=_("Дата создания")) 
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_("Дата создания")) 
     post = models.ForeignKey('ework_post.AbsPost', on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
-        unique_together = ('user', 'week_start')
         verbose_name = _("Бесплатная публикация")
         verbose_name_plural = _("Бесплатные публикации")
-        unique_together = ['user', 'week_start']
+        unique_together = ['user', 'week_start'] 
 
     def __str__(self):
         return f"{self.user.username} - {self.week_start}"
@@ -116,12 +126,7 @@ class FreePostRecord(models.Model):
     def can_user_post_free(cls, user):
         """Проверить, может ли пользователь опубликовать бесплатно на этой неделе"""
         week_start = cls.get_current_week_start()
-        record, created = cls.objects.get_or_create(
-            user=user,
-            week_start=week_start,
-            defaults={'used_at': None}
-        )
-        return record.used_at is None
+        return not cls.objects.filter(user=user, week_start=week_start).exists()
     
     @classmethod
     def use_free_post(cls, user, post):
@@ -130,10 +135,18 @@ class FreePostRecord(models.Model):
         record, created = cls.objects.get_or_create(
             user=user,
             week_start=week_start,
-            defaults={'used_at': timezone.now(), 'post': post}
+            defaults={'post': post}
         )
-        if not record.used_at:
-            record.used_at = timezone.now()
+        if not created and not record.post:
             record.post = post
-            record.save()
+            record.save(update_fields=['post'])
         return record
+
+    @classmethod
+    def get_user_free_post_this_week(cls, user):
+        """Получить запись о бесплатной публикации пользователя на этой неделе"""
+        week_start = cls.get_current_week_start()
+        try:
+            return cls.objects.get(user=user, week_start=week_start)
+        except cls.DoesNotExist:
+            return None
