@@ -12,11 +12,10 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '6e89-181-97-30-161.ngrok-free.app',  # Ваш ngrok домен
+    'https://601c-181-97-30-161.ngrok-free.app',  # Ваш ngrok домен
     '*.ngrok-free.app',  # Или все ngrok домены
 ]
 
-# Настройки CSRF для Telegram Mini App
 CSRF_COOKIE_DOMAIN = None  # Убираем ограничение домена
 CSRF_COOKIE_SECURE = True  # Для HTTPS
 CSRF_COOKIE_HTTPONLY = False  # Важно! Позволяет JS доступ к cookie
@@ -25,7 +24,7 @@ CSRF_USE_SESSIONS = True  # Используем сессии вместо cooki
 CSRF_COOKIE_AGE = None
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://6e89-181-97-30-161.ngrok-free.app',
+    'https://601c-181-97-30-161.ngrok-free.app',
     'https://*.ngrok-free.app',
 ]
 

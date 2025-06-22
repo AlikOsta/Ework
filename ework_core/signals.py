@@ -34,6 +34,7 @@ def moderate_post_async(instance):
         print(f"Ошибка при модерации: {e}")
         type(instance).objects.filter(pk=instance.pk).update(status=1)
 
+
 def send_telegram_notification_async(instance):
     """Отправка уведомления в Telegram в отдельном потоке"""
     def send_notification():

@@ -30,7 +30,7 @@ function initFavoriteButtons() {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': getCSRFToken(),
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({})
