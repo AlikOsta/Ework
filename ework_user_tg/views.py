@@ -319,27 +319,6 @@ def telegram_login(request):
         return redirect('user:telegram_auth')
 
 
-def test_login(request):
-    """Тестовая авторизация для разработки"""
-    if request.method == 'POST':
-        # Авторизуем тестового пользователя
-        from ework_user_tg.models import TelegramUser
-        user, created = TelegramUser.objects.get_or_create(
-            telegram_id=123456789,
-            defaults={
-                'username': 'testuser',
-                'first_name': 'Test',
-                'last_name': 'User',
-                'email': 'test@test.com'
-            }
-        )
-        login(request, user)
-        return redirect('core:home')
-    
-    # Показываем форму авторизации
-    return render(request, 'user/test_login.html')
-
-
 # Настройки для Telegram Mini App
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = False  # Важно! Позволяет JavaScript получить доступ к cookie
