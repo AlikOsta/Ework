@@ -22,6 +22,3 @@ class ServicesPostForm(BasePostForm):
         first = qs.first()
         if first:
             self.fields['sub_rubric'].initial = first.pk
-        
-        
-        
