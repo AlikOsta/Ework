@@ -35,9 +35,6 @@
         {% if user.is_authenticated %}
         <button type="button"
                 data-post-id="{{ post.pk }}"
-                hx-post="{% url 'core:favorite_toggle' post_pk=post.pk %}"
-                hx-swap="outerHTML"
-                hx-trigger="click once"
                 data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
                 class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in favorite_post_ids %}text-danger{% else %}text-muted{% endif %}"
                 aria-label="Избранное">
