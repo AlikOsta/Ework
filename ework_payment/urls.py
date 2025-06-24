@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .telegram_webhook import telegram_payment_webhook
 
 app_name = 'payments'
 
@@ -9,6 +10,9 @@ urlpatterns = [
     
     # Callback от Telegram
     path('api/telegram/callback/', views.telegram_payment_callback, name='telegram_callback'),
+    
+    # Webhook от Telegram Bot API для платежей
+    path('webhook/telegram/', telegram_payment_webhook, name='telegram_webhook'),
     
     # Проверка статуса платежа
     path('api/status/<int:payment_id>/', views.payment_status, name='payment_status'),
