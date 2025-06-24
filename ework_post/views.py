@@ -273,28 +273,108 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             kwargs['category_slug'] = self.category_slug
         return kwargs
     
-    def form_valid(self, form):
-        """Обработка валидной формы"""
-        self.object = form.save(commit=False)
-        self.object.user = self.request.user
+    def get_context_data(self, **kwargs):
+        """Добавить информацию о тарифах в контекст"""
+        context = super().get_context_data(**kwargs)
         
+        # Добавляем информацию о тарифах
+        if hasattr(self.get_form(), 'get_package_info'):
+            context['package_info'] = self.get_form().get_package_info()
+        
+        # Проверяем доступность бесплатного тарифа
+        context['can_use_free_package'] = FreePostRecord.can_user_post_free(self.request.user)
+        
+        return context
+    
+    def form_valid(self, form):
+        """Обработка валидной формы с учетом тарифов"""
         try:
-            self.object.full_clean() 
-            self.object.save()
-            messages.success(self.request, self.success_message)
+            # Сохраняем пост без коммита
+            self.object = form.save(commit=False)
+            self.object.user = self.request.user
             
-            if self.request.headers.get('HX-Request'):
-                return HttpResponse(
-                    status=200,
-                    headers={
-                        'HX-Trigger': 'closeModal',
-                        'HX-Redirect': str(self.get_success_url())
-                    }
-                )
+            # Получаем выбранный тариф
+            package = form.cleaned_data['package']
             
-            return super().form_valid(form)
+            # Проверяем возможность публикации
+            if not PostPublicationService.can_publish_post(self.request.user, package):
+                form.add_error('package', _('Выбранный тариф недоступен'))
+                return self.form_invalid(form)
+            
+            # Если это платный тариф, создаем платеж
+            if package.is_paid():
+                return self.handle_paid_package(form, package)
+            else:
+                # Для бесплатного тарифа публикуем сразу
+                return self.handle_free_package(form, package)
+                
         except ValidationError as e:
             form.add_error(None, e)
+            return self.form_invalid(form)
+    
+    def handle_free_package(self, form, package):
+        """Обработка бесплатного тарифа"""
+        try:
+            # Сохраняем пост
+            self.object.full_clean()
+            self.object.save()
+            
+            # Публикуем с бесплатным тарифом
+            if PostPublicationService.publish_post(self.object, package):
+                messages.success(self.request, self.success_message)
+                
+                if self.request.headers.get('HX-Request'):
+                    return HttpResponse(
+                        status=200,
+                        headers={
+                            'HX-Trigger': 'closeModal',
+                            'HX-Redirect': str(self.get_success_url())
+                        }
+                    )
+                return redirect(self.get_success_url())
+            else:
+                form.add_error(None, _('Ошибка публикации объявления'))
+                return self.form_invalid(form)
+                
+        except ValidationError as e:
+            form.add_error(None, e)
+            return self.form_invalid(form)
+    
+    def handle_paid_package(self, form, package):
+        """Обработка платного тарифа"""
+        try:
+            # Сохраняем пост как черновик
+            self.object.status = 0  # Черновик
+            self.object.full_clean()
+            self.object.save()
+            
+            # Создаем платеж
+            payment = PaymentService.create_payment(self.request.user, package)
+            
+            # Если это AJAX запрос, возвращаем данные для оплаты
+            if self.request.headers.get('HX-Request') or self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                from ework_payment.services import TelegramPaymentService
+                invoice_data = TelegramPaymentService.create_invoice_payload(payment)
+                
+                return JsonResponse({
+                    'success': True,
+                    'requires_payment': True,
+                    'payment_id': payment.id,
+                    'post_id': self.object.id,
+                    'amount': float(payment.amount),
+                    'currency': package.currency.code if package.currency else 'UAH',
+                    'invoice_data': invoice_data
+                })
+            
+            # Для обычного запроса перенаправляем на страницу оплаты
+            messages.info(
+                self.request, 
+                _('Объявление создано. Для публикации необходимо оплатить тариф.')
+            )
+            return redirect('payments:payment_status', payment_id=payment.id)
+            
+        except Exception as e:
+            form.add_error(None, _('Ошибка создания платежа: {}').format(str(e)))
             return self.form_invalid(form)
     
     def get_success_url(self):
