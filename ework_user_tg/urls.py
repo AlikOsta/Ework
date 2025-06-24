@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AuthorProfileView, telegram_login, Index, TelegramAuthView, profile_edit, test_login
+from .views import AuthorProfileView, telegram_login, Index, TelegramAuthView, profile_edit
 
 app_name = 'user'
 
@@ -11,8 +11,5 @@ urlpatterns = [
     path('telegram_login/', telegram_login, name='telegram_login'),
     path('index/', Index.as_view(), name='index'),
     path('auth/telegram/', TelegramAuthView.as_view(), name='telegram_auth'),
-    
-    # Тестовая авторизация для разработки
-    path('test-login/', test_login, name='test_login'),
 
 ]
