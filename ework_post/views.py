@@ -348,14 +348,11 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             self.object.full_clean()
             self.object.save()
             
-            # Создаем платеж
+            # Создаем простой платеж
             payment = PaymentService.create_payment(self.request.user, package)
             
             # Если это AJAX запрос, возвращаем данные для оплаты
-            if self.request.headers.get('HX-Request') or self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                from ework_payment.services import TelegramPaymentService
-                invoice_data = TelegramPaymentService.create_invoice_payload(payment)
-                
+            if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
                     'success': True,
                     'requires_payment': True,
@@ -363,15 +360,17 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
                     'post_id': self.object.id,
                     'amount': float(payment.amount),
                     'currency': package.currency.code if package.currency else 'UAH',
-                    'invoice_data': invoice_data
+                    'invoice_url': f'https://t.me/YourBotName?start=pay_{payment.id}',  # Замените на реальный URL бота
+                    'title': f'Тариф: {package.name}',
+                    'description': package.description
                 })
             
-            # Для обычного запроса перенаправляем на страницу оплаты
+            # Для обычного запроса показываем сообщение
             messages.info(
                 self.request, 
-                _('Объявление создано. Для публикации необходимо оплатить тариф.')
+                _('Объявление создано. Для публикации оплатите тариф в Telegram боте.')
             )
-            return redirect('payments:payment_status', payment_id=payment.id)
+            return redirect('core:home')
             
         except Exception as e:
             form.add_error(None, _('Ошибка создания платежа: {}').format(str(e)))
