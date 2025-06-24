@@ -35,10 +35,10 @@
           {% if user.is_authenticated %}
           <button type="button"
                   data-post-id="{{ post.pk }}"
-                  data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
+                  data-is-favorite="true"
                   class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn text-danger"
                   aria-label="Избранное">
-            <i class="material-icons ">favorite</i>
+            <i class="material-icons">favorite</i>
           </button>
           {% endif %}
         </div>
