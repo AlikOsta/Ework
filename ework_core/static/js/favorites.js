@@ -121,8 +121,6 @@ function getCSRFToken() {
     // Если нет мета-тега, пробуем из cookie
     return getCookie('csrftoken');
 }
-
-// Функция для получения CSRF токена
 function getCSRFToken() {
     // Сначала пробуем получить из мета-тега
     const metaToken = document.querySelector('meta[name="csrf-token"]');
