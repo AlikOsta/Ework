@@ -5,13 +5,15 @@ from django.views.generic import ListView, CreateView, UpdateView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 
 from ework_post.models import AbsPost, Favorite, PostView
 from ework_rubric.models import SuperRubric, SubRubric
+from ework_premium.models import Package, FreePostRecord
+from ework_payment.services import PaymentService, PostPublicationService
 
 
 class PostViewMixin:
