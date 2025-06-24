@@ -6,7 +6,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
     <div class="modal-body">
-        <form method="post" enctype="multipart/form-data" id="post-form">
+        <form method="post" enctype="multipart/form-data" id="services-post-form">
             {% csrf_token %}
             
             <!-- Основные поля -->
@@ -68,16 +68,17 @@
                 {% endif %}
             </div>
 
-            <!-- Простой выбор тарифа -->
+            <!-- Выбор тарифа -->
             <div class="mb-3">
-                <label for="{{ form.package.id_for_label }}" class="form-label">{{ form.package.label }}</label>
-                <select name="package" id="id_package" class="form-select" required>
+                <label for="package-select" class="form-label">{% trans "Выберите тариф" %}</label>
+                <select name="package" id="package-select" class="form-select" required>
                     {% for package in package_info %}
                         <option value="{{ package.id }}" 
                                 data-allows-photo="{{ package.allows_photo|yesno:'true,false' }}"
                                 data-price="{{ package.price }}"
                                 data-is-free="{{ package.is_free|yesno:'true,false' }}"
-                                {% if not package.available %}disabled{% endif %}>
+                                {% if not package.available %}disabled{% endif %}
+                                {% if forloop.first %}selected{% endif %}>
                             {{ package.name }} 
                             {% if package.is_free %}
                                 ({% trans "Бесплатно" %})
@@ -107,28 +108,49 @@
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Отмена" %}</button>
-        <button type="submit" form="post-form" class="btn btn-primary" id="submit-btn">
+        <button type="button" class="btn btn-primary" id="submit-btn">
             <span id="btn-text">{% trans "Опубликовать" %}</span>
         </button>
     </div>
 </div>
 
 <script>
+console.log('Services form script loaded');
+
 document.addEventListener('DOMContentLoaded', function() {
-    const packageSelect = document.getElementById('id_package');
+    console.log('DOM loaded, setting up services form');
+    
+    const packageSelect = document.getElementById('package-select');
     const imageField = document.getElementById('image-field');
     const submitBtn = document.getElementById('submit-btn');
     const btnText = document.getElementById('btn-text');
+    const form = document.getElementById('services-post-form');
+    
+    if (!packageSelect || !imageField || !submitBtn || !form) {
+        console.error('Required elements not found');
+        return;
+    }
+    
+    console.log('All elements found, setting up handlers');
     
     // Обработчик изменения тарифа
-    packageSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
+    function updatePackageSelection() {
+        console.log('Package selection changed');
+        const selectedOption = packageSelect.options[packageSelect.selectedIndex];
         const allowsPhoto = selectedOption.dataset.allowsPhoto === 'true';
         const isFree = selectedOption.dataset.isFree === 'true';
         const price = selectedOption.dataset.price;
         
+        console.log('Package details:', {allowsPhoto, isFree, price});
+        
         // Показываем/скрываем поле изображения
-        imageField.style.display = allowsPhoto ? 'block' : 'none';
+        if (allowsPhoto) {
+            imageField.style.display = 'block';
+            console.log('Showing image field');
+        } else {
+            imageField.style.display = 'none';
+            console.log('Hiding image field');
+        }
         
         // Обновляем текст кнопки
         if (isFree) {
@@ -136,29 +158,47 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             btnText.textContent = `{% trans "Оплатить" %} ${price} UAH`;
         }
-    });
+        
+        console.log('Button text updated:', btnText.textContent);
+    }
+    
+    packageSelect.addEventListener('change', updatePackageSelection);
     
     // Вызываем обработчик при загрузке
-    packageSelect.dispatchEvent(new Event('change'));
+    updatePackageSelection();
     
     // Обработка отправки формы
-    document.getElementById('post-form').addEventListener('submit', function(e) {
+    submitBtn.addEventListener('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Submit button clicked');
         
         const selectedOption = packageSelect.options[packageSelect.selectedIndex];
         const isFree = selectedOption.dataset.isFree === 'true';
         
+        console.log('Is free package:', isFree);
+        
         if (isFree) {
+            console.log('Submitting free package form');
             // Для бесплатного тарифа отправляем обычную форму
-            this.submit();
+            form.submit();
         } else {
-            // Для платного тарифа используем Telegram Payments
+            console.log('Handling paid package');
+            // Для платного тарифа используем AJAX
             handlePaidSubmission();
         }
     });
     
     function handlePaidSubmission() {
-        const formData = new FormData(document.getElementById('post-form'));
+        console.log('Handling paid submission');
+        
+        // Блокируем кнопку
+        submitBtn.disabled = true;
+        const originalText = btnText.textContent;
+        btnText.textContent = '{% trans "Обработка..." %}';
+        
+        const formData = new FormData(form);
         
         fetch(window.location.href, {
             method: 'POST',
@@ -168,32 +208,84 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('Response data:', data);
+            
             if (data.success && data.requires_payment) {
-                // Открываем Telegram оплату
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.openInvoice(data.invoice_url, function(status) {
+                console.log('Payment required, opening Telegram payment');
+                
+                // Проверяем доступность Telegram WebApp
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openInvoice) {
+                    console.log('Opening Telegram invoice');
+                    
+                    // Создаем простой invoice payload
+                    const invoice = {
+                        title: data.title || 'Оплата тарифа',
+                        description: data.description || 'Оплата размещения объявления',
+                        payload: `payment_${data.payment_id}`,
+                        currency: data.currency || 'UAH',
+                        prices: [{ label: 'Размещение', amount: Math.round(data.amount * 100) }]
+                    };
+                    
+                    window.Telegram.WebApp.openInvoice(invoice, function(status) {
+                        console.log('Payment status:', status);
+                        
                         if (status === 'paid') {
-                            // Оплата прошла успешно
-                            window.location.href = '{% url "core:home" %}';
+                            console.log('Payment successful');
+                            alert('{% trans "Оплата прошла успешно! Объявление отправлено на модерацию." %}');
+                            
+                            // Закрываем модалку и обновляем страницу
+                            const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
+                            if (modal) modal.hide();
+                            window.location.reload();
                         } else {
+                            console.log('Payment failed or cancelled');
                             alert('{% trans "Оплата отменена или не прошла" %}');
                         }
+                        
+                        // Разблокируем кнопку
+                        submitBtn.disabled = false;
+                        btnText.textContent = originalText;
                     });
                 } else {
-                    alert('{% trans "Telegram WebApp недоступно. Используйте Telegram для оплаты." %}');
+                    console.log('Telegram WebApp not available');
+                    alert('{% trans "Telegram WebApp недоступно. Откройте приложение через Telegram бот." %}');
+                    
+                    // Разблокируем кнопку
+                    submitBtn.disabled = false;
+                    btnText.textContent = originalText;
                 }
             } else if (data.success) {
-                window.location.href = '{% url "core:home" %}';
+                console.log('Form submitted successfully without payment');
+                alert('{% trans "Объявление создано успешно!" %}');
+                
+                // Закрываем модалку и обновляем страницу
+                const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
+                if (modal) modal.hide();
+                window.location.reload();
             } else {
+                console.error('Form submission error:', data.error);
                 alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                
+                // Разблокируем кнопку
+                submitBtn.disabled = false;
+                btnText.textContent = originalText;
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Network error:', error);
             alert('Произошла ошибка при отправке формы');
+            
+            // Разблокируем кнопку
+            submitBtn.disabled = false;
+            btnText.textContent = originalText;
         });
     }
+    
+    console.log('Services form setup complete');
 });
 </script>
