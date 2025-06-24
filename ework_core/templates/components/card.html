@@ -8,7 +8,13 @@
     <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
       {% for post in posts %}
       <div class="col">
-        <div class="card h-100 position-relative">
+        <div class="card h-100 position-relative{% if post.package.highlight_color %} premium-card{% endif %}"
+             {% if post.package.highlight_color %}style="background-color: {{ post.package.highlight_color }}; border-color: {{ post.package.highlight_color }};"{% endif %}>
+          {% if post.package.icon_flag %}
+          <div class="premium-badge position-absolute top-0 start-0 mt-1 ms-1">
+            <span class="badge bg-warning text-dark">{{ post.package.icon_flag }}</span>
+          </div>
+          {% endif %}
           <div class="card-img-top-placeholder"
             hx-get="{% url 'core:product_detail' pk=post.pk %}"
             hx-target="#dialog"
