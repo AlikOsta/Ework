@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AuthorProfileView, telegram_login, Index, TelegramAuthView, profile_edit
+from .views import AuthorProfileView, telegram_login, Index, TelegramAuthView, profile_edit, test_login
 
 app_name = 'user'
 
