@@ -11,12 +11,13 @@ class ServicesPostCreateView(BasePostCreateView):
     model = PostServices
     form_class = ServicesPostForm
     template_name = 'services/post_services_form.html'
-
+    
     def get_success_url(self):
         return reverse_lazy('core:home')
     
-    
+
 class ServicesPostUpdateView(BasePostUpdateView):
+    """Редактирование услуги"""
     model = PostServices
     form_class = ServicesPostForm
     template_name = 'services/post_services_form.html'
@@ -24,7 +25,7 @@ class ServicesPostUpdateView(BasePostUpdateView):
     
     def get_form_kwargs(self):
         """Переопределяем чтобы не передавать category_slug"""
-        kwargs = super(BasePostUpdateView, self).get_form_kwargs()  # Вызываем UpdateView напрямую
+        kwargs = super(BasePostUpdateView, self).get_form_kwargs()  
         kwargs['user'] = self.request.user
         return kwargs
     
