@@ -360,7 +360,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
                     'post_id': self.object.id,
                     'amount': float(payment.amount),
                     'currency': package.currency.code if package.currency else 'UAH',
-                    'invoice_url': f'https://t.me/YourBotName?start=pay_{payment.id}',  # Замените на реальный URL бота
                     'title': f'Тариф: {package.name}',
                     'description': package.description
                 })
