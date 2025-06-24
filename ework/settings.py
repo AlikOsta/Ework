@@ -130,10 +130,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'ework_user_tg.TelegramUser'
 
-# URL для перенаправления на авторизацию
-LOGIN_URL = '/user/auth/telegram/'
-LOGIN_REDIRECT_URL = '/'
-
 USE_I18N = True
 USE_L10N = True 
 
