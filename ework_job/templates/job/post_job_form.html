@@ -1,271 +1,183 @@
-{% extends "pages/base.html" %}
 {% load i18n widget_tweaks %}
 
-{% block title %}{% trans "Создать вакансию" %}{% endblock %}
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title">{% trans "Создать вакансию" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+        <form method="post" enctype="multipart/form-data" id="post-form">
+            {% csrf_token %}
+            
+            <!-- Основные поля -->
+            <div class="mb-3">
+                <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                {{ form.title|add_class:"form-control" }}
+                {% if form.title.errors %}
+                    <div class="text-danger">{{ form.title.errors.0 }}</div>
+                {% endif %}
+            </div>
 
-{% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">{% trans "Создать вакансию" %}</h4>
+            <div class="mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                {{ form.description|add_class:"form-control"|attr:"rows:3" }}
+                {% if form.description.errors %}
+                    <div class="text-danger">{{ form.description.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
+                    {{ form.price|add_class:"form-control" }}
+                    {% if form.price.errors %}
+                        <div class="text-danger">{{ form.price.errors.0 }}</div>
+                    {% endif %}
                 </div>
-                <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" id="post-form">
-                        {% csrf_token %}
-                        
-                        <!-- Основные поля -->
-                        <div class="mb-3">
-                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
-                            {{ form.title|add_class:"form-control" }}
-                            {% if form.title.errors %}
-                                <div class="text-danger">{{ form.title.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-                            {{ form.description|add_class:"form-control"|attr:"rows:4" }}
-                            {% if form.description.errors %}
-                                <div class="text-danger">{{ form.description.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
-                                {{ form.price|add_class:"form-control" }}
-                                {% if form.price.errors %}
-                                    <div class="text-danger">{{ form.price.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.currency.id_for_label }}" class="form-label">{{ form.currency.label }}</label>
-                                {{ form.currency|add_class:"form-select" }}
-                                {% if form.currency.errors %}
-                                    <div class="text-danger">{{ form.currency.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.city.id_for_label }}" class="form-label">{{ form.city.label }}</label>
-                                {{ form.city|add_class:"form-select" }}
-                                {% if form.city.errors %}
-                                    <div class="text-danger">{{ form.city.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{{ form.sub_rubric.label }}</label>
-                                {{ form.sub_rubric|add_class:"form-select" }}
-                                {% if form.sub_rubric.errors %}
-                                    <div class="text-danger">{{ form.sub_rubric.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Поля специфичные для вакансий -->
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label for="{{ form.experience.id_for_label }}" class="form-label">{{ form.experience.label }}</label>
-                                {{ form.experience|add_class:"form-select" }}
-                                {% if form.experience.errors %}
-                                    <div class="text-danger">{{ form.experience.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4">
-                                <label for="{{ form.work_schedule.id_for_label }}" class="form-label">{{ form.work_schedule.label }}</label>
-                                {{ form.work_schedule|add_class:"form-select" }}
-                                {% if form.work_schedule.errors %}
-                                    <div class="text-danger">{{ form.work_schedule.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-4">
-                                <label for="{{ form.work_format.id_for_label }}" class="form-label">{{ form.work_format.label }}</label>
-                                {{ form.work_format|add_class:"form-select" }}
-                                {% if form.work_format.errors %}
-                                    <div class="text-danger">{{ form.work_format.errors.0 }}</div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.user_phone.id_for_label }}" class="form-label">{{ form.user_phone.label }}</label>
-                            {{ form.user_phone|add_class:"form-control" }}
-                            {% if form.user_phone.errors %}
-                                <div class="text-danger">{{ form.user_phone.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Выбор тарифа -->
-                        <div class="mb-4">
-                            <label class="form-label">{% trans "Выберите тариф" %}</label>
-                            <div class="pricing-cards">
-                                {% for package in package_info %}
-                                <div class="pricing-card {% if not package.available %}disabled{% endif %}" 
-                                     data-package-id="{{ package.id }}"
-                                     data-allows-photo="{{ package.allows_photo|yesno:'true,false' }}"
-                                     data-price="{{ package.price }}"
-                                     data-is-free="{{ package.is_free|yesno:'true,false' }}">
-                                    
-                                    <div class="card mb-2">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center">
-                                                <input type="radio" 
-                                                       class="form-check-input me-3" 
-                                                       name="package" 
-                                                       value="{{ package.id }}"
-                                                       id="package_{{ package.id }}"
-                                                       {% if not package.available %}disabled{% endif %}>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1">
-                                                        {% if package.icon_flag %}{{ package.icon_flag }} {% endif %}
-                                                        {{ package.name }}
-                                                    </h6>
-                                                    <small class="text-muted">{{ package.description }}</small>
-                                                    {% if not package.available and package.disabled_reason %}
-                                                        <div class="text-warning small">{{ package.disabled_reason }}</div>
-                                                    {% endif %}
-                                                </div>
-                                                <div class="text-end">
-                                                    {% if package.is_free %}
-                                                        <span class="badge bg-success">{% trans "Бесплатно" %}</span>
-                                                    {% else %}
-                                                        <strong>{{ package.price }} {{ package.currency }}</strong>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% if form.package.errors %}
-                                <div class="text-danger">{{ form.package.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Поле изображения (показывается только для тарифов с фото) -->
-                        <div class="mb-3" id="image-field" style="display: none;">
-                            <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
-                            {{ form.image|add_class:"form-control" }}
-                            {% if form.image.errors %}
-                                <div class="text-danger">{{ form.image.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-
-                        <!-- Кнопки -->
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'core:home' %}" class="btn btn-secondary">{% trans "Отмена" %}</a>
-                            <button type="submit" class="btn btn-primary" id="submit-btn">
-                                <span id="btn-text">{% trans "Опубликовать" %}</span>
-                                <span id="btn-price" style="display: none;"></span>
-                            </button>
-                        </div>
-
-                        <!-- Скрытое поле для передачи выбранного тарифа -->
-                        {{ form.package.as_hidden }}
-                    </form>
+                <div class="col-md-6">
+                    <label for="{{ form.currency.id_for_label }}" class="form-label">{{ form.currency.label }}</label>
+                    {{ form.currency|add_class:"form-select" }}
+                    {% if form.currency.errors %}
+                        <div class="text-danger">{{ form.currency.errors.0 }}</div>
+                    {% endif %}
                 </div>
             </div>
-        </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="{{ form.city.id_for_label }}" class="form-label">{{ form.city.label }}</label>
+                    {{ form.city|add_class:"form-select" }}
+                    {% if form.city.errors %}
+                        <div class="text-danger">{{ form.city.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{{ form.sub_rubric.label }}</label>
+                    {{ form.sub_rubric|add_class:"form-select" }}
+                    {% if form.sub_rubric.errors %}
+                        <div class="text-danger">{{ form.sub_rubric.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Поля специфичные для вакансий -->
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label for="{{ form.experience.id_for_label }}" class="form-label">{{ form.experience.label }}</label>
+                    {{ form.experience|add_class:"form-select" }}
+                    {% if form.experience.errors %}
+                        <div class="text-danger">{{ form.experience.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.work_schedule.id_for_label }}" class="form-label">{{ form.work_schedule.label }}</label>
+                    {{ form.work_schedule|add_class:"form-select" }}
+                    {% if form.work_schedule.errors %}
+                        <div class="text-danger">{{ form.work_schedule.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.work_format.id_for_label }}" class="form-label">{{ form.work_format.label }}</label>
+                    {{ form.work_format|add_class:"form-select" }}
+                    {% if form.work_format.errors %}
+                        <div class="text-danger">{{ form.work_format.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.user_phone.id_for_label }}" class="form-label">{{ form.user_phone.label }}</label>
+                {{ form.user_phone|add_class:"form-control" }}
+                {% if form.user_phone.errors %}
+                    <div class="text-danger">{{ form.user_phone.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Простой выбор тарифа -->
+            <div class="mb-3">
+                <label for="{{ form.package.id_for_label }}" class="form-label">{{ form.package.label }}</label>
+                <select name="package" id="id_package" class="form-select" required>
+                    {% for package in package_info %}
+                        <option value="{{ package.id }}" 
+                                data-allows-photo="{{ package.allows_photo|yesno:'true,false' }}"
+                                data-price="{{ package.price }}"
+                                data-is-free="{{ package.is_free|yesno:'true,false' }}"
+                                {% if not package.available %}disabled{% endif %}>
+                            {{ package.name }} 
+                            {% if package.is_free %}
+                                ({% trans "Бесплатно" %})
+                            {% else %}
+                                ({{ package.price }} {{ package.currency }})
+                            {% endif %}
+                            {% if package.icon_flag %} {{ package.icon_flag }}{% endif %}
+                            {% if not package.available %} - {{ package.disabled_reason }}{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% if form.package.errors %}
+                    <div class="text-danger">{{ form.package.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Поле изображения (показывается только для тарифов с фото) -->
+            <div class="mb-3" id="image-field" style="display: none;">
+                <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+                {{ form.image|add_class:"form-control" }}
+                {% if form.image.errors %}
+                    <div class="text-danger">{{ form.image.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Отмена" %}</button>
+        <button type="submit" form="post-form" class="btn btn-primary" id="submit-btn">
+            <span id="btn-text">{% trans "Опубликовать" %}</span>
+        </button>
     </div>
 </div>
 
-<style>
-.pricing-card {
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.pricing-card:hover:not(.disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.pricing-card.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.pricing-card.selected .card {
-    border-color: #0d6efd;
-    background-color: rgba(13, 110, 253, 0.1);
-}
-</style>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const pricingCards = document.querySelectorAll('.pricing-card');
+    const packageSelect = document.getElementById('id_package');
     const imageField = document.getElementById('image-field');
     const submitBtn = document.getElementById('submit-btn');
     const btnText = document.getElementById('btn-text');
-    const btnPrice = document.getElementById('btn-price');
-    const packageInput = document.querySelector('input[name="package"]');
     
-    // Изначально выбираем первый доступный тариф
-    const firstAvailable = document.querySelector('.pricing-card:not(.disabled)');
-    if (firstAvailable) {
-        selectPackage(firstAvailable);
-    }
-    
-    pricingCards.forEach(card => {
-        if (!card.classList.contains('disabled')) {
-            card.addEventListener('click', function() {
-                selectPackage(this);
-            });
-        }
-    });
-    
-    function selectPackage(selectedCard) {
-        // Убираем выделение с других карточек
-        pricingCards.forEach(card => {
-            card.classList.remove('selected');
-            const radio = card.querySelector('input[type="radio"]');
-            if (radio) radio.checked = false;
-        });
-        
-        // Выделяем выбранную карточку
-        selectedCard.classList.add('selected');
-        const radio = selectedCard.querySelector('input[type="radio"]');
-        if (radio) {
-            radio.checked = true;
-            packageInput.value = radio.value;
-        }
+    // Обработчик изменения тарифа
+    packageSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const allowsPhoto = selectedOption.dataset.allowsPhoto === 'true';
+        const isFree = selectedOption.dataset.isFree === 'true';
+        const price = selectedOption.dataset.price;
         
         // Показываем/скрываем поле изображения
-        const allowsPhoto = selectedCard.dataset.allowsPhoto === 'true';
         imageField.style.display = allowsPhoto ? 'block' : 'none';
         
         // Обновляем текст кнопки
-        const isFree = selectedCard.dataset.isFree === 'true';
-        const price = selectedCard.dataset.price;
-        
         if (isFree) {
             btnText.textContent = '{% trans "Опубликовать" %}';
-            btnPrice.style.display = 'none';
         } else {
-            btnText.textContent = '{% trans "Оплатить" %}';
-            btnPrice.textContent = `${price} UAH`;
-            btnPrice.style.display = 'inline';
+            btnText.textContent = `{% trans "Оплатить" %} ${price} UAH`;
         }
-    }
+    });
+    
+    // Вызываем обработчик при загрузке
+    packageSelect.dispatchEvent(new Event('change'));
     
     // Обработка отправки формы
     document.getElementById('post-form').addEventListener('submit', function(e) {
-        const selectedCard = document.querySelector('.pricing-card.selected');
-        if (!selectedCard) {
-            e.preventDefault();
-            alert('{% trans "Пожалуйста, выберите тариф" %}');
-            return;
-        }
+        e.preventDefault();
         
-        const isFree = selectedCard.dataset.isFree === 'true';
-        if (!isFree) {
-            // Для платных тарифов будем использовать AJAX
-            e.preventDefault();
+        const selectedOption = packageSelect.options[packageSelect.selectedIndex];
+        const isFree = selectedOption.dataset.isFree === 'true';
+        
+        if (isFree) {
+            // Для бесплатного тарифа отправляем обычную форму
+            this.submit();
+        } else {
+            // Для платного тарифа используем Telegram Payments
             handlePaidSubmission();
         }
     });
@@ -284,9 +196,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.requires_payment) {
-                // Здесь будет интеграция с Telegram Payments
-                console.log('Требуется оплата:', data);
-                alert('Функционал оплаты будет добавлен в следующем обновлении');
+                // Открываем Telegram оплату
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.openInvoice(data.invoice_url, function(status) {
+                        if (status === 'paid') {
+                            // Оплата прошла успешно
+                            window.location.href = '{% url "core:home" %}';
+                        } else {
+                            alert('{% trans "Оплата отменена или не прошла" %}');
+                        }
+                    });
+                } else {
+                    alert('{% trans "Telegram WebApp недоступно. Используйте Telegram для оплаты." %}');
+                }
             } else if (data.success) {
                 window.location.href = '{% url "core:home" %}';
             } else {
@@ -300,4 +222,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-{% endblock %}
