@@ -8,7 +8,7 @@
     <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
       {% for post in posts %}
       <div class="col">
-        <div class="card h-100 position-relative">
+      <div class="card h-100 position-relative{% if post.is_premium %} border-warning" style="background: linear-gradient(135deg, #fff3cd, #ffeaa7); box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);{% endif %}">
           <div class="card-img-top-placeholder"
             hx-get="{% url 'core:product_detail' pk=post.pk %}"
             hx-target="#dialog"

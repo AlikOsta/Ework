@@ -1,8 +1,9 @@
 {% load widget_tweaks %}
 {% load i18n %}
+{% load static %}
 
 {% with WIDGET_ERROR_CLASS="is-invalid" %}
-<form hx-post="{{ request.path }}" hx-target="this" hx-swap="outerHTML" class="modal-content" id="post-form">
+<form hx-post="{{ request.path }}" hx-target="this" hx-swap="outerHTML" hx-encoding="multipart/form-data" class="modal-content" id="post-form" enctype="multipart/form-data">
     {% csrf_token %}
 
     <div class="modal-header">
@@ -62,7 +63,7 @@
             </div>
             <div class="card-body">
                 <div class="mb-3 form-check">
-                    {% render_field form.addon_photo class="form-check-input pricing-addon" %}
+                    {% render_field form.addon_photo class="form-check-input pricing-addon" data-toggle="image-field" %}
                     <label class="form-check-label" for="{{ form.addon_photo.id_for_label }}">
                         {{ form.addon_photo.label }} 
                         <small class="text-muted">({{ form.addon_photo.help_text }})</small>
@@ -88,7 +89,7 @@
         </div>
 
         <!-- Поле для изображения (показывается только при выборе аддона фото) -->
-        <div id="image-field" class="mb-3" style="display: none;">
+        <div id="image-field" class="mb-3" style="display: {{ form.addon_photo.value|yesno:'block,none' }};">
             <label for="{{ form.image.id_for_label }}" class="form-label">{% trans "Изображение" %}</label>
             {% render_field form.image class="form-control" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.image.errors|first }}</div>
@@ -118,93 +119,64 @@
     </div>
 </form>
 
+<!-- ОТЛАДОЧНЫЙ СКРИПТ - временно -->
 {% if not object %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация расчета стоимости
-    updatePricing();
+console.log('=== ОТЛАДКА УСЛУГ НАЧАЛО ===');
+
+(function() {
+    console.log('Отладочный скрипт услуг запущен');
     
-    // Обработчик изменения аддонов
-    document.querySelectorAll('.pricing-addon').forEach(function(checkbox) {
-        checkbox.addEventListener('change', function() {
-            updatePricing();
-            toggleImageField();
+    const form = document.querySelector('form[hx-post]');
+    const submitBtn = document.querySelector('#submit-btn');
+    const imageField = document.querySelector('#image-field');
+    const pricingBreakdown = document.querySelector('#pricing-breakdown');
+    const checkboxes = document.querySelectorAll('input[type=checkbox].pricing-addon');
+    
+    console.log('Элементы найдены:', {form, submitBtn, imageField, pricingBreakdown, checkboxes: checkboxes.length});
+    
+    checkboxes.forEach((cb, i) => {
+        cb.addEventListener('change', function() {
+            console.log(`Услуги: чекбокс ${cb.name} = ${cb.checked}`);
+            
+            if (cb.name === 'addon_photo') {
+                imageField.style.display = cb.checked ? 'block' : 'none';
+            }
+            
+            updatePrice();
         });
     });
     
-    function updatePricing() {
-        const photoAddon = document.querySelector('#{{ form.addon_photo.id_for_label }}').checked;
-        const highlightAddon = document.querySelector('#{{ form.addon_highlight.id_for_label }}').checked;
-        const autoBumpAddon = document.querySelector('#{{ form.addon_auto_bump.id_for_label }}').checked;
+    function updatePrice() {
+        const photo = document.querySelector('input[name="addon_photo"]').checked;
+        const highlight = document.querySelector('input[name="addon_highlight"]').checked; 
+        const autoBump = document.querySelector('input[name="addon_auto_bump"]').checked;
         
-        // HTMX запрос для обновления цен
-        htmx.ajax('GET', '{% url "core:pricing_calculator" %}', {
-            values: {
-                'addon_photo': photoAddon,
-                'addon_highlight': highlightAddon,
-                'addon_auto_bump': autoBumpAddon
-            },
-            target: '#pricing-breakdown',
-            swap: 'innerHTML'
-        }).then(function(response) {
-            const data = JSON.parse(response.xhr.responseText);
-            updateButton(data.button);
-            updatePricingDisplay(data.breakdown);
-        });
-    }
-    
-    function toggleImageField() {
-        const photoAddon = document.querySelector('#{{ form.addon_photo.id_for_label }}').checked;
-        const imageField = document.querySelector('#image-field');
-        
-        if (photoAddon) {
-            imageField.style.display = 'block';
+        if (photo || highlight || autoBump) {
+            pricingBreakdown.innerHTML = '<div class="text-info">Услуги: Тестовая цена 150 руб</div>';
+            submitBtn.textContent = 'Оплатить 150 руб';
+            submitBtn.className = 'btn btn-success';
         } else {
-            imageField.style.display = 'none';
-            // Очищаем поле изображения
-            document.querySelector('#{{ form.image.id_for_label }}').value = '';
+            pricingBreakdown.innerHTML = '<div class="text-success">Бесплатная публикация</div>';
+            submitBtn.textContent = 'Опубликовать бесплатно';
+            submitBtn.className = 'btn btn-primary';
         }
     }
     
-    function updateButton(buttonConfig) {
-        const submitBtn = document.querySelector('#submit-btn');
-        submitBtn.textContent = buttonConfig.text;
-        submitBtn.className = buttonConfig.class;
-    }
-    
-    function updatePricingDisplay(breakdown) {
-        let html = '';
-        
-        if (breakdown.can_post_free && breakdown.total_price == 0) {
-            html = '<div class="text-success"><i class="fas fa-check"></i> {% trans "Бесплатная публикация" %}</div>';
-        } else {
-            html = '<div class="pricing-details">';
-            html += '<div class="d-flex justify-content-between">';
-            html += '<span>{% trans "Базовая публикация" %}</span>';
-            html += '<span>' + breakdown.base_price + ' ' + (breakdown.currency ? breakdown.currency.symbol : '$') + '</span>';
-            html += '</div>';
-            
-            // Добавляем аддоны
-            for (const [key, addon] of Object.entries(breakdown.addons)) {
-                if (addon.selected) {
-                    html += '<div class="d-flex justify-content-between text-muted">';
-                    html += '<span>+ ' + addon.description + '</span>';
-                    html += '<span>' + addon.price + ' ' + (breakdown.currency ? breakdown.currency.symbol : '$') + '</span>';
-                    html += '</div>';
-                }
-            }
-            
-            html += '<hr>';
-            html += '<div class="d-flex justify-content-between fw-bold">';
-            html += '<span>{% trans "Итого" %}</span>';
-            html += '<span>' + breakdown.total_price + ' ' + (breakdown.currency ? breakdown.currency.symbol : '$') + '</span>';
-            html += '</div>';
-            html += '</div>';
-        }
-        
-        document.querySelector('#pricing-breakdown').innerHTML = html;
+    updatePrice();
+})();
+
+console.log('=== ОТЛАДКА УСЛУГ КОНЕЦ ===');
+</script>
+{% endif %}
+
+<script>
+// Простое переключение поля изображения
+document.addEventListener('change', function(e) {
+    if (e.target.dataset.toggle === 'image-field') {
+        document.getElementById('image-field').style.display = e.target.checked ? 'block' : 'none';
     }
 });
 </script>
-{% endif %}
+
 {% endwith %}

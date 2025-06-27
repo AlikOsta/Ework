@@ -8,8 +8,11 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, View
 from django.db.models import Q, Count
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import json
 
 from ework_rubric.models import SuperRubric, SubRubric
 from ework_post.models import AbsPost, Favorite, BannerPost, PostView
@@ -257,6 +260,98 @@ def get_post_views_stats(post):
         unique_viewers=Count('user', distinct=True)
     )
     return stats
+
+
+class CreateInvoiceView(View):
+    """API для создания инвойса через Telegram Bot"""
+    
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            payment_id = data.get('payment_id')
+            if not payment_id:
+                return JsonResponse({'success': False, 'error': 'payment_id обязателен'}, status=400)
+
+            from ework_premium.models import Payment
+            try:
+                payment = Payment.objects.get(
+                    id=payment_id,
+                    user=request.user,
+                    status='pending'
+                )
+            except Payment.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Платеж не найден'}, status=404)
+
+            if not request.user.telegram_id:
+                return JsonResponse({'success': False, 'error': 'У пользователя не задан telegram_id'}, status=400)
+
+            payload     = payment.get_payload()
+            amount      = payment.amount
+            order_id    = payment.order_id
+            addons_data = payment.addons_data
+
+            # Создаём инвойс-ссылку
+            from ework_bot_tg.bot.bot import create_invoice_link
+            invoice_link = create_invoice_link(
+                user_id=request.user.telegram_id,
+                payment_id=payment.id,
+                payload=payload,
+                amount=amount,
+                order_id=order_id,
+                addons_data=addons_data
+            )
+
+            if not invoice_link:
+                return JsonResponse({'success': False, 'error': 'Ошибка создания инвойса'}, status=500)
+
+            return JsonResponse({'success': True, 'invoice_link': invoice_link})
+
+        except Exception as e:
+            # Логируем полную трассировку
+            import traceback; traceback.print_exc()
+            return JsonResponse({'success': False, 'error': f'Внутренняя ошибка: {e}'}, status=500)
+
+
+def publish_post_after_payment(user_id, payment_id):
+    """Функция для публикации поста после успешной оплаты (вызывается из бота)"""
+    try:
+        from ework_premium.models import Payment
+        
+        print(f"🔧 Обрабатываем платеж {payment_id} для пользователя {user_id}")
+        
+        # Получаем платеж
+        payment = Payment.objects.get(
+            id=payment_id,
+            user__telegram_id=user_id,
+            status='pending'
+        )
+        
+        print(f"🔧 Платеж найден: {payment}")
+        
+        # Проверяем, есть ли связанный пост
+        if not payment.post:
+            print(f"❌ Нет поста для платежа {payment_id}")
+            payment.mark_as_paid()
+            return False
+        
+        post = payment.post
+        print(f"🔧 Найден пост-черновик: {post.title} (ID: {post.id})")
+        
+        # Переводим пост из черновика на модерацию
+        post.status = 0  # На модерацию
+        post.save(update_fields=['status'])
+        
+        # Отмечаем платеж как оплаченный
+        payment.mark_as_paid()
+        
+        print(f"✅ Платеж {payment_id} обработан, пост {post.id} отправлен на модерацию")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Ошибка публикации поста после оплаты: {e}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
+        return False
 
 
 @login_required

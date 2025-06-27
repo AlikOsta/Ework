@@ -13,7 +13,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     '*',  # Ваш ngrok домен
-    '*.ngrok-free.app',  # Или все ngrok домены
+    'https://e6bd-181-84-216-165.ngrok-free.app',  # Или все ngrok домены
 ]
 
 CSRF_COOKIE_DOMAIN = None  # Убираем ограничение домена
@@ -24,7 +24,7 @@ CSRF_USE_SESSIONS = True  # Используем сессии вместо cooki
 CSRF_COOKIE_AGE = None
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://601c-181-97-30-161.ngrok-free.app',
+    'https://e6bd-181-84-216-165.ngrok-free.app',
     'https://*.ngrok-free.app',
 ]
 
@@ -152,4 +152,5 @@ ROSETTA_UWSGI_AUTO_RELOAD = True
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'ework_core', 'static'),
 ]

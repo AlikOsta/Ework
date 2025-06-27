@@ -27,6 +27,9 @@ urlpatterns = [
     
     # Публикация после оплаты
     path('api/post-payment-success/<int:payment_id>/', PostPaymentSuccessView.as_view(), name='post_payment_success'),
+    
+    # API для создания инвойса
+    path('api/create-invoice/', views.CreateInvoiceView.as_view(), name='create_invoice'),
 
     path("", views.home, name='home'),
 

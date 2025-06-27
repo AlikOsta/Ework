@@ -74,6 +74,10 @@ class Payment(models.Model):
     # Информация о выбранных аддонах (JSON)
     addons_data = models.JSONField(default=dict, blank=True, verbose_name=_("Данные аддонов"), 
                                   help_text=_("JSON с информацией о выбранных аддонах"))
+    
+    # Ссылка на пост (черновик)
+    post = models.ForeignKey('ework_post.AbsPost', on_delete=models.CASCADE, null=True, blank=True, 
+                            verbose_name=_("Пост"), help_text=_("Пост-черновик для публикации после оплаты"))
 
     class Meta:
         verbose_name = _("Платеж")
@@ -105,7 +109,7 @@ class Payment(models.Model):
 
     def get_payload(self):
         """Получить payload для Telegram"""
-        return f"{self.user.id}&&&{self.id}"
+        return f"{self.user.telegram_id}&&&{self.id}"
     
     def set_addons(self, photo=False, highlight=False, auto_bump=False):
         """Установить информацию о выбранных аддонах"""

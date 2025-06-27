@@ -335,11 +335,24 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def _handle_paid_post(self, form, payment):
         """Обработать платную публикацию"""
-        # Сохраняем данные формы в сессии для восстановления после оплаты
-        self.request.session[f'post_data_{payment.id}'] = {
-            'form_data': form.cleaned_data,
-            'payment_id': payment.id
-        }
+        # Создаем пост-черновик сразу
+        post = form.save(commit=False)
+        post.user = self.request.user
+        post.package = payment.package
+        post.status = -1  # Черновик
+        
+        # Применяем аддоны
+        post.set_addons(
+            photo=form.cleaned_data.get('addon_photo', False),
+            highlight=form.cleaned_data.get('addon_highlight', False),
+            auto_bump=form.cleaned_data.get('addon_auto_bump', False)
+        )
+        
+        post.save()
+        
+        # Связываем платеж с постом
+        payment.post = post
+        payment.save(update_fields=['post'])
         
         # Если это HTMX запрос, возвращаем JSON с данными для оплаты
         if self.request.headers.get('HX-Request'):
@@ -358,6 +371,30 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         """URL для перенаправления после успешного создания"""
         return reverse_lazy('core:home')
+    
+    def _determine_post_type(self, request):
+        """Определить тип поста (job, service и т.д.)"""
+        # Можно определить по referrer или передать в параметрах
+        referrer = request.META.get('HTTP_REFERER', '')
+        
+        if 'jobs' in referrer or 'job' in referrer:
+            return 'job'
+        elif 'services' in referrer or 'service' in referrer:
+            return 'service'
+        else:
+            return 'job'  # по умолчанию
+    
+    def _get_post_model(self, post_type):
+        """Получить модель поста по типу"""
+        if post_type == 'job':
+            from ework_job.models import PostJob
+            return PostJob
+        elif post_type == 'service':
+            from ework_services.models import PostServices
+            return PostServices
+        else:
+            from ework_job.models import PostJob
+            return PostJob
 
 
 
@@ -563,6 +600,14 @@ class PricingCalculatorView(View):
             auto_bump=addon_auto_bump
         )
         
+        # Сериализуем currency объект
+        if breakdown.get('currency'):
+            breakdown['currency'] = {
+                'name': breakdown['currency'].name,
+                'symbol': breakdown['currency'].symbol,
+                'code': breakdown['currency'].code
+            }
+        
         return JsonResponse({
             'breakdown': breakdown,
             'button': button_config,
@@ -610,10 +655,19 @@ class PostPaymentSuccessView(LoginRequiredMixin, View):
             # Создаем объект поста
             post = post_model()
             
-            # Устанавливаем основные поля
+            # Восстанавливаем объекты моделей по их ID
             for field_name, value in form_data.items():
                 if hasattr(post, field_name) and not field_name.startswith('addon_'):
-                    setattr(post, field_name, value)
+                    # Проверяем, является ли поле внешним ключом
+                    field = post._meta.get_field(field_name)
+                    if hasattr(field, 'related_model') and field.related_model:
+                        # Это ForeignKey - получаем объект по ID
+                        if value:
+                            related_obj = field.related_model.objects.get(pk=value)
+                            setattr(post, field_name, related_obj)
+                    else:
+                        # Обычное поле
+                        setattr(post, field_name, value)
             
             post.user = request.user
             post.package = payment.package

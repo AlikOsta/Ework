@@ -108,24 +108,34 @@ class AbsPost(PolymorphicModel):
         self.deleted_at = None
         self.save(update_fields=['is_deleted', 'deleted_at'])
     
-    def apply_addons_from_payment(self, payment):
-        """Применить аддоны из платежа к посту"""
+    def set_addons(self, photo=False, highlight=False, auto_bump=False):
+        """Установить аддоны для поста"""
         from django.utils import timezone
         from datetime import timedelta
         
-        self.has_photo_addon = payment.has_photo_addon()
-        self.has_highlight_addon = payment.has_highlight_addon()
-        self.has_auto_bump_addon = payment.has_auto_bump_addon()
+        self.has_photo_addon = photo
+        self.has_highlight_addon = highlight
+        self.has_auto_bump_addon = auto_bump
         
+        # Если есть выделение цветом - делаем пост премиум
+        self.is_premium = highlight
+        
+        # Устанавливаем время истечения для аддонов
         now = timezone.now()
         
-        # Установить сроки действия промо
-        if self.has_highlight_addon:
+        if highlight:
             self.highlight_expires_at = now + timedelta(days=3)
         
-        if self.has_auto_bump_addon:
+        if auto_bump:
             self.auto_bump_expires_at = now + timedelta(days=7)
-            
+
+    def apply_addons_from_payment(self, payment):
+        """Применить аддоны из платежа к посту"""
+        self.set_addons(
+            photo=payment.has_photo_addon(),
+            highlight=payment.has_highlight_addon(),
+            auto_bump=payment.has_auto_bump_addon()
+        )
         self.save(update_fields=[
             'has_photo_addon', 'has_highlight_addon', 'has_auto_bump_addon',
             'highlight_expires_at', 'auto_bump_expires_at'

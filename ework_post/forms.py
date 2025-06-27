@@ -65,10 +65,16 @@ class BasePostForm(forms.ModelForm):
     
     def _setup_image_field(self):
         """Настроить поле изображения"""
-        # Если аддон фото не выбран, скрываем поле image
-        if not self.data.get('addon_photo'):
-            self.fields['image'].widget = forms.HiddenInput()
-            self.fields['image'].required = False
+        # При первом рендере формы (когда data пустая) оставляем поле как есть
+        # JS сам покажет/скроет его в зависимости от аддона
+        if self.data:  # Только если форма уже была отправлена
+            if not self.data.get('addon_photo'):
+                self.fields['image'].widget = forms.HiddenInput()
+                self.fields['image'].required = False
+            else:
+                # Возвращаем обычный FileInput если аддон выбран
+                self.fields['image'].widget = forms.FileInput(attrs={'class': 'form-control'})
+                self.fields['image'].required = False
     
     def get_pricing_breakdown(self):
         """Получить разбивку цен"""
