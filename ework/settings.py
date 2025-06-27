@@ -12,7 +12,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'https://601c-181-97-30-161.ngrok-free.app',  # Ваш ngrok домен
+    '*',  # Ваш ngrok домен
     '*.ngrok-free.app',  # Или все ngrok домены
 ]
 
@@ -41,10 +41,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rosetta',
-    'django_htmx',
-    'widget_tweaks',
-    'polymorphic',
+    'rosetta',  
+    'django_htmx',  
+    'widget_tweaks',  
+    'polymorphic',  
     'ework_bot_tg', #бот ТГ и его фунционнал
     'ework_user_tg', # модель пользователя и авторизация
     'ework_job', # объявления о работе 

@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse, reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DetailView
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q
@@ -9,9 +9,12 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.http import JsonResponse
 
 from ework_post.models import AbsPost, Favorite, PostView
 from ework_rubric.models import SuperRubric, SubRubric
+from ework_premium.models import Package, FreePostRecord
+from ework_premium.utils import create_payment_for_post
 
 
 class PostViewMixin:
@@ -273,12 +276,46 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         """Обработка валидной формы"""
-        self.object = form.save(commit=False)
-        self.object.user = self.request.user
+        # Получаем аддоны из формы
+        addon_photo = form.cleaned_data.get('addon_photo', False)
+        addon_highlight = form.cleaned_data.get('addon_highlight', False)
+        addon_auto_bump = form.cleaned_data.get('addon_auto_bump', False)
         
+        # Получаем пакет по умолчанию
+        package = Package.objects.filter(is_active=True, package_type='PAID').first()
+        
+        # Создаем платеж
+        payment = create_payment_for_post(
+            user=self.request.user,
+            package=package,
+            photo=addon_photo,
+            highlight=addon_highlight,
+            auto_bump=addon_auto_bump
+        )
+        
+        # Если платеж не требуется (бесплатная публикация)
+        if payment is None:
+            return self._publish_free_post(form, addon_photo, addon_highlight, addon_auto_bump)
+        else:
+            return self._handle_paid_post(form, payment)
+    
+    def _publish_free_post(self, form, addon_photo, addon_highlight, addon_auto_bump):
+        """Опубликовать бесплатный пост"""
         try:
-            self.object.full_clean() 
+            self.object = form.save(commit=False)
+            self.object.user = self.request.user
+            
+            # Аддоны для бесплатной публикации не применяются
+            self.object.has_photo_addon = False
+            self.object.has_highlight_addon = False
+            self.object.has_auto_bump_addon = False
+            
+            self.object.full_clean()
             self.object.save()
+            
+            # Отметить использование бесплатной публикации
+            FreePostRecord.use_free_post(self.request.user, self.object)
+            
             messages.success(self.request, self.success_message)
             
             if self.request.headers.get('HX-Request'):
@@ -290,10 +327,33 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
                     }
                 )
             
-            return super().form_valid(form)
+            return redirect(self.get_success_url())
+            
         except ValidationError as e:
             form.add_error(None, e)
             return self.form_invalid(form)
+    
+    def _handle_paid_post(self, form, payment):
+        """Обработать платную публикацию"""
+        # Сохраняем данные формы в сессии для восстановления после оплаты
+        self.request.session[f'post_data_{payment.id}'] = {
+            'form_data': form.cleaned_data,
+            'payment_id': payment.id
+        }
+        
+        # Если это HTMX запрос, возвращаем JSON с данными для оплаты
+        if self.request.headers.get('HX-Request'):
+            return JsonResponse({
+                'action': 'payment_required',
+                'payment_id': payment.id,
+                'amount': str(payment.amount),
+                'currency': payment.package.currency.symbol if payment.package.currency else '$',
+                'payload': payment.get_payload(),
+                'order_id': payment.order_id
+            })
+        
+        # Для обычного запроса перенаправляем на страницу оплаты
+        return redirect('payments:payment_page', payment_id=payment.id)
     
     def get_success_url(self):
         """URL для перенаправления после успешного создания"""
@@ -464,5 +524,144 @@ class PostSearchMixin:
         return queryset.select_related(
             'user', 'city', 'currency', 'sub_rubric'
         ).order_by('-created_at')
+
+
+class PricingCalculatorView(View):
+    """HTMX view для динамического расчета стоимости"""
+    
+    def get(self, request, *args, **kwargs):
+        """Рассчитать стоимость на основе выбранных аддонов"""
+        from ework_premium.utils import PricingCalculator
+        from django.contrib.auth import get_user_model
+        
+        # Получаем параметры аддонов из GET параметров
+        addon_photo = request.GET.get('addon_photo') == 'true'
+        addon_highlight = request.GET.get('addon_highlight') == 'true'
+        addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'
+        
+        # Для неавторизованных пользователей создаем временного пользователя
+        if request.user.is_authenticated:
+            user = request.user
+        else:
+            User = get_user_model()
+            user = User(id=999999)  # Фиктивный пользователь
+        
+        # Создаем калькулятор
+        calculator = PricingCalculator(user)
+        
+        # Получаем разбивку цен
+        breakdown = calculator.get_pricing_breakdown(
+            photo=addon_photo,
+            highlight=addon_highlight,
+            auto_bump=addon_auto_bump
+        )
+        
+        # Получаем конфигурацию кнопки
+        button_config = calculator.get_button_config(
+            photo=addon_photo,
+            highlight=addon_highlight,
+            auto_bump=addon_auto_bump
+        )
+        
+        return JsonResponse({
+            'breakdown': breakdown,
+            'button': button_config,
+            'show_image_field': addon_photo
+        })
+
+
+class PostPaymentSuccessView(LoginRequiredMixin, View):
+    """View для обработки публикации после успешной оплаты"""
+    
+    def post(self, request, payment_id, *args, **kwargs):
+        """Опубликовать пост после успешной оплаты"""
+        from ework_premium.models import Payment
+        from django.forms.models import model_to_dict
+        
+        # Получаем платеж
+        try:
+            payment = Payment.objects.get(
+                id=payment_id,
+                user=request.user,
+                status='paid'
+            )
+        except Payment.DoesNotExist:
+            return JsonResponse({
+                'error': 'Платеж не найден или не оплачен'
+            }, status=400)
+        
+        # Получаем данные формы из сессии
+        session_key = f'post_data_{payment.id}'
+        post_data = request.session.get(session_key)
+        
+        if not post_data:
+            return JsonResponse({
+                'error': 'Данные формы не найдены'
+            }, status=400)
+        
+        try:
+            # Создаем пост
+            form_data = post_data['form_data']
+            
+            # Определяем тип поста из URL или параметров
+            post_type = self._determine_post_type(request)
+            post_model = self._get_post_model(post_type)
+            
+            # Создаем объект поста
+            post = post_model()
+            
+            # Устанавливаем основные поля
+            for field_name, value in form_data.items():
+                if hasattr(post, field_name) and not field_name.startswith('addon_'):
+                    setattr(post, field_name, value)
+            
+            post.user = request.user
+            post.package = payment.package
+            
+            # Применяем аддоны из платежа
+            post.apply_addons_from_payment(payment)
+            
+            # Сохраняем пост
+            post.save()
+            
+            # Очищаем данные из сессии
+            del request.session[session_key]
+            
+            messages.success(request, _('Объявление успешно опубликовано!'))
+            
+            return JsonResponse({
+                'success': True,
+                'post_id': post.id,
+                'redirect_url': post.get_absolute_url()
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Ошибка при создании объявления: {str(e)}'
+            }, status=500)
+    
+    def _determine_post_type(self, request):
+        """Определить тип поста (job, service и т.д.)"""
+        # Можно определить по referrer или передать в параметрах
+        referrer = request.META.get('HTTP_REFERER', '')
+        
+        if 'jobs' in referrer:
+            return 'job'
+        elif 'services' in referrer:
+            return 'service'
+        else:
+            return 'job'  # по умолчанию
+    
+    def _get_post_model(self, post_type):
+        """Получить модель поста по типу"""
+        if post_type == 'job':
+            from ework_job.models import PostJob
+            return PostJob
+        elif post_type == 'service':
+            from ework_services.models import PostServices
+            return PostServices
+        else:
+            from ework_job.models import PostJob
+            return PostJob
 
 

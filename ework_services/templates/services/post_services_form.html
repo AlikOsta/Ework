@@ -54,58 +54,157 @@
             {% render_field form.user_phone class="form-control" error_class=WIDGET_ERROR_CLASS %}
         </div>
 
+        <!-- Аддоны продвижения -->
+        {% if not object %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">{% trans "Дополнительные опции продвижения" %}</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3 form-check">
+                    {% render_field form.addon_photo class="form-check-input pricing-addon" %}
+                    <label class="form-check-label" for="{{ form.addon_photo.id_for_label }}">
+                        {{ form.addon_photo.label }} 
+                        <small class="text-muted">({{ form.addon_photo.help_text }})</small>
+                    </label>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    {% render_field form.addon_highlight class="form-check-input pricing-addon" %}
+                    <label class="form-check-label" for="{{ form.addon_highlight.id_for_label }}">
+                        {{ form.addon_highlight.label }}
+                        <small class="text-muted">({{ form.addon_highlight.help_text }})</small>
+                    </label>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    {% render_field form.addon_auto_bump class="form-check-input pricing-addon" %}
+                    <label class="form-check-label" for="{{ form.addon_auto_bump.id_for_label }}">
+                        {{ form.addon_auto_bump.label }}
+                        <small class="text-muted">({{ form.addon_auto_bump.help_text }})</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Поле для изображения (показывается только при выборе аддона фото) -->
+        <div id="image-field" class="mb-3" style="display: none;">
+            <label for="{{ form.image.id_for_label }}" class="form-label">{% trans "Изображение" %}</label>
+            {% render_field form.image class="form-control" error_class=WIDGET_ERROR_CLASS %}
+            <div class="invalid-feedback">{{ form.image.errors|first }}</div>
+            <div class="form-text">{% trans "Добавьте изображение к объявлению" %}</div>
+        </div>
+
+        <!-- Блок с расчетом стоимости -->
+        <div id="pricing-summary" class="card mt-3">
+            <div class="card-body">
+                <h6>{% trans "Стоимость публикации" %}</h6>
+                <div id="pricing-breakdown">
+                    <!-- Сюда будет загружаться разбивка цен через HTMX -->
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="d-grid gap-3 d-md-flex justify-content-md-end">
         <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</button>
         {% if object %}
             <button type="submit" class="btn btn-primary">{% trans "Сохранить изменения" %}</button>
         {% else %}
-            <button type="button" class="btn btn-primary" onclick="initPayment()">
-                💳 {% trans "Оплатить и опубликовать" %} (10₽)
+            <button type="submit" id="submit-btn" class="btn btn-primary">
+                {% trans "Опубликовать" %}
             </button>
         {% endif %}
     </div>
 </form>
 
+{% if not object %}
 <script>
-async function initPayment() {
-    const form = document.getElementById('post-form');
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация расчета стоимости
+    updatePricing();
     
-    // Проверяем валидность формы перед оплатой
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
+    // Обработчик изменения аддонов
+    document.querySelectorAll('.pricing-addon').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+            updatePricing();
+            toggleImageField();
+        });
+    });
+    
+    function updatePricing() {
+        const photoAddon = document.querySelector('#{{ form.addon_photo.id_for_label }}').checked;
+        const highlightAddon = document.querySelector('#{{ form.addon_highlight.id_for_label }}').checked;
+        const autoBumpAddon = document.querySelector('#{{ form.addon_auto_bump.id_for_label }}').checked;
+        
+        // HTMX запрос для обновления цен
+        htmx.ajax('GET', '{% url "core:pricing_calculator" %}', {
+            values: {
+                'addon_photo': photoAddon,
+                'addon_highlight': highlightAddon,
+                'addon_auto_bump': autoBumpAddon
+            },
+            target: '#pricing-breakdown',
+            swap: 'innerHTML'
+        }).then(function(response) {
+            const data = JSON.parse(response.xhr.responseText);
+            updateButton(data.button);
+            updatePricingDisplay(data.breakdown);
+        });
     }
     
-    try {
-        // Отправляем запрос на создание платежа
-        const response = await fetch('/payments/create_payment/', { 
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        });
+    function toggleImageField() {
+        const photoAddon = document.querySelector('#{{ form.addon_photo.id_for_label }}').checked;
+        const imageField = document.querySelector('#image-field');
         
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Ошибка создания платежа');
+        if (photoAddon) {
+            imageField.style.display = 'block';
+        } else {
+            imageField.style.display = 'none';
+            // Очищаем поле изображения
+            document.querySelector('#{{ form.image.id_for_label }}').value = '';
+        }
+    }
+    
+    function updateButton(buttonConfig) {
+        const submitBtn = document.querySelector('#submit-btn');
+        submitBtn.textContent = buttonConfig.text;
+        submitBtn.className = buttonConfig.class;
+    }
+    
+    function updatePricingDisplay(breakdown) {
+        let html = '';
+        
+        if (breakdown.can_post_free && breakdown.total_price == 0) {
+            html = '<div class="text-success"><i class="fas fa-check"></i> {% trans "Бесплатная публикация" %}</div>';
+        } else {
+            html = '<div class="pricing-details">';
+            html += '<div class="d-flex justify-content-between">';
+            html += '<span>{% trans "Базовая публикация" %}</span>';
+            html += '<span>' + breakdown.base_price + ' ' + (breakdown.currency ? breakdown.currency.symbol : '$') + '</span>';
+            html += '</div>';
+            
+            // Добавляем аддоны
+            for (const [key, addon] of Object.entries(breakdown.addons)) {
+                if (addon.selected) {
+                    html += '<div class="d-flex justify-content-between text-muted">';
+                    html += '<span>+ ' + addon.description + '</span>';
+                    html += '<span>' + addon.price + ' ' + (breakdown.currency ? breakdown.currency.symbol : '$') + '</span>';
+                    html += '</div>';
+                }
+            }
+            
+            html += '<hr>';
+            html += '<div class="d-flex justify-content-between fw-bold">';
+            html += '<span>{% trans "Итого" %}</span>';
+            html += '<span>' + breakdown.total_price + ' ' + (breakdown.currency ? breakdown.currency.symbol : '$') + '</span>';
+            html += '</div>';
+            html += '</div>';
         }
         
-        const data = await response.json();
-        
-        // Открываем платежное окно
-        window.Telegram.WebApp.openInvoice(data.invoice_link, (status) => {
-            if (status === 'paid') {
-                console.logg('Payment successful');
-                // Успешная оплата - отправляем форму
-                form.submit();
-            } else {
-                alert('Оплата не была завершена. Объявление не опубликовано.');
-            }
-        });
-    } catch (error) {
-        console.error('Payment error:', error);
-        alert('Ошибка: ' + error.message);
+        document.querySelector('#pricing-breakdown').innerHTML = html;
     }
-}
+});
 </script>
+{% endif %}
 {% endwith %}

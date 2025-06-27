@@ -23,9 +23,15 @@ class Package(models.Model):
     package_type = models.CharField(_('Тип пакета'), max_length=20, choices=PACKAGE_TYPES, default='FREE_WEEKLY', help_text=_("Тип пакета"))
     price_per_post = models.DecimalField(max_digits=8, decimal_places=2, verbose_name=_("Цена за объявление"), help_text=_("Цена за объявление"))
     currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Валюта"), help_text=_("Валюта"))
-    highlight_color = models.CharField(max_length=7, blank=True,verbose_name=_("HEX-код цвета для выделения объявления"), help_text=_("HEX-код цвета для выделения объявления"))
-    icon_flag = models.CharField(max_length=50, blank=True, verbose_name=_("Имя CSS-класса или значка (например, ⭐️ для Премиум)"), help_text=_("Имя CSS-класса или значка (например, ⭐️ для Премиум)"))
-    allows_photo = models.BooleanField(default=False, verbose_name=_("Разрешены фото"))
+    
+    # Поля для аддонов продвижения
+    photo_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за фото"), help_text=_("Цена аддона 'Фото' (30 дней)"))
+    highlight_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за выделение"), help_text=_("Цена аддона 'Цветное выделение' (3 дня)"))
+    auto_bump_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за автоподнятие"), help_text=_("Цена аддона 'Автоподнятие' (7 дней)"))
+    
+    # Настройки отображения
+    highlight_color = models.CharField(max_length=7, blank=True, default="#fffacd", verbose_name=_("HEX-код цвета для выделения объявления"), help_text=_("HEX-код цвета для выделения объявления"))
+    
     duration_days = models.PositiveIntegerField(default=30, verbose_name=_("Срок размещения (дней)"))
     is_active = models.BooleanField(default=True, verbose_name=_("Активен"))
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_("Порядок"), help_text=_("Порядок"))
@@ -64,6 +70,10 @@ class Payment(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата оплаты"))
     telegram_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа Telegram"))
     telegram_provider_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа провайдера"))
+    
+    # Информация о выбранных аддонах (JSON)
+    addons_data = models.JSONField(default=dict, blank=True, verbose_name=_("Данные аддонов"), 
+                                  help_text=_("JSON с информацией о выбранных аддонах"))
 
     class Meta:
         verbose_name = _("Платеж")
@@ -96,6 +106,26 @@ class Payment(models.Model):
     def get_payload(self):
         """Получить payload для Telegram"""
         return f"{self.user.id}&&&{self.id}"
+    
+    def set_addons(self, photo=False, highlight=False, auto_bump=False):
+        """Установить информацию о выбранных аддонах"""
+        self.addons_data = {
+            'photo': photo,
+            'highlight': highlight,
+            'auto_bump': auto_bump
+        }
+    
+    def has_photo_addon(self):
+        """Проверить, выбран ли аддон фото"""
+        return self.addons_data.get('photo', False)
+    
+    def has_highlight_addon(self):
+        """Проверить, выбран ли аддон выделения"""
+        return self.addons_data.get('highlight', False)
+    
+    def has_auto_bump_addon(self):
+        """Проверить, выбран ли аддон автоподнятия"""
+        return self.addons_data.get('auto_bump', False)
 
 
 class FreePostRecord(models.Model):

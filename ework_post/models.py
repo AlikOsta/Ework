@@ -3,7 +3,7 @@ from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from slugify import slugify
+from django.utils.text import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.validators import RegexValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -44,6 +44,16 @@ class AbsPost(PolymorphicModel):
     is_deleted = models.BooleanField( default=False, db_index=True, verbose_name=_("Удалено"), help_text=_("Мягкое удаление"))
     deleted_at = models.DateTimeField( null=True, blank=True, verbose_name=_("Дата удаления"))
     package = models.ForeignKey(Package, on_delete=models.PROTECT, null=True, blank=True, verbose_name=_('Тариф'), help_text=_('Тариф объявления'))
+    
+    # Поля для промо-функций
+    has_photo_addon = models.BooleanField(default=False, verbose_name=_("Аддон фото"), help_text=_("Разрешено добавлять фото"))
+    has_highlight_addon = models.BooleanField(default=False, verbose_name=_("Аддон выделения"), help_text=_("Пост выделяется цветом"))
+    has_auto_bump_addon = models.BooleanField(default=False, verbose_name=_("Аддон автоподнятия"), help_text=_("Автоматическое поднятие в топ"))
+    
+    # Даты истечения промо
+    highlight_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Выделение до"), help_text=_("Дата окончания выделения"))
+    auto_bump_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Автоподнятие до"), help_text=_("Дата окончания автоподнятия"))
+    last_bump_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Последнее поднятие"), help_text=_("Дата последнего автоподнятия"))
 
     class Meta:
         verbose_name = _("Объявление")
@@ -97,6 +107,62 @@ class AbsPost(PolymorphicModel):
         self.is_deleted = False
         self.deleted_at = None
         self.save(update_fields=['is_deleted', 'deleted_at'])
+    
+    def apply_addons_from_payment(self, payment):
+        """Применить аддоны из платежа к посту"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        self.has_photo_addon = payment.has_photo_addon()
+        self.has_highlight_addon = payment.has_highlight_addon()
+        self.has_auto_bump_addon = payment.has_auto_bump_addon()
+        
+        now = timezone.now()
+        
+        # Установить сроки действия промо
+        if self.has_highlight_addon:
+            self.highlight_expires_at = now + timedelta(days=3)
+        
+        if self.has_auto_bump_addon:
+            self.auto_bump_expires_at = now + timedelta(days=7)
+            
+        self.save(update_fields=[
+            'has_photo_addon', 'has_highlight_addon', 'has_auto_bump_addon',
+            'highlight_expires_at', 'auto_bump_expires_at'
+        ])
+    
+    def is_highlight_active(self):
+        """Проверить, активно ли выделение"""
+        from django.utils import timezone
+        return (self.has_highlight_addon and 
+                self.highlight_expires_at and 
+                self.highlight_expires_at > timezone.now())
+    
+    def is_auto_bump_active(self):
+        """Проверить, активно ли автоподнятие"""
+        from django.utils import timezone
+        return (self.has_auto_bump_addon and 
+                self.auto_bump_expires_at and 
+                self.auto_bump_expires_at > timezone.now())
+    
+    def can_be_bumped(self):
+        """Проверить, можно ли поднять пост (прошло 12 часов)"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        if not self.is_auto_bump_active():
+            return False
+            
+        if not self.last_bump_at:
+            return True
+            
+        return self.last_bump_at + timedelta(hours=12) <= timezone.now()
+    
+    def bump_post(self):
+        """Поднять пост в топ"""
+        from django.utils import timezone
+        self.last_bump_at = timezone.now()
+        self.save(update_fields=['last_bump_at'])
 
 
 class PostView(models.Model):
