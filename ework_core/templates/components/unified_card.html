@@ -1,15 +1,5 @@
 {% load i18n %}
 
-{% comment %}
-Унифицированная карточка объявления
-Параметры:
-- post: объект поста
-- show_seller: показывать ли блок продавца (по умолчанию true)
-- show_controls: показывать ли кнопки управления (по умолчанию false)
-- status: статус поста для отображения соответствующих кнопок
-- favorite_post_ids: список ID избранных постов
-{% endcomment %}
-
 <div class="card h-100 position-relative{% if post.is_premium %} border-warning" style="background: linear-gradient(135deg, #fff3cd, #ffeaa7); box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);{% endif %}">
     <!-- Изображение карточки -->
     <div class="card-img-top-placeholder"

@@ -1,7 +1,8 @@
 {% extends 'pages/base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Авторизация через Telegram{% endblock %}
+{% block title %}{% trans "Авторизация через Telegram" %}{% endblock %}
 
 {% block content %}
 <div class="telegram-auth-page mt-4">
@@ -9,8 +10,8 @@
         <div class="telegram-logo mb-3">
             <i class="bi bi-telegram text-primary" style="font-size: 5rem;"></i>
         </div>
-        <h2 class="fw-bold mb-2">Авторизация через Telegram</h2>
-        <p class="text-muted mb-4">Для полноценной работы с приложением Capybara необходимо авторизоваться через Telegram</p>
+        <h2 class="fw-bold mb-2">{% trans "Авторизация через Telegram" %}</h2>
+        <p class="text-muted mb-4">{% trans "Для полноценной работы с приложением Capybara необходимо авторизоваться через Telegram" %}</p>
     </div>
     
     <div class="auth-card">
@@ -19,12 +20,12 @@
             <div class="d-grid gap-3">
                 <a href="https://t.me/{{ site_config.bot_username }}" class="btn btn-primary btn-lg">
                     <i class="bi bi-telegram me-2"></i>
-                    Перейти к боту
+                    {% trans "Перейти к боту" %}
                 </a>
                 
                 <a href="{% url 'core:home' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
-                    Вернуться на главную
+                    {% trans "Вернуться на главную" %}
                 </a>
             </div>
         </div>

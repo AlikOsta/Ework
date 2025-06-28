@@ -3,6 +3,7 @@ import django
 import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
+from django.utils.translation import gettext_lazy as _ 
 
 import httpx
 from aiogram import Dispatcher, types
@@ -55,6 +56,9 @@ logger.addHandler(console_handler)
 # Инициализация бота и диспетчера
 default_props = DefaultBotProperties(parse_mode="HTML")
 bot = Bot(token=cfg['bot_token'], default=default_props)
+welcome_text = _(cfg['welcome_text'])
+text_button = _(cfg['text_button'])
+
 dp = Dispatcher()
 
 # Асинхронный HTTP-клиент (singleton)
@@ -125,14 +129,13 @@ async def create_invoice_link(
 # Команда /start
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
-    logger.info("User %s invoked /start", message.from_user.id)
     webapp_button = InlineKeyboardButton(
-        text="🚀 Открыть Mini App",
+        text=text_button,
         web_app=WebAppInfo(url=cfg['miniapp_url'])
     )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[webapp_button]])
     await message.answer(
-        text="Привет! Нажми на кнопку ниже, чтобы открыть наш Mini App:",
+        text=f"Привет!\n{welcome_text}",
         reply_markup=keyboard
     )
 
@@ -142,7 +145,6 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     data = callback_query.data.split('_')
     action, _, post_id = data[:3]
-    logger.info("Moderation callback: action=%s post_id=%s by user=%s", action, post_id, user_id)
     try:
         # Ищем пост в двух моделях
         post = None
@@ -164,10 +166,9 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
 
         await callback_query.message.delete()
         await callback_query.answer(response_text, show_alert=True)
-        logger.info("Moderation done: %s", response_text)
     except Exception:
         logger.exception("Error processing moderation callback")
-        await callback_query.answer("❌ Произошла ошибка при модерации", show_alert=True)
+        await callback_query.answer(_("❌ Произошла ошибка при модерации"), show_alert=True)
 
 # Pre-checkout
 @dp.pre_checkout_query()
@@ -181,22 +182,20 @@ async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
 @dp.message(lambda msg: msg.successful_payment)
 async def successful_payment(message: types.Message):
     payload = message.successful_payment.invoice_payload
-    logger.info("Payment successful, payload=%s", payload)
     try:
         user_id_str, payment_id_str = payload.split('&&&')
         user_id, payment_id = int(user_id_str), int(payment_id_str)
         success = await sync_to_async(__import__('ework_core.views').publish_post_after_payment)(user_id, payment_id)
         if success:
-            await message.answer("✅ Оплата прошла успешно! Ваше объявление опубликовано и отправлено на модерацию.")
+            await message.answer(_("✅ Оплата прошла успешно! Ваше объявление опубликовано и отправлено на модерацию."))
         else:
-            await message.answer("⚠️ Оплата получена, но при публикации произошла ошибка. Обратитесь в поддержку.")
+            await message.answer(_("⚠️ Оплата получена, но при публикации произошла ошибка. Обратитесь в поддержку."))
     except Exception:
         logger.exception("Error handling successful payment payload=%s", payload)
-        await message.answer("⚠️ Оплата получена, но произошла ошибка. Обратитесь в поддержку.")
+        await message.answer(_("⚠️ Оплата получена, но произошла ошибка. Обратитесь в поддержку."))
 
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
-    logger.info("Webhook deleted, starting polling...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":

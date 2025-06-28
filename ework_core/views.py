@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
 from django.db.models import Q, Count
 import json
-
+from django.utils.decorators import method_decorator
 
 from ework_rubric.models import SuperRubric, SubRubric
 from ework_post.models import AbsPost, Favorite, BannerPost, PostView
@@ -29,6 +29,7 @@ def home(request):
     return render(request, "pages/index.html", context)
 
 
+@login_required
 def modal_select_post(request):
     """Модальное окно выбора типа поста"""
     return render(request, 'includes/modal_select_post.html')
@@ -116,7 +117,7 @@ class PostListByRubricView(BasePostListView):
         
         return context
 
-
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class PostDetailView(DetailView):
     """Оптимизированный детальный просмотр поста"""
     model = AbsPost
@@ -171,7 +172,7 @@ class PostDetailView(DetailView):
         
         return context
 
-
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class FavoriteListView(ListView):
     """Список избранных постов"""
     model = AbsPost
@@ -196,6 +197,7 @@ class FavoriteListView(ListView):
         return ctx
 
 
+@login_required
 @require_POST
 def toggle_favorite(request, post_pk):
     """Переключить статус избранного"""
@@ -236,6 +238,7 @@ def premium(request):
     return render(request, 'pages/premium.html', context)
 
 
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class CreateInvoiceView(View):
     """API для создания инвойса через Telegram Bot"""
     
@@ -280,7 +283,7 @@ class CreateInvoiceView(View):
             traceback.print_exc()
             return JsonResponse({'success': False, 'error': f'Внутренняя ошибка: {e}'}, status=500)
 
-
+@login_required
 def publish_post_after_payment(user_id, payment_id):
     """Функция для публикации поста после успешной оплаты"""
     try:

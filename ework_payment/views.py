@@ -5,7 +5,6 @@ from aiogram import Bot
 import asyncio
 import time
 
-# BOT_TOKEN and PAYMENT_PROVIDER_TOKEN moved to SiteConfig
 
 @csrf_exempt
 @require_POST

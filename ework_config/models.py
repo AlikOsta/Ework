@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _ 
 
 
 class SiteConfig(models.Model):
@@ -9,16 +10,16 @@ class SiteConfig(models.Model):
     """
     
     # Основные настройки сайта
-    site_name = models.CharField(max_length=200, default='eWork', verbose_name='Название сайта')
-    site_description = models.TextField(default='Платформа для поиска работы и услуг', verbose_name='Описание сайта')
-    site_url = models.URLField(default='https://localhost:8000', verbose_name='URL сайта')
+    site_name = models.CharField(max_length=200, default='eWork', verbose_name=_('Текст для кнопки'))
+    site_description = models.TextField(default='Платформа для поиска работы и услуг', verbose_name=_('Приветственное  сообщение для бота'))
+    site_url = models.URLField(default='https://localhost:8000', verbose_name=_('URL сайта для Мини Апп'))
     
     # Telegram Bot настройки
     bot_token = models.CharField(max_length=200, verbose_name='Bot Token', blank=True)
     bot_username = models.CharField(max_length=100, verbose_name='Bot Username', blank=True)
     
     # Telegram Notification Bot (для уведомлений админам)
-    notification_bot_token = models.CharField(max_length=200, verbose_name='Notification Bot Token', blank=True)
+    notification_bot_token = models.CharField(max_length=200, verbose_name='Support Bot Token', blank=True)
     admin_chat_id = models.CharField(max_length=20, verbose_name='Admin Chat ID', blank=True)
     admin_username = models.CharField(max_length=20, verbose_name='Admin Username', blank=True)
     
@@ -31,27 +32,27 @@ class SiteConfig(models.Model):
     # Настройки модерации
     auto_moderation_enabled = models.BooleanField(
         default=True, 
-        verbose_name='Автоматическая модерация включена',
+        verbose_name=_('Автоматическая модерация включена'),
         help_text='Использовать ИИ для автоматической проверки постов'
     )
     manual_approval_required = models.BooleanField(
         default=False, 
-        verbose_name='Требуется ручное одобрение',
+        verbose_name=_('Требуется ручное одобрение'),
         help_text='Даже после ИИ модерации требуется ручное одобрение админом'
     )
     
     # Настройки постов
-    max_free_posts_per_user = models.PositiveIntegerField(default=1, verbose_name='Максимум бесплатных постов на пользователя')
-    post_expiry_days = models.PositiveIntegerField(default=30, verbose_name='Дни до истечения поста')
+    max_free_posts_per_user = models.PositiveIntegerField(default=1, verbose_name=_('Максимум бесплатных постов на пользователя'))
+    post_expiry_days = models.PositiveIntegerField(default=30, verbose_name=_('Дни до истечения поста'))
     
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Создано'))
+    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Обновлено'))
     
     class Meta:
         app_label = "ework_config"
-        verbose_name = 'Конфигурация сайта'
-        verbose_name_plural = 'Конфигурация сайта'
+        verbose_name = _('Конфигурация сайта')
+        verbose_name_plural = _('Конфигурация сайта')
     
     def save(self, *args, **kwargs):
         # Обеспечиваем singleton паттерн

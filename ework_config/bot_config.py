@@ -1,6 +1,4 @@
-"""
-Конфигурация для бота с кэшированием и ленивой загрузкой
-"""
+
 from .utils import get_config
 
 _bot_config = None
@@ -16,6 +14,8 @@ def get_bot_config():
             'payment_provider_token': config.payment_provider_token,
             'notification_bot_token': config.notification_bot_token,
             'admin_chat_id': config.admin_chat_id,
+            'welcome_text': config.site_description,
+            'text_button': config.site_name,
         }
     return _bot_config
 
