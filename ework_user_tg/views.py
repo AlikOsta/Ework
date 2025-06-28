@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-BOT_TOKEN = "7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g"
+# BOT_TOKEN moved to SiteConfig
 
 @method_decorator(login_required(login_url='user:telegram_auth'), name='dispatch')
 class AuthorProfileView(ListView):
@@ -83,9 +83,9 @@ class AuthorProfileView(ListView):
                 # Для собственного профиля получаем посты всех статусов
                 self._posts_by_status = {
                     'published': list(base_queryset.filter(status=3)),  # Опубликованные
-                    'pending': list(base_queryset.filter(status=0)),    # На модерации (не проверено)
-                    'approved': list(base_queryset.filter(status=1)),   # Одобрено, но не опубликовано
-                    'rejected': list(base_queryset.filter(status=2)),   # Заблокированные
+                    'pending': list(base_queryset.filter(status=0)),    # Не проверено
+                    'approved': list(base_queryset.filter(status=1)),   # На модерации
+                    'rejected': list(base_queryset.filter(status=2)),   # Отклоненные
                     'archived': list(base_queryset.filter(status=4)),   # В архиве
                 }
             else:
@@ -286,7 +286,10 @@ def telegram_login(request):
             logger.error("telegram_login: Нет initData")
             return JsonResponse({'status': 'error', 'error': 'Нет initData'}, status=400)
 
-        bot_token = BOT_TOKEN
+        # Токен бота из конфигурации
+        from ework_config.utils import get_config
+        config = get_config()
+        bot_token = config.bot_token
 
         if not verify_init_data(init_data, bot_token):
             logger.error("telegram_login: Неправильная подпись initData")

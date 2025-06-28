@@ -5,25 +5,29 @@ from aiogram import Bot
 import asyncio
 import time
 
-BOT_TOKEN = "7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g"
-PAYMENT_PROVIDER_TOKEN = '1744374395:TEST:703d48b8cac170d51296'
+# BOT_TOKEN and PAYMENT_PROVIDER_TOKEN moved to SiteConfig
 
 @csrf_exempt
 @require_POST
 def create_payment(request):
     try:
         print("Payment request received")
+        
+        # Получаем конфигурацию
+        from ework_config.utils import get_config
+        config = get_config()
+        
         # Фиксированные параметры платежа
         amount = 1000  # 10 рублей в копейках
         payload = f"post_creation_{int(time.time())}"
         
         async def create_invoice():
-            async with Bot(token=BOT_TOKEN) as bot:
+            async with Bot(token=config.bot_token) as bot:
                 return await bot.create_invoice_link(
                     title="Размещение услуги",
                     description="Оплата за размещение услуги на платформе",
                     payload=payload,
-                    provider_token=PAYMENT_PROVIDER_TOKEN,
+                    provider_token=config.payment_provider_token,
                     currency="RUB",
                     prices=[{"label": "Размещение услуги", "amount": amount}],
                     need_email=False,

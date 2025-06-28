@@ -12,8 +12,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '*',  # Ваш ngrok домен
-    'https://e6bd-181-84-216-165.ngrok-free.app',  # Или все ngrok домены
+    '*',  # Для разработки - в продакшене нужно указать конкретные домены
 ]
 
 CSRF_COOKIE_DOMAIN = None  # Убираем ограничение домена
@@ -24,8 +23,7 @@ CSRF_USE_SESSIONS = True  # Используем сессии вместо cooki
 CSRF_COOKIE_AGE = None
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://e6bd-181-84-216-165.ngrok-free.app',
-    'https://*.ngrok-free.app',
+    'https://*.ngrok-free.app',  # Для ngrok в разработке
 ]
 
 # Настройки сессий для Telegram Mini App
@@ -87,6 +85,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'ework_rubric.middleware.post_rubric_context_processor',
+                'ework_config.context_processors.site_config',
             ],
         },
     },

@@ -86,10 +86,12 @@ class AbsPost(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        if self.image:
+        # Обрабатываем изображение только при первом сохранении
+        if self.image and not hasattr(self, '_image_processed'):
             processed = process_image(self.image, self.pk)
             if processed != self.image:
                 self.image = processed
+                self._image_processed = True
                 super().save(update_fields=['image'])
 
     def clean(self):

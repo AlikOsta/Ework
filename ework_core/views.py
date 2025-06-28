@@ -320,13 +320,13 @@ def publish_post_after_payment(user_id, payment_id):
         print(f"🔧 Обрабатываем платеж {payment_id} для пользователя {user_id}")
         
         # Получаем платеж
-        payment = Payment.objects.get(
+        payment = Payment.objects.select_related('user').get(
             id=payment_id,
             user__telegram_id=user_id,
             status='pending'
         )
         
-        print(f"🔧 Платеж найден: {payment}")
+        print(f"🔧 Платеж найден: ID={payment.id}, Order={payment.order_id}")
         
         # Проверяем, есть ли связанный пост
         if not payment.post:

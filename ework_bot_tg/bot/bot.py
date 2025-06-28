@@ -5,13 +5,15 @@ from aiogram.filters import Command
 from aiogram.types import WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
 import asyncio
 
-BOT_TOKEN = "7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g"
-MINIAPP_URL = "https://e6bd-181-84-216-165.ngrok-free.app/users/index/"
+# BOT_TOKEN and MINIAPP_URL moved to SiteConfig
 
 # Функция для создания инвойс-ссылки
 async def create_invoice_link_async(user_id, payment_id, payload, amount, order_id, addons_data):
     """Создать инвойс и вернуть ссылку"""
     try:
+        # Получаем конфигурацию в начале функции
+        from ework_config.bot_config import get_bot_config
+        bot_config = get_bot_config()
         print(f"🔧 Создаем инвойс для платежа {payment_id}")
         print(f"🔧 User ID: {user_id}")
         print(f"🔧 Payment amount: {amount}")
@@ -38,7 +40,7 @@ async def create_invoice_link_async(user_id, payment_id, payload, amount, order_
         print(f"🔧 Price in kopecks: {price_kopecks}")
         print(f"🔧 Description: {description}")
         print(f"🔧 Payload: {payload}")
-        print(f"🔧 Provider token: {PAYMENT_PROVIDER_TOKEN}")
+        print(f"🔧 Provider token: {bot_config['payment_provider_token']}")
         
         # Создаем инвойс ссылку
         print("🔧 Вызываем bot.create_invoice_link...")
@@ -46,7 +48,7 @@ async def create_invoice_link_async(user_id, payment_id, payload, amount, order_
             title="Публикация объявления",
             description=description,
             payload=payload,
-            provider_token=PAYMENT_PROVIDER_TOKEN,
+            provider_token=bot_config['payment_provider_token'],
             currency="RUB",
             prices=[
                 LabeledPrice(label="Публикация объявления", amount=price_kopecks)
@@ -100,13 +102,15 @@ def create_invoice_link(user_id, payment_id, payload, amount, order_id, addons_d
         print(f"🔧 Description: {description}")
         
         # HTTP запрос к Telegram Bot API
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/createInvoiceLink"
+        from ework_config.bot_config import get_bot_config
+        bot_config = get_bot_config()
+        url = f"https://api.telegram.org/bot{bot_config['bot_token']}/createInvoiceLink"
         
         data = {
             "title": "Публикация объявления",
             "description": description,
             "payload": payload,
-            "provider_token": PAYMENT_PROVIDER_TOKEN,
+            "provider_token": bot_config['payment_provider_token'],
             "currency": "RUB",
             "prices": [{"label": "Публикация объявления", "amount": price_kopecks}],
             "need_name": False,
@@ -136,15 +140,17 @@ def create_invoice_link(user_id, payment_id, payload, amount, order_id, addons_d
         import traceback
         print(f"❌ HTTP: Traceback: {traceback.format_exc()}")
         return None
-PAYMENT_PROVIDER_TOKEN = '1744374395:TEST:703d48b8cac170d51296'
+# Получаем конфигурацию
+from ework_config.bot_config import get_bot_config
+bot_config = get_bot_config()
 
 # Указываем parse_mode через DefaultBotProperties
 default_props = DefaultBotProperties(parse_mode="HTML")
-bot = Bot(token=BOT_TOKEN, default=default_props)
+bot = Bot(token=bot_config['bot_token'], default=default_props)
 dp = Dispatcher()
 
-print(f"🤖 Bot инициализирован с токеном: {BOT_TOKEN[:10]}...")
-print(f"🔑 Provider token: {PAYMENT_PROVIDER_TOKEN[:10]}...")
+print(f"🤖 Bot инициализирован с токеном: {bot_config['bot_token'][:10]}...")
+print(f"🔑 Provider token: {bot_config['payment_provider_token'][:10]}...")
 
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
@@ -153,7 +159,7 @@ async def cmd_start(message: types.Message):
     """
     webapp_button = InlineKeyboardButton(
         text="🚀 Открыть Mini App",
-        web_app=WebAppInfo(url=MINIAPP_URL)
+        web_app=WebAppInfo(url=bot_config['miniapp_url'])
     )
     # Собираем клавиатуру
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[webapp_button]])
@@ -163,6 +169,62 @@ async def cmd_start(message: types.Message):
         reply_markup=keyboard
     )
 
+@dp.callback_query(lambda c: c.data.startswith('approve_post_') or c.data.startswith('reject_post_'))
+async def handle_moderation_callback(callback_query: types.CallbackQuery):
+    """Обработка кнопок модерации постов"""
+    try:
+        action = callback_query.data.split('_')[0]  # approve или reject
+        post_id = callback_query.data.split('_')[2]  # ID поста
+        
+        print(f"🔧 Получен callback модерации: {action} для поста {post_id}")
+        
+        # Импортируем модели Django
+        import os
+        import django
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ework.settings')
+        django.setup()
+        
+        from ework_job.models import PostJob
+        from ework_services.models import PostServices
+        
+        # Ищем пост в обеих моделях (на модерации)
+        post = None
+        try:
+            post = PostJob.objects.get(id=post_id, status=1)  # На модерации
+        except PostJob.DoesNotExist:
+            try:
+                post = PostServices.objects.get(id=post_id, status=1)
+            except PostServices.DoesNotExist:
+                await callback_query.answer("❌ Пост не найден или уже обработан", show_alert=True)
+                return
+        
+        if action == 'approve':
+            post.status = 3  # Опубликовано
+            post.save()
+            response_text = f"✅ Пост '{post.title}' одобрен и опубликован!"
+            
+            # Отправляем уведомление о публикации
+            from ework_core.signals import send_telegram_notification_async
+            send_telegram_notification_async(post)
+            
+        elif action == 'reject':
+            post.status = 2  # Отклонено
+            post.save()
+            response_text = f"❌ Пост '{post.title}' отклонен"
+            
+            # Возвращаем деньги если был платным
+            from ework_core.signals import refund_if_paid
+            refund_if_paid(post)
+        
+        # Удаляем сообщение из чата
+        await callback_query.message.delete()
+        
+        await callback_query.answer(response_text, show_alert=True)
+        
+    except Exception as e:
+        print(f"❌ Ошибка обработки модерации: {e}")
+        await callback_query.answer("❌ Произошла ошибка", show_alert=True)
+
 @dp.message(Command(commands=["invoice"]))
 async def send_invoice(message: types.Message):
     await message.bot.send_invoice(
@@ -170,7 +232,7 @@ async def send_invoice(message: types.Message):
         title="Название товара",
         description="Описание товара",
         payload="unique_payload",
-        provider_token=PAYMENT_PROVIDER_TOKEN,
+        provider_token=bot_config['payment_provider_token'],
         currency="RUB",
         prices=[
             LabeledPrice(label="Товар", amount=1000),  # 10.00 рублей (в копейках)

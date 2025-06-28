@@ -29,6 +29,9 @@ class PaymentAdmin(admin.ModelAdmin):
     readonly_fields = ['order_id', 'created_at', 'paid_at', 'telegram_payment_charge_id', 'telegram_provider_payment_charge_id']
     search_fields = ['order_id', 'user__username', 'user__email']
     
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user', 'package')
+    
     def get_readonly_fields(self, request, obj=None):
         if obj:  # editing an existing object
             return self.readonly_fields + ['user', 'package', 'amount']

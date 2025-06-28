@@ -85,7 +85,11 @@ class Payment(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"Платеж {self.order_id} - {self.user.username}"
+        try:
+            username = self.user.username if hasattr(self, 'user') and self.user else 'Unknown'
+            return f"Платеж {self.order_id} - {username}"
+        except:
+            return f"Платеж {self.order_id}"
 
     @classmethod
     def generate_order_id(cls, user_id):
