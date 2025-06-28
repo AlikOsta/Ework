@@ -69,11 +69,15 @@ class AuthorProfileView(ListView):
             author = self.get_author()
             is_own = self.is_own_profile()
             
-            # Базовый queryset для всех постов автора
+            # Базовый queryset для всех постов автора с оптимизацией
             base_queryset = AbsPost.objects.filter(
                 user=author,
                 is_deleted=False  # Исключаем удаленные посты
-            ).select_related('user', 'city', 'currency', 'sub_rubric').order_by('-created_at')
+            ).select_related(
+                'user', 'city', 'currency', 'sub_rubric', 'sub_rubric__super_rubric'
+            ).prefetch_related(
+                'favorited_by'  # Предзагружаем избранное
+            ).order_by('-created_at')
             
             if is_own:
                 # Для собственного профиля получаем посты всех статусов
@@ -329,3 +333,63 @@ CSRF_COOKIE_NAME = 'csrftoken'
 # Разрешить работу в iframe
 X_FRAME_OPTIONS = 'ALLOWALL'
 SECURE_FRAME_DENY = False
+
+
+@method_decorator(login_required(login_url='user:telegram_auth'), name='dispatch')
+class CreateRatingView(TemplateView):
+    """Создание отзыва пользователю"""
+    template_name = 'user_ework/rating_form.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_id = kwargs.get('user_id')
+        context['to_user'] = get_object_or_404(User, id=user_id)
+        
+        # Проверяем, не оставлял ли уже отзыв
+        from .models import UserRating
+        existing_rating = UserRating.objects.filter(
+            from_user=self.request.user,
+            to_user=context['to_user']
+        ).first()
+        
+        context['existing_rating'] = existing_rating
+        context['can_rate'] = not existing_rating and context['to_user'] != self.request.user
+        
+        if context['can_rate']:
+            from .forms import UserRatingForm
+            context['form'] = UserRatingForm(
+                from_user=self.request.user,
+                to_user=context['to_user']
+            )
+        
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        user_id = kwargs.get('user_id')
+        to_user = get_object_or_404(User, id=user_id)
+        
+        # Проверяем права
+        if to_user == request.user:
+            return JsonResponse({'success': False, 'error': 'Нельзя оценивать себя'})
+        
+        from .models import UserRating
+        existing_rating = UserRating.objects.filter(
+            from_user=request.user,
+            to_user=to_user
+        ).first()
+        
+        if existing_rating:
+            return JsonResponse({'success': False, 'error': 'Вы уже оценивали этого пользователя'})
+        
+        from .forms import UserRatingForm
+        form = UserRatingForm(
+            request.POST,
+            from_user=request.user,
+            to_user=to_user
+        )
+        
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True, 'message': 'Отзыв добавлен!'})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors})

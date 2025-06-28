@@ -1,16 +1,26 @@
 {% load i18n %}
 
-<div class="card h-100 position-relative">
+{% comment %}
+Унифицированная карточка объявления
+Параметры:
+- post: объект поста
+- show_seller: показывать ли блок продавца (по умолчанию true)
+- show_controls: показывать ли кнопки управления (по умолчанию false)
+- status: статус поста для отображения соответствующих кнопок
+- favorite_post_ids: список ID избранных постов
+{% endcomment %}
+
+<div class="card h-100 position-relative{% if post.is_premium %} border-warning" style="background: linear-gradient(135deg, #fff3cd, #ffeaa7); box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);{% endif %}">
     <!-- Изображение карточки -->
     <div class="card-img-top-placeholder"
-         hx-get="{% url 'core:product_detail' pk=product.pk %}"
+         hx-get="{% url 'core:product_detail' pk=post.pk %}"
          hx-target="#dialog"
          aria-label="{% trans 'Просмотр объявления' %}"
          style="cursor: pointer;">
-        {% if product.image %}
-        <img src="{{ product.image.url }}"
+        {% if post.image %}
+        <img src="{{ post.image.url }}"
              class="card-img-top object-fit-cover"
-             alt="{{ product.title }}"
+             alt="{{ post.title }}"
              style="height: 150px;">
         {% else %}
         <i class="material-icons text-muted" style="font-size: 48px;">image</i>
@@ -21,39 +31,55 @@
     <div class="card-body p-2">
         <h5 class="card-title mb-1 text-truncate" 
             style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            {{ product.title }}
+            {{ post.title }}
         </h5>
         <p class="card-price mb-1 fw-bold">
-            {{ product.price }} {{ product.currency.code }}
+            {{ post.price }} {{ post.currency.code }}
         </p>
-        <p class="card-location mb-0 text-muted small">
+        <p class="card-location mb-1">
             <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">location_on</i>
-            {{ product.city.name }}
+            {{ post.city }}
         </p>
+        
+        {% if show_seller|default:True and post.user %}
+        <!-- Блок продавца - ссылка на профиль -->
+        <a href="{% url 'user:author_profile' author_id=post.user.id %}" class="card-seller mb-0 text-decoration-none">
+            <small class="text-muted d-flex align-items-center">
+                <i class="material-icons me-1" style="font-size: 1em;">person</i>
+                <span class="text-truncate">{{ post.user.username }}</span>
+                {% if post.user.average_rating > 0 %}
+                <i class="material-icons text-warning ms-1" style="font-size: 0.8em;">star</i>
+                <span class="ms-1" style="font-size: 0.8em;">{{ post.user.average_rating|floatformat:1 }}</span>
+                {% endif %}
+            </small>
+        </a>
+        {% else %}
+        <!-- Показываем дату если не показываем продавца -->
         <p class="card-date mb-0 text-muted small">
             <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">schedule</i>
-            {{ product.created_at|date:"d.m.y" }}
+            {{ post.created_at|date:"d.m.y" }}
         </p>
-            </div>
+        {% endif %}
+    </div>
 
-    <!-- Кнопка избранного (только для аутентифицированных пользователей) -->
+    <!-- Кнопка избранного -->
     {% if user.is_authenticated %}
     <button type="button"
-            data-post-id="{{ product.pk }}"
-            data-is-favorite="{% if product.pk in favorite_post_ids %}true{% else %}false{% endif %}"
-            class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if product.pk in favorite_post_ids %}text-danger{% else %}text-muted{% endif %}"
+            data-post-id="{{ post.pk }}"
+            data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
+            class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in favorite_post_ids %}text-danger{% else %}text-muted{% endif %}"
             aria-label="{% trans 'Избранное' %}">
-        <i class="material-icons">{% if product.pk in favorite_post_ids %}favorite{% else %}favorite_border{% endif %}</i>
+        <i class="material-icons">{% if post.pk in favorite_post_ids %}favorite{% else %}favorite_border{% endif %}</i>
     </button>
     {% endif %}
 
-    <!-- Кнопки управления объявлением -->
+    <!-- Кнопки управления объявлением (для владельца) -->
     {% if show_controls %}
     <div class="card-footer p-2 bg-transparent border-0">
         {% if status == "published" %}
             <!-- Кнопки для опубликованных объявлений -->
             <div class="d-grid gap-2">
-                <form method="post" action="{% url 'core:change_post_status' product.pk 4 %}" class="mb-0">
+                <form method="post" action="{% url 'core:change_post_status' post.pk 4 %}" class="mb-0">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-outline-secondary w-100">
                         {% trans "В архив" %}
@@ -61,13 +87,13 @@
                 </form>
                 <div class="d-flex gap-1">
                     <button type="button" 
-                            hx-get="{% url 'core:post_edit' product.pk %}" 
+                            hx-get="{% url 'core:post_edit' post.pk %}" 
                             hx-target="#dialog" 
                             class="btn btn-sm btn-outline-primary flex-grow-1">
                         {% trans "Изменить" %}
                     </button>
                     <button type="button" 
-                            hx-get="{% url 'core:post_delete_confirm' product.pk %}" 
+                            hx-get="{% url 'core:post_delete_confirm' post.pk %}" 
                             hx-target="#dialog" 
                             class="btn btn-sm btn-outline-danger flex-grow-1">
                         {% trans "Удалить" %}
@@ -78,7 +104,7 @@
         {% elif status == "archived" %}
             <!-- Кнопки для архивных объявлений -->
             <div class="d-grid gap-2">
-                <form method="post" action="{% url 'core:change_post_status' product.pk 0 %}" class="mb-0">
+                <form method="post" action="{% url 'core:change_post_status' post.pk 0 %}" class="mb-0">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-outline-primary w-100">
                         {% trans "Опубликовать" %}
@@ -86,13 +112,13 @@
                 </form>
                 <div class="d-flex gap-1">
                     <button type="button" 
-                            hx-get="{% url 'core:post_edit' product.pk %}" 
+                            hx-get="{% url 'core:post_edit' post.pk %}" 
                             hx-target="#dialog" 
                             class="btn btn-sm btn-outline-primary flex-grow-1">
                         {% trans "Изменить" %}
                     </button>
                     <button type="button" 
-                            hx-get="{% url 'core:post_delete_confirm' product.pk %}" 
+                            hx-get="{% url 'core:post_delete_confirm' post.pk %}" 
                             hx-target="#dialog" 
                             class="btn btn-sm btn-outline-danger flex-grow-1">
                         {% trans "Удалить" %}
@@ -104,12 +130,10 @@
             <!-- Кнопки для заблокированных объявлений -->
             <div class="d-grid gap-2">
                 <div class="alert alert-danger alert-sm mb-2 p-2">
-                    <small>
-                        {% trans "Объявление заблокировано модератором" %}
-                    </small>
+                    <small>{% trans "Объявление заблокировано модератором" %}</small>
                 </div>
                 <button type="button" 
-                        hx-get="{% url 'core:post_delete_confirm' product.pk %}" 
+                        hx-get="{% url 'core:post_delete_confirm' post.pk %}" 
                         hx-target="#dialog" 
                         class="btn btn-sm btn-outline-danger w-100">
                     {% trans "Удалить" %}
@@ -119,20 +143,14 @@
     </div>
     {% endif %}
 
-    <!-- Индикатор статуса для объявлений на модерации -->
+    <!-- Индикаторы статуса -->
     {% if status == "pending" %}
     <div class="position-absolute bottom-0 start-0 end-0 bg-warning bg-opacity-75 text-center py-1">
-        <small class="text-dark">
-            {% trans "Ожидает проверки" %}
-        </small>
+        <small class="text-dark">{% trans "Ожидает проверки" %}</small>
     </div>
     {% elif status == "approved" %}
     <div class="position-absolute bottom-0 start-0 end-0 bg-success bg-opacity-75 text-center py-1">
-        <small class="text-white">
-            
-            {% trans "Одобрено, ожидает публикации" %}
-        </small>
+        <small class="text-white">{% trans "Одобрено, ожидает публикации" %}</small>
     </div>
     {% endif %}
 </div>
-

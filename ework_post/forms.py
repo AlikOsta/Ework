@@ -38,21 +38,27 @@ class BasePostForm(forms.ModelForm):
         
         # Инициализируем калькулятор цен
         self.pricing_calculator = PricingCalculator(self.user)
-        self.fields['currency'].queryset = Currency.objects.all().order_by('order')
+        # Оптимизированные queryset
+        currency_qs = Currency.objects.order_by('order')
+        self.fields['currency'].queryset = currency_qs
         self.fields['currency'].empty_label = None
-        first =self.fields['currency'].queryset.first()
+        first = currency_qs.first()
         if first is not None:
             self.fields['currency'].initial = first.pk
 
-        self.fields['city'].queryset = City.objects.all().order_by('order')
+        city_qs = City.objects.order_by('order')
+        self.fields['city'].queryset = city_qs
         self.fields['city'].empty_label = None
-        first = self.fields['city'].queryset.first()
+        first = city_qs.first()
         if first is not None:
             self.fields['city'].initial = first.pk
         
-        self.fields['sub_rubric'].queryset = SubRubric.objects.all().order_by('order')
+        sub_rubric_qs = SubRubric.objects.select_related('super_rubric').order_by(
+            'super_rubric__order', 'order'
+        )
+        self.fields['sub_rubric'].queryset = sub_rubric_qs
         self.fields['sub_rubric'].empty_label = None
-        first = self.fields['sub_rubric'].queryset.first()
+        first = sub_rubric_qs.first()
         if first is not None:
             self.fields['sub_rubric'].initial = first.pk
 

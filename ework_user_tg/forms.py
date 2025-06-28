@@ -39,3 +39,43 @@ class UserProfileForm(forms.ModelForm):
             from ework_locations.models import City
             self.fields['city'].queryset = City.objects.all()
             self.fields['city'].widget.attrs.update({'class': 'form-control'})
+
+
+class UserRatingForm(forms.ModelForm):
+    """Форма для оставления отзыва пользователю"""
+    
+    rating = forms.ChoiceField(
+        choices=[(i, f"{i} ⭐") for i in range(1, 6)],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        label=_('Оценка'),
+        help_text=_('Выберите оценку от 1 до 5 звезд')
+    )
+    
+    comment = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control', 
+            'rows': 3, 
+            'placeholder': _('Напишите отзыв (необязательно)')
+        }),
+        label=_('Комментарий'),
+        required=False,
+        max_length=550
+    )
+    
+    class Meta:
+        from .models import UserRating
+        model = UserRating
+        fields = ['rating', 'comment']
+    
+    def __init__(self, *args, **kwargs):
+        self.from_user = kwargs.pop('from_user', None)
+        self.to_user = kwargs.pop('to_user', None)
+        super().__init__(*args, **kwargs)
+    
+    def save(self, commit=True):
+        rating = super().save(commit=False)
+        rating.from_user = self.from_user
+        rating.to_user = self.to_user
+        if commit:
+            rating.save()
+        return rating

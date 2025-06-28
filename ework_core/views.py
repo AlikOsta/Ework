@@ -24,8 +24,8 @@ from ework_premium.models import Package
 
 def home(request):
     context = {
-        "categories": SuperRubric.objects.all(),
-        "banners": BannerPost.objects.all(),
+        "categories": SuperRubric.objects.order_by('order'),
+        "banners": BannerPost.objects.filter(is_active=True).order_by('order')[:5],
     }
     return render(request, "pages/index.html", context)
 
