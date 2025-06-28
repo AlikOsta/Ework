@@ -1,0 +1,150 @@
+{% load widget_tweaks %}
+{% load i18n %}
+
+<div class="modal-content">
+    <div class="modal-header">
+        <h5 class="modal-title">
+            {% blocktrans with user=to_user.get_full_name %}Оставить отзыв пользователю {{ user }}{% endblocktrans %}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+    </div>
+    <div class="modal-body">
+        {% if existing_rating %}
+            <div class="alert alert-info">
+                <h6>{% trans "Вы уже оценивали этого пользователя" %}</h6>
+                <p><strong>{% trans "Ваша оценка:" %}</strong> 
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= existing_rating.rating %}⭐{% else %}☆{% endif %}
+                    {% endfor %}
+                    ({{ existing_rating.rating }}/5)
+                </p>
+                {% if existing_rating.comment %}
+                    <p><strong>{% trans "Комментарий:" %}</strong> {{ existing_rating.comment }}</p>
+                {% endif %}
+                <small class="text-muted">{% trans "Дата:" %} {{ existing_rating.created_at|date:"d.m.Y H:i" }}</small>
+            </div>
+        {% elif not can_rate %}
+            <div class="alert alert-warning">
+                {% trans "Вы не можете оценить этого пользователя" %}
+            </div>
+        {% else %}
+            <form hx-post="{% url 'user:create_rating' user_id=to_user.id %}" hx-target="#rating-result" hx-swap="innerHTML">
+                {% csrf_token %}
+                
+                <div class="mb-4">
+                    <label class="form-label text-center d-block mb-3">{{ form.rating.label }}</label>
+                    <div class="rating-stars d-flex justify-content-center align-items-center">
+                        {% for choice in form.rating.field.choices %}
+                            <div class="form-check me-3">
+                                <input class="form-check-input d-none" type="radio" name="rating" id="rating{{ choice.0 }}" value="{{ choice.0 }}">
+                                <label class="form-check-label star-label" for="rating{{ choice.0 }}" style="cursor: pointer; font-size: 3em; transition: all 0.2s ease;">
+                                    <i class="material-icons text-muted star-icon" style="text-shadow: 0 1px 2px rgba(0,0,0,0.1);">star_border</i>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <small class="form-text text-muted text-center d-block mt-2">{{ form.rating.help_text }}</small>
+                </div>
+                
+                <div id="rating-result"></div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Отмена" %}</button>
+                    <button type="submit" class="btn btn-primary">{% trans "Отправить отзыв" %}</button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Интерактивные звезды - инициализируем сразу
+function initStars() {
+    const starLabels = document.querySelectorAll('.star-label');
+    const starIcons = document.querySelectorAll('.star-icon');
+    
+    if (starLabels.length === 0) return; // Элементы еще не загружены
+    
+    let selectedRating = 0; // Запоминаем выбранный рейтинг
+    
+    starLabels.forEach((label, index) => {
+        // Подсветка при наведении
+        label.addEventListener('mouseenter', function() {
+            highlightStars(index);
+        });
+        
+        // Клик по звезде
+        label.addEventListener('click', function(e) {
+            e.preventDefault();
+            selectedRating = index + 1;
+            const radio = document.getElementById('rating' + selectedRating);
+            if (radio) {
+                radio.checked = true;
+                // Создаем событие изменения для совместимости
+                radio.dispatchEvent(new Event('change'));
+            }
+            highlightStars(index);
+        });
+    });
+    
+    // Восстановление состояния при уходе мыши
+    const ratingStars = document.querySelector('.rating-stars');
+    if (ratingStars) {
+        ratingStars.addEventListener('mouseleave', function() {
+            if (selectedRating > 0) {
+                highlightStars(selectedRating - 1);
+            } else {
+                resetStars();
+            }
+        });
+    }
+    
+    function highlightStars(upToIndex) {
+        starIcons.forEach((icon, i) => {
+            if (i <= upToIndex) {
+                icon.textContent = 'star';
+                icon.className = 'material-icons text-warning star-icon';
+            } else {
+                icon.textContent = 'star_border';
+                icon.className = 'material-icons text-muted star-icon';
+            }
+        });
+    }
+    
+    function resetStars() {
+        starIcons.forEach(icon => {
+            icon.textContent = 'star_border';
+            icon.className = 'material-icons text-muted star-icon';
+        });
+    }
+}
+
+// Инициализируем звезды при загрузке DOM
+document.addEventListener('DOMContentLoaded', initStars);
+
+// Инициализируем звезды после загрузки HTMX контента
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    // Небольшая задержка чтобы DOM успел обновиться
+    setTimeout(initStars, 100);
+});
+
+// Обработка успешной отправки отзыва
+document.addEventListener('htmx:afterRequest', function(event) {
+    if (event.detail.elt.closest('form')) {
+        const response = JSON.parse(event.detail.xhr.responseText);
+        const resultDiv = document.getElementById('rating-result');
+        
+        if (response.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success">' + response.message + '</div>';
+            // Закрываем модальное окно через 2 секунды
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
+                if (modal) modal.hide();
+            }, 2000);
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger">' + 
+                (response.error || 'Произошла ошибка') + '</div>';
+        }
+    }
+});
+</script>

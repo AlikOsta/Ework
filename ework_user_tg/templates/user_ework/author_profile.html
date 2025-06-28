@@ -55,6 +55,21 @@
                         <i class="material-icons me-2" style="font-size: 1em; vertical-align: text-bottom;">edit</i>{% trans "Редактировать профиль" %}
                     </button>
                 </div>
+                {% else %}
+                <!-- Кнопки для взаимодействия с продавцом -->
+                <div class="mt-3 d-grid gap-2">
+                    <a href="https://t.me/{{ author.username }}" target="_blank" class="btn btn-primary">
+                        <i class="material-icons me-2" style="font-size: 1em; vertical-align: text-bottom;">message</i>
+                        {% trans "Связаться в Telegram" %}
+                    </a>
+                    <button type="button" 
+                            class="btn btn-outline-warning"
+                            hx-get="{% url 'user:create_rating' user_id=author.id %}"
+                            hx-target="#dialog">
+                        <i class="material-icons me-2" style="font-size: 1em; vertical-align: text-bottom;">star</i>
+                        {% trans "Оставить отзыв" %}
+                    </button>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -107,7 +122,7 @@
                 {% for product in published_products %}
                 <div class="col-6">
                     <div class="position-relative">
-                        {% include 'user_ework/card.html' with product=product show_controls=True status="published" %}
+                        {% include 'components/unified_card.html' with post=product show_seller=False show_controls=True status="published" favorite_post_ids=favorite_post_ids %}
                     </div>
                 </div>
                 {% endfor %}
@@ -142,7 +157,7 @@
                         <div class="badge bg-success position-absolute top-0 start-0 m-2" style="z-index: 10;">
                             {% trans "Одобрено" %}
                         </div>
-                        {% include 'user_ework/card.html' with product=product show_controls=False status="approved" %}
+                        {% include 'components/unified_card.html' with post=product show_seller=False show_controls=False status="approved" favorite_post_ids=favorite_post_ids %}
                     </div>
                 </div>
                 {% endfor %}
@@ -154,7 +169,7 @@
                         <div class="badge bg-warning position-absolute top-0 start-0 m-2" style="z-index: 10;">
                             {% trans "На проверке" %}
                         </div>
-                        {% include 'user_ework/card.html' with product=product show_controls=False status="pending" %}
+                        {% include 'components/unified_card.html' with post=product show_seller=False show_controls=False status="pending" favorite_post_ids=favorite_post_ids %}
                     </div>
                 </div>
                 {% endfor %}
@@ -177,7 +192,7 @@
                 {% for product in archived_products %}
                 <div class="col-6">
                     <div class="position-relative">
-                        {% include 'user_ework/card.html' with product=product show_controls=True status="archived" %}
+                        {% include 'components/unified_card.html' with post=product show_seller=False show_controls=True status="archived" favorite_post_ids=favorite_post_ids %}
                     </div>
                 </div>
                 {% endfor %}
@@ -203,7 +218,7 @@
                         <div class="badge bg-danger position-absolute top-0 start-0 m-2" style="z-index: 10;">
                             {% trans "Заблокировано" %}
                         </div>
-                        {% include 'user_ework/card.html' with product=product show_controls=True status="rejected" %}
+                        {% include 'components/unified_card.html' with post=product show_seller=False show_controls=True status="rejected" favorite_post_ids=favorite_post_ids %}
                     </div>
                 </div>
                 {% endfor %}
@@ -230,7 +245,7 @@
     <div class="row g-3 mb-5">
         {% for product in published_products %}
         <div class="col-6">
-            {% include 'user_ework/card.html' with product=product show_controls=False status="public" %}
+            {% include 'components/unified_card.html' with post=product show_seller=False show_controls=False status="public" favorite_post_ids=favorite_post_ids %}
         </div>
         {% endfor %}
     </div>

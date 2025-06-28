@@ -1,6 +1,6 @@
 from urllib.parse import parse_qsl, unquote
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import TemplateView, UpdateView, ListView
+from django.views.generic import TemplateView, ListView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -14,34 +14,31 @@ from django.conf import settings
 from .verify_telegram_init_data import verify_init_data
 import json
 from ework_post.models import AbsPost, Favorite
-from .forms import UserProfileForm
+from .forms import UserProfileForm, UserRatingForm
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import translation
-
+from django.db.models import Count, Avg
+from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
-
 User = get_user_model()
 
-BOT_TOKEN = "7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g"
 
-@method_decorator(login_required(login_url='user:telegram_auth'), name='dispatch')
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class AuthorProfileView(ListView):
-    """Представление профиля автора с его объявлениями"""
+    """Оптимизированное представление профиля автора"""
     model = AbsPost
     template_name = 'user_ework/author_profile.html'
     context_object_name = 'posts'
     paginate_by = 20
     
     def setup(self, request, *args, **kwargs):
-        """Инициализация общих данных при настройке представления"""
         super().setup(request, *args, **kwargs)
         self._author = None
         self._is_own_profile = None
-        self._posts_by_status = None
 
     def get_author(self):
-        """Получает автора с кэшированием"""
+        """Получить автора с кэшированием"""
         if self._author is None:
             self._author = get_object_or_404(User, id=self.kwargs['author_id'])
         return self._author
@@ -53,51 +50,56 @@ class AuthorProfileView(ListView):
             return ['user_ework/author_profile_full.html']
     
     def is_own_profile(self):
-        """Проверяет, является ли профиль собственным (с кэшированием результата)"""
+        """Проверить, является ли профиль собственным"""
         if self._is_own_profile is None:
             try:
-                self._is_own_profile = self.request.user.is_authenticated and self.request.user.id == self.get_author().id
-                logger.info(f"Is own profile: {self._is_own_profile}")
+                self._is_own_profile = (
+                    self.request.user.is_authenticated and 
+                    self.request.user.id == self.get_author().id
+                )
             except Exception as e:
                 logger.error(f"Error checking if own profile: {e}")
                 self._is_own_profile = False
         return self._is_own_profile
 
     def get_posts_by_status(self):
-        """Получает посты автора, сгруппированные по статусам"""
-        if self._posts_by_status is None:
-            author = self.get_author()
-            is_own = self.is_own_profile()
-            
-            # Базовый queryset для всех постов автора
-            base_queryset = AbsPost.objects.filter(
-                user=author,
-                is_deleted=False  # Исключаем удаленные посты
-            ).select_related('user', 'city', 'currency', 'sub_rubric').order_by('-created_at')
-            
-            if is_own:
-                # Для собственного профиля получаем посты всех статусов
-                self._posts_by_status = {
-                    'published': list(base_queryset.filter(status=3)),  # Опубликованные
-                    'pending': list(base_queryset.filter(status=0)),    # На модерации (не проверено)
-                    'approved': list(base_queryset.filter(status=1)),   # Одобрено, но не опубликовано
-                    'rejected': list(base_queryset.filter(status=2)),   # Заблокированные
-                    'archived': list(base_queryset.filter(status=4)),   # В архиве
-                }
-            else:
-                # Для чужого профиля показываем только опубликованные
-                self._posts_by_status = {
-                    'published': list(base_queryset.filter(status=3)),
-                    'pending': [],
-                    'approved': [],
-                    'rejected': [],
-                    'archived': [],
-                }
+        """Получить посты автора, сгруппированные по статусам с оптимизацией"""
+        author = self.get_author()
+        is_own = self.is_own_profile()
         
-        return self._posts_by_status
+        # Базовый queryset с оптимизацией
+        base_queryset = AbsPost.objects.filter(
+            user=author,
+            is_deleted=False
+        ).select_related(
+            'user', 'city', 'currency', 'sub_rubric', 'sub_rubric__super_rubric'
+        ).prefetch_related('favorited_by').order_by('-created_at')
+        
+        if is_own:
+            # Для собственного профиля получаем посты всех статусов одним запросом
+            posts = list(base_queryset)
+            posts_by_status = {
+                'published': [p for p in posts if p.status == 3],
+                'pending': [p for p in posts if p.status == 0],
+                'approved': [p for p in posts if p.status == 1],
+                'rejected': [p for p in posts if p.status == 2],
+                'archived': [p for p in posts if p.status == 4],
+            }
+        else:
+            # Для чужого профиля показываем только опубликованные
+            published_posts = list(base_queryset.filter(status=3))
+            posts_by_status = {
+                'published': published_posts,
+                'pending': [],
+                'approved': [],
+                'rejected': [],
+                'archived': [],
+            }
+        
+        return posts_by_status
 
     def get_queryset(self):
-        """Получает объявления для основного списка (опубликованные)"""
+        """Получить объявления для основного списка (опубликованные)"""
         posts_by_status = self.get_posts_by_status()
         return posts_by_status['published']
     
@@ -149,11 +151,9 @@ class AuthorProfileView(ListView):
             else:
                 context['favorite_post_ids'] = []
             
-            # Дополнительная статистика профиля
+            # Дополнительная статистика для собственного профиля
             if is_own_profile:
-                context.update({
-                    'profile_stats': self.get_profile_stats(author, posts_by_status),
-                })
+                context['profile_stats'] = self.get_profile_stats(author, posts_by_status)
             
             return context
             
@@ -177,11 +177,9 @@ class AuthorProfileView(ListView):
             }
     
     def get_profile_stats(self, author, posts_by_status):
-        """Получает дополнительную статистику профиля"""
+        """Получить статистику профиля с оптимизацией"""
         try:
             from ework_post.models import PostView
-            from django.contrib.contenttypes.models import ContentType
-            from django.db.models import Count, Sum
             
             # Все посты пользователя
             all_posts = []
@@ -196,19 +194,21 @@ class AuthorProfileView(ListView):
             }
             
             if all_posts:
-                # Подсчет просмотров
+                # Подсчет просмотров одним запросом
                 post_ids = [post.pk for post in all_posts]
-                content_types = ContentType.objects.get_for_models(*[type(post) for post in all_posts]).values()
+                content_types = ContentType.objects.get_for_models(
+                    *[type(post) for post in all_posts]
+                ).values()
                 
                 total_views = PostView.objects.filter(
                     content_type__in=content_types,
                     object_id__in=post_ids
                 ).count()
                 
-                # Подсчет избранных
+                # Подсчет избранных одним запросом
                 total_favorites = Favorite.objects.filter(post__in=all_posts).count()
                 
-                # Средняя цена (только для опубликованных)
+                # Средняя цена только для опубликованных
                 published_posts = posts_by_status['published']
                 if published_posts:
                     prices = [post.price for post in published_posts if post.price]
@@ -234,8 +234,9 @@ class AuthorProfileView(ListView):
             }
 
 
+@login_required
 def profile_edit(request):
-    """Функция-представление для редактирования профиля"""
+    """Редактирование профиля"""
     if request.method == 'POST':
         form = UserProfileForm(request.POST, instance=request.user)
         if form.is_valid():
@@ -244,9 +245,8 @@ def profile_edit(request):
             # Обрабатываем смену языка
             new_language = form.cleaned_data.get('language')
             if new_language and new_language != request.LANGUAGE_CODE:
-                # Сохраняем язык в сессии
-                request.session[translation.LANGUAGE_SESSION_KEY] = new_language
-                # Активируем новый язык
+                # ИСПРАВЛЕНИЕ: используем строку напрямую
+                request.session['django_language'] = new_language
                 translation.activate(new_language)
             
             if request.headers.get('HX-Request'):
@@ -268,6 +268,7 @@ def profile_edit(request):
 class Index(TemplateView):
     template_name = 'user_ework/index.html'
 
+
 class TelegramAuthView(TemplateView):
     template_name = 'user_ework/telegram_auth.html'
 
@@ -275,14 +276,19 @@ class TelegramAuthView(TemplateView):
 @require_POST
 @csrf_exempt
 def telegram_login(request):
+    """Оптимизированная авторизация через Telegram"""
     try:
         init_data = request.POST.get('initData')
         logger.debug("telegram_login: initData raw = %r", init_data)
+        
         if not init_data:
             logger.error("telegram_login: Нет initData")
             return JsonResponse({'status': 'error', 'error': 'Нет initData'}, status=400)
 
-        bot_token = BOT_TOKEN
+        # Токен бота из конфигурации
+        from ework_config.utils import get_config
+        config = get_config()
+        bot_token = config.bot_token
 
         if not verify_init_data(init_data, bot_token):
             logger.error("telegram_login: Неправильная подпись initData")
@@ -302,30 +308,87 @@ def telegram_login(request):
             logger.error("telegram_login: Отсутствует Telegram ID в данных")
             return JsonResponse({'status': 'error', 'error': 'Отсутствует Telegram ID'}, status=400)
 
-        user, created = User.objects.get_or_create(telegram_id=telegram_id)
-        user.first_name = user_data.get('first_name', '')
-        user.last_name = user_data.get('last_name', '')
-        user.username = user_data.get('username', f"tg_{telegram_id}")
-        if 'photo_url' in user_data:
-            user.photo_url = user_data['photo_url']
-        user.save()
+        # Создаем или обновляем пользователя
+        user, created = User.objects.get_or_create(
+            telegram_id=telegram_id,
+            defaults={
+                'first_name': user_data.get('first_name', ''),
+                'last_name': user_data.get('last_name', ''),
+                'username': user_data.get('username', f"tg_{telegram_id}"),
+                'photo_url': user_data.get('photo_url', ''),
+            }
+        )
+        
+        if not created:
+            # Обновляем данные существующего пользователя
+            user.first_name = user_data.get('first_name', '')
+            user.last_name = user_data.get('last_name', '')
+            user.username = user_data.get('username', f"tg_{telegram_id}")
+            if 'photo_url' in user_data:
+                user.photo_url = user_data['photo_url']
+            user.save(update_fields=['first_name', 'last_name', 'username', 'photo_url'])
 
         login(request, user)
-
         return redirect('core:home')
 
     except Exception:
         logger.exception("telegram_login: Внутренняя ошибка")
-        return redirect('user:telegram_auth')
+        return redirect('users:telegram_auth')
 
 
-# Настройки для Telegram Mini App
-CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = False  # Важно! Позволяет JavaScript получить доступ к cookie
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_USE_SESSIONS = False
-CSRF_COOKIE_NAME = 'csrftoken'
-
-# Разрешить работу в iframe
-X_FRAME_OPTIONS = 'ALLOWALL'
-SECURE_FRAME_DENY = False
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
+class CreateRatingView(TemplateView):
+    """Создание отзыва пользователю"""
+    template_name = 'user_ework/rating_form.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user_id = kwargs.get('user_id')
+        context['to_user'] = get_object_or_404(User, id=user_id)
+        
+        # Проверяем, не оставлял ли уже отзыв
+        from .models import UserRating
+        existing_rating = UserRating.objects.filter(
+            from_user=self.request.user,
+            to_user=context['to_user']
+        ).first()
+        
+        context['existing_rating'] = existing_rating
+        context['can_rate'] = not existing_rating and context['to_user'] != self.request.user
+        
+        if context['can_rate']:
+            context['form'] = UserRatingForm(
+                from_user=self.request.user,
+                to_user=context['to_user']
+            )
+        
+        return context
+    
+    def post(self, request, *args, **kwargs):
+        user_id = kwargs.get('user_id')
+        to_user = get_object_or_404(User, id=user_id)
+        
+        # Проверяем права
+        if to_user == request.user:
+            return JsonResponse({'success': False, 'error': 'Нельзя оценивать себя'})
+        
+        from .models import UserRating
+        existing_rating = UserRating.objects.filter(
+            from_user=request.user,
+            to_user=to_user
+        ).first()
+        
+        if existing_rating:
+            return JsonResponse({'success': False, 'error': 'Вы уже оценивали этого пользователя'})
+        
+        form = UserRatingForm(
+            request.POST,
+            from_user=request.user,
+            to_user=to_user
+        )
+        
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True, 'message': 'Отзыв добавлен!'})
+        else:
+            return JsonResponse({'success': False, 'errors': form.errors})

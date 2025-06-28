@@ -8,47 +8,7 @@
     <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
       {% for post in posts %}
       <div class="col">
-        <div class="card h-100 position-relative{% if post.package.highlight_color %} premium-card{% endif %}"
-             {% if post.package.highlight_color %}style="background-color: {{ post.package.highlight_color }}; border-color: {{ post.package.highlight_color }};"{% endif %}>
-          {% if post.package.icon_flag %}
-          <div class="premium-badge position-absolute top-0 start-0 mt-1 ms-1">
-            <span class="badge bg-warning text-dark">{{ post.package.icon_flag }}</span>
-          </div>
-          {% endif %}
-          <div class="card-img-top-placeholder"
-            hx-get="{% url 'core:product_detail' pk=post.pk %}"
-            hx-target="#dialog"
-            aria-label="пост">
-            {% if post.image %}
-            <img src="{{ post.image.url }}"
-                 class="card-img-top object-fit-cover"
-                 alt="{{ post.title }}"
-                 style="height: 150px;">
-            {% else %}
-            <i class="material-icons text-muted" style="font-size: 48px;">image</i>
-            {% endif %}
-          </div>
-          <div class="card-body p-2">
-
-            <h5 class="card-title mb-1 text-truncate" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post.title }}</h5>
-            <p class="card-price mb-1">{{ post.price }} {{ post.currency.code }}</p>
-            <p class="card-location mb-0">
-              <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">location_on</i>
-              {{ post.city }}
-            </p>
-          </div>
-
-        {% if user.is_authenticated %}
-        <button type="button"
-                data-post-id="{{ post.pk }}"
-                data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
-                class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in favorite_post_ids %}text-danger{% else %}text-muted{% endif %}"
-                aria-label="Избранное">
-          <i class="material-icons">{% if post.pk in favorite_post_ids %}favorite{% else %}favorite_border{% endif %}</i>
-        </button>
-        {% endif %}
-
-        </div>
+        {% include 'components/unified_card.html' with post=post show_seller=True show_controls=False favorite_post_ids=favorite_post_ids %}
       </div>
       {% endfor %}
     </div>

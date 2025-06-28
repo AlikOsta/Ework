@@ -4,10 +4,6 @@
 
 {% block title %}{% trans "Главная" %} | eWork{% endblock %}
 
-{% block extra_head %}
-    <script defer src="{% static 'js/main.js' %}"></script>
-{% endblock extra_head %}
-
 {% block content %}
 
 <main>
@@ -26,7 +22,6 @@
                     href="#"
                     data-category-id="{{ category.id }}"
                     data-url="{% url 'core:post_list_by_rubric' category.id %}"
-                    onclick="activateTab(this, '{% url 'core:post_list_by_rubric' category.id %}')"
                 >
                     {{ category.name }}
                 </a>

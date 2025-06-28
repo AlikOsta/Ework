@@ -12,8 +12,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    'https://601c-181-97-30-161.ngrok-free.app',  # Ваш ngrok домен
-    '*.ngrok-free.app',  # Или все ngrok домены
+    '*',  # Для разработки - в продакшене нужно указать конкретные домены
 ]
 
 CSRF_COOKIE_DOMAIN = None  # Убираем ограничение домена
@@ -24,8 +23,7 @@ CSRF_USE_SESSIONS = True  # Используем сессии вместо cooki
 CSRF_COOKIE_AGE = None
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://601c-181-97-30-161.ngrok-free.app',
-    'https://*.ngrok-free.app',
+    'https://*.ngrok-free.app',  # Для ngrok в разработке
 ]
 
 # Настройки сессий для Telegram Mini App
@@ -41,10 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rosetta',
-    'django_htmx',
-    'widget_tweaks',
-    'polymorphic',
+    'rosetta',  
+    'django_htmx',  
+    'widget_tweaks',  
+    'polymorphic',  
     'ework_bot_tg', #бот ТГ и его фунционнал
     'ework_user_tg', # модель пользователя и авторизация
     'ework_job', # объявления о работе 
@@ -87,6 +85,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'ework_rubric.middleware.post_rubric_context_processor',
+                'ework_config.context_processors.site_config',
             ],
         },
     },
@@ -152,4 +151,5 @@ ROSETTA_UWSGI_AUTO_RELOAD = True
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'ework_core', 'static'),
 ]

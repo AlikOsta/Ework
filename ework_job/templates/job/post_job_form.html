@@ -1,6 +1,11 @@
-{% load i18n widget_tweaks %}
+{% load widget_tweaks %}
+{% load i18n %}
+{% load static %}
 
-<div class="modal-content">
+{% with WIDGET_ERROR_CLASS="is-invalid" %}
+<form hx-post="{{ request.path }}" hx-target="this" hx-swap="outerHTML" hx-encoding="multipart/form-data" class="modal-content" enctype="multipart/form-data">
+    {% csrf_token %}
+
     <div class="modal-header">
         <h5 class="modal-title">{% trans "Создать вакансию" %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -93,224 +98,160 @@
                 {% endif %}
             </div>
 
-            <!-- Выбор тарифа -->
-            <div class="mb-3">
-                <label for="package-select" class="form-label">{% trans "Выберите тариф" %}</label>
-                <select name="package" id="package-select" class="form-select" required>
-                    {% for package in package_info %}
-                        <option value="{{ package.id }}" 
-                                data-allows-photo="{{ package.allows_photo|yesno:'true,false' }}"
-                                data-price="{{ package.price }}"
-                                data-is-free="{{ package.is_free|yesno:'true,false' }}"
-                                {% if not package.available %}disabled{% endif %}
-                                {% if forloop.first %}selected{% endif %}>
-                            {{ package.name }} 
-                            {% if package.is_free %}
-                                ({% trans "Бесплатно" %})
-                            {% else %}
-                                ({{ package.price }} {{ package.currency }})
-                            {% endif %}
-                            {% if package.icon_flag %} {{ package.icon_flag }}{% endif %}
-                            {% if not package.available %} - {{ package.disabled_reason }}{% endif %}
-                        </option>
-                    {% endfor %}
-                </select>
-                {% if form.package.errors %}
-                    <div class="text-danger">{{ form.package.errors.0 }}</div>
-                {% endif %}
+        <!-- Телефон для связи -->
+        <div class="mb-3">
+            <label for="{{ form.user_phone.id_for_label }}" class="form-label">{% trans "Телефон для связи" %}</label>
+            {% render_field form.user_phone class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="+7 (XXX) XXX-XX-XX" %}
+            <div class="invalid-feedback">{{ form.user_phone.errors|first }}</div>
+            <div class="form-text">{% trans "Укажите номер телефона для связи с вами" %}</div>
+        </div>
+
+        <!-- Аддоны продвижения -->
+        {% if not object %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">{% trans "Дополнительные опции продвижения" %}</h6>
             </div>
-
-            <!-- Поле изображения (показывается только для тарифов с фото) -->
-            <div class="mb-3" id="image-field" style="display: none;">
-                <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
-                {{ form.image|add_class:"form-control" }}
-                {% if form.image.errors %}
-                    <div class="text-danger">{{ form.image.errors.0 }}</div>
-                {% endif %}
+            <div class="card-body">
+                <div class="mb-3 form-check">
+                    {% render_field form.addon_photo class="form-check-input pricing-addon" data-toggle="image-field" %}
+                    <label class="form-check-label" for="{{ form.addon_photo.id_for_label }}">
+                        {{ form.addon_photo.label }} 
+                        <small class="text-muted">({{ form.addon_photo.help_text }})</small>
+                    </label>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    {% render_field form.addon_highlight class="form-check-input pricing-addon" %}
+                    <label class="form-check-label" for="{{ form.addon_highlight.id_for_label }}">
+                        {{ form.addon_highlight.label }}
+                        <small class="text-muted">({{ form.addon_highlight.help_text }})</small>
+                    </label>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    {% render_field form.addon_auto_bump class="form-check-input pricing-addon" %}
+                    <label class="form-check-label" for="{{ form.addon_auto_bump.id_for_label }}">
+                        {{ form.addon_auto_bump.label }}
+                        <small class="text-muted">({{ form.addon_auto_bump.help_text }})</small>
+                    </label>
+                </div>
             </div>
+        </div>
 
-        </form>
-    </div>
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Отмена" %}</button>
-        <button type="button" class="btn btn-primary" id="submit-btn">
-            <span id="btn-text">{% trans "Опубликовать" %}</span>
-        </button>
-    </div>
-</div>
+        <!-- Поле для изображения (показывается только при выборе аддона фото) -->
+        <div id="image-field" class="mb-3" style="display: {{ form.addon_photo.value|yesno:'block,none' }};">
+            <label for="{{ form.image.id_for_label }}" class="form-label">{% trans "Изображение" %}</label>
+            {% render_field form.image class="form-control" error_class=WIDGET_ERROR_CLASS %}
+            <div class="invalid-feedback">{{ form.image.errors|first }}</div>
+            <div class="form-text">{% trans "Добавьте изображение к объявлению" %}</div>
+        </div>
 
+        <!-- Блок с расчетом стоимости -->
+        <div id="pricing-summary" class="card mt-3">
+            <div class="card-body">
+                <h6>{% trans "Стоимость публикации" %}</h6>
+                <div id="pricing-breakdown">
+                    <!-- Сюда будет загружаться разбивка цен через HTMX -->
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Кнопки управления -->
+        <div class="d-grid gap-3 d-md-flex justify-content-md-end">
+            <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</button>
+            <button type="submit" id="submit-btn" class="btn btn-primary">
+                {% if object %}
+                    {% trans "Сохранить изменения" %}
+                {% else %}
+                    {% trans "Опубликовать" %}
+                {% endif %}
+            </button>
+        </div> 
+    </div>
+</form>
+
+<!-- ОТЛАДОЧНЫЙ СКРИПТ - временно -->
+{% if not object %}
 <script>
-console.log('Job form script loaded');
+console.log('=== ОТЛАДКА НАЧАЛО ===');
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, setting up job form');
+// Запускаем сразу, так как скрипт уже в DOM
+(function() {
+    console.log('Отладочный скрипт запущен сразу');
     
-    const packageSelect = document.getElementById('package-select');
-    const imageField = document.getElementById('image-field');
-    const submitBtn = document.getElementById('submit-btn');
-    const btnText = document.getElementById('btn-text');
-    const form = document.getElementById('job-post-form');
+    // Проверяем наличие элементов
+    const form = document.querySelector('form[hx-post]');
+    const submitBtn = document.querySelector('#submit-btn');
+    const imageField = document.querySelector('#image-field');
+    const pricingBreakdown = document.querySelector('#pricing-breakdown');
+    const checkboxes = document.querySelectorAll('input[type=checkbox].pricing-addon');
     
-    if (!packageSelect || !imageField || !submitBtn || !form) {
-        console.error('Required elements not found');
-        return;
-    }
+    console.log('Элементы найдены:');
+    console.log('  form:', form);
+    console.log('  submitBtn:', submitBtn);
+    console.log('  imageField:', imageField);
+    console.log('  pricingBreakdown:', pricingBreakdown);
+    console.log('  checkboxes:', checkboxes.length);
     
-    console.log('All elements found, setting up handlers');
-    
-    // Обработчик изменения тарифа
-    function updatePackageSelection() {
-        console.log('Package selection changed');
-        const selectedOption = packageSelect.options[packageSelect.selectedIndex];
-        const allowsPhoto = selectedOption.dataset.allowsPhoto === 'true';
-        const isFree = selectedOption.dataset.isFree === 'true';
-        const price = selectedOption.dataset.price;
-        
-        console.log('Package details:', {allowsPhoto, isFree, price});
-        
-        // Показываем/скрываем поле изображения
-        if (allowsPhoto) {
-            imageField.style.display = 'block';
-            console.log('Showing image field');
-        } else {
-            imageField.style.display = 'none';
-            console.log('Hiding image field');
-        }
-        
-        // Обновляем текст кнопки
-        if (isFree) {
-            btnText.textContent = '{% trans "Опубликовать" %}';
-        } else {
-            btnText.textContent = `{% trans "Оплатить" %} ${price} UAH`;
-        }
-        
-        console.log('Button text updated:', btnText.textContent);
-    }
-    
-    packageSelect.addEventListener('change', updatePackageSelection);
-    
-    // Вызываем обработчик при загрузке
-    updatePackageSelection();
-    
-    // Обработка отправки формы
-    submitBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        console.log('Submit button clicked');
-        
-        const selectedOption = packageSelect.options[packageSelect.selectedIndex];
-        const isFree = selectedOption.dataset.isFree === 'true';
-        
-        console.log('Is free package:', isFree);
-        
-        if (isFree) {
-            console.log('Submitting free package form');
-            // Для бесплатного тарифа отправляем обычную форму
-            form.submit();
-        } else {
-            console.log('Handling paid package');
-            // Для платного тарифа используем AJAX
-            handlePaidSubmission();
-        }
+    // Добавляем обработчики напрямую
+    checkboxes.forEach((cb, i) => {
+        console.log(`Чекбокс ${i}:`, cb.name, cb.checked);
+        cb.addEventListener('change', function() {
+            console.log(`Чекбокс ${cb.name} изменен на:`, cb.checked);
+            
+            // Показать/скрыть поле изображения
+            if (cb.name === 'addon_photo') {
+                if (cb.checked) {
+                    console.log('Показываем поле изображения');
+                    imageField.style.display = 'block';
+                } else {
+                    console.log('Скрываем поле изображения');
+                    imageField.style.display = 'none';
+                }
+            }
+            
+            // Обновить цену
+            updatePrice();
+        });
     });
     
-    function handlePaidSubmission() {
-        console.log('Handling paid submission');
+    function updatePrice() {
+        console.log('Обновляем цену...');
+        const photoChecked = document.querySelector('input[name="addon_photo"]').checked;
+        const highlightChecked = document.querySelector('input[name="addon_highlight"]').checked; 
+        const autoBumpChecked = document.querySelector('input[name="addon_auto_bump"]').checked;
         
-        // Блокируем кнопку
-        submitBtn.disabled = true;
-        const originalText = btnText.textContent;
-        btnText.textContent = '{% trans "Обработка..." %}';
+        console.log('Состояние аддонов:', {photoChecked, highlightChecked, autoBumpChecked});
         
-        const formData = new FormData(form);
-        
-        fetch(window.location.href, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            }
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            return response.json();
-        })
-        .then(data => {
-            console.log('Response data:', data);
-            
-            if (data.success && data.requires_payment) {
-                console.log('Payment required, opening Telegram payment');
-                
-                // Проверяем доступность Telegram WebApp
-                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openInvoice) {
-                    console.log('Opening Telegram invoice');
-                    
-                    // Создаем простой invoice payload
-                    const invoice = {
-                        title: data.title || 'Оплата тарифа',
-                        description: data.description || 'Оплата размещения объявления',
-                        payload: `payment_${data.payment_id}`,
-                        currency: data.currency || 'UAH',
-                        prices: [{ label: 'Размещение', amount: Math.round(data.amount * 100) }]
-                    };
-                    
-                    window.Telegram.WebApp.openInvoice(invoice, function(status) {
-                        console.log('Payment status:', status);
-                        
-                        if (status === 'paid') {
-                            console.log('Payment successful');
-                            alert('{% trans "Оплата прошла успешно! Объявление отправлено на модерацию." %}');
-                            
-                            // Закрываем модалку и обновляем страницу
-                            const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
-                            if (modal) modal.hide();
-                            window.location.reload();
-                        } else {
-                            console.log('Payment failed or cancelled');
-                            alert('{% trans "Оплата отменена или не прошла" %}');
-                        }
-                        
-                        // Разблокируем кнопку
-                        submitBtn.disabled = false;
-                        btnText.textContent = originalText;
-                    });
-                } else {
-                    console.log('Telegram WebApp not available');
-                    alert('{% trans "Telegram WebApp недоступно. Откройте приложение через Telegram бот." %}');
-                    
-                    // Разблокируем кнопку
-                    submitBtn.disabled = false;
-                    btnText.textContent = originalText;
-                }
-            } else if (data.success) {
-                console.log('Form submitted successfully without payment');
-                alert('{% trans "Объявление создано успешно!" %}');
-                
-                // Закрываем модалку и обновляем страницу
-                const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
-                if (modal) modal.hide();
-                window.location.reload();
-            } else {
-                console.error('Form submission error:', data.error);
-                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-                
-                // Разблокируем кнопку
-                submitBtn.disabled = false;
-                btnText.textContent = originalText;
-            }
-        })
-        .catch(error => {
-            console.error('Network error:', error);
-            alert('Произошла ошибка при отправке формы');
-            
-            // Разблокируем кнопку
-            submitBtn.disabled = false;
-            btnText.textContent = originalText;
-        });
+        // Простая заглушка для проверки
+        if (photoChecked || highlightChecked || autoBumpChecked) {
+            pricingBreakdown.innerHTML = '<div class="text-info">Тестовая цена: 100 руб</div>';
+            submitBtn.textContent = 'Оплатить 100 руб';
+            submitBtn.className = 'btn btn-success';
+        } else {
+            pricingBreakdown.innerHTML = '<div class="text-success">Бесплатная публикация</div>';
+            submitBtn.textContent = 'Опубликовать бесплатно';
+            submitBtn.className = 'btn btn-primary';
+        }
     }
     
-    console.log('Job form setup complete');
+    // Первоначальный вызов
+    updatePrice();
+})(); // Вызываем IIFE сразу
+
+console.log('=== ОТЛАДКА КОНЕЦ ===');
+</script>
+{% endif %}
+
+<script>
+// Простое переключение поля изображения
+document.addEventListener('change', function(e) {
+    if (e.target.dataset.toggle === 'image-field') {
+        document.getElementById('image-field').style.display = e.target.checked ? 'block' : 'none';
+    }
 });
 </script>
+
+{% endwith %}

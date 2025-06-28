@@ -6,4 +6,8 @@ class EworkCoreConfig(AppConfig):
     name = 'ework_core'
 
     def ready(self):
-        import ework_core.signals 
+        try:
+            import ework_core.signals
+        except ImportError:
+            # Если mistralai не установлен, пропускаем
+            pass 

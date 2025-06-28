@@ -2,6 +2,7 @@
 from django.urls import path
 
 from . import views
+from ework_post.views import PricingCalculatorView, PostPaymentSuccessView
 
 app_name = 'core'
 
@@ -20,6 +21,15 @@ urlpatterns = [
     path('post/<int:pk>/status/<int:status>/', views.change_post_status, name='change_post_status'),
     path('post/<int:pk>/edit/', views.post_edit, name='post_edit'),
     path('post/<int:pk>/delete/', views.post_delete_confirm, name='post_delete_confirm'),
+
+    # API для динамического расчета стоимости
+    path('api/pricing-calculator/', PricingCalculatorView.as_view(), name='pricing_calculator'),
+    
+    # Публикация после оплаты
+    path('api/post-payment-success/<int:payment_id>/', PostPaymentSuccessView.as_view(), name='post_payment_success'),
+    
+    # API для создания инвойса
+    path('api/create-invoice/', views.CreateInvoiceView.as_view(), name='create_invoice'),
 
     path("", views.home, name='home'),
 
