@@ -11,6 +11,7 @@ class SuperRubric(models.Model):
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_('Порядок'), help_text=_('Порядок рубрики'))
 
     class Meta:
+        app_label = "ework_config"
         verbose_name = _("Категория")
         verbose_name_plural = _("Категории")
         ordering = ['order']
@@ -46,6 +47,7 @@ class SubRubric(models.Model):
         return reverse('subcategory-detail', kwargs={'slug': self.slug})
 
     class Meta:
+        app_label = "ework_config"
         verbose_name = _("Подрубрика")
         verbose_name_plural = _("Подрубрики")
         ordering = ['order']

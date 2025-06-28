@@ -1,4 +1,4 @@
-from .models import SiteConfig, SystemLog
+from .models import SiteConfig
 from django.core.cache import cache
 import logging
 
@@ -12,20 +12,6 @@ def get_config():
         config = SiteConfig.get_config()
         cache.set('site_config', config, 300)  # Кэшируем на 5 минут
     return config
-
-
-def log_system_event(level, message, module=None, user_id=None, extra_data=None):
-    """Логирование системных событий"""
-    try:
-        SystemLog.objects.create(
-            level=level,
-            message=message,
-            module=module,
-            user_id=user_id,
-            extra_data=extra_data
-        )
-    except Exception as e:
-        logger.error(f"Ошибка записи в системный лог: {e}")
 
 
 def clear_config_cache():

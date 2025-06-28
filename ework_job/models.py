@@ -10,7 +10,9 @@ class PostJob(AbsPost):
     work_format = models.IntegerField(choices=WORK_FORMAT_CHOICES, default=0, verbose_name=_('Формат работы'))
 
     class Meta:
-        pass
+        app_label = "ework_post"
+        verbose_name = _("Вакансия")
+        verbose_name_plural = _("Вакансии")
 
 
     

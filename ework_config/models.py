@@ -19,7 +19,8 @@ class SiteConfig(models.Model):
     
     # Telegram Notification Bot (для уведомлений админам)
     notification_bot_token = models.CharField(max_length=200, verbose_name='Notification Bot Token', blank=True)
-    admin_chat_id = models.CharField(max_length=50, verbose_name='Admin Chat ID', blank=True)
+    admin_chat_id = models.CharField(max_length=20, verbose_name='Admin Chat ID', blank=True)
+    admin_username = models.CharField(max_length=20, verbose_name='Admin Username', blank=True)
     
     # Payment настройки
     payment_provider_token = models.CharField(max_length=200, verbose_name='Payment Provider Token', blank=True)
@@ -40,33 +41,15 @@ class SiteConfig(models.Model):
     )
     
     # Настройки постов
-    max_free_posts_per_user = models.PositiveIntegerField(default=3, verbose_name='Максимум бесплатных постов на пользователя')
+    max_free_posts_per_user = models.PositiveIntegerField(default=1, verbose_name='Максимум бесплатных постов на пользователя')
     post_expiry_days = models.PositiveIntegerField(default=30, verbose_name='Дни до истечения поста')
-    
-    # Настройки рейтинга
-    min_rating_to_post = models.FloatField(default=0.0, verbose_name='Минимальный рейтинг для публикации')
-    
-    # Email настройки
-    contact_email = models.EmailField(blank=True, verbose_name='Контактный email')
-    support_email = models.EmailField(blank=True, verbose_name='Email поддержки')
-    
-    # Социальные сети
-    telegram_channel = models.CharField(max_length=100, blank=True, verbose_name='Telegram канал')
-    telegram_group = models.CharField(max_length=100, blank=True, verbose_name='Telegram группа')
-    
-    # SEO настройки
-    meta_keywords = models.TextField(blank=True, verbose_name='Meta keywords')
-    meta_description = models.TextField(blank=True, verbose_name='Meta description')
-    
-    # Технические настройки
-    debug_mode = models.BooleanField(default=False, verbose_name='Режим отладки')
-    maintenance_mode = models.BooleanField(default=False, verbose_name='Режим обслуживания')
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Обновлено')
     
     class Meta:
+        app_label = "ework_config"
         verbose_name = 'Конфигурация сайта'
         verbose_name_plural = 'Конфигурация сайта'
     
@@ -85,57 +68,3 @@ class SiteConfig(models.Model):
         config, created = cls.objects.get_or_create(pk=1)
         return config
 
-
-class AdminUser(models.Model):
-    """Модель для хранения админов с их правами"""
-    
-    telegram_id = models.BigIntegerField(unique=True, verbose_name='Telegram ID')
-    username = models.CharField(max_length=100, blank=True, verbose_name='Username')
-    first_name = models.CharField(max_length=100, blank=True, verbose_name='Имя')
-    last_name = models.CharField(max_length=100, blank=True, verbose_name='Фамилия')
-    
-    # Права доступа
-    can_moderate_posts = models.BooleanField(default=True, verbose_name='Может модерировать посты')
-    can_manage_users = models.BooleanField(default=False, verbose_name='Может управлять пользователями')
-    can_manage_payments = models.BooleanField(default=False, verbose_name='Может управлять платежами')
-    can_view_analytics = models.BooleanField(default=True, verbose_name='Может просматривать аналитику')
-    can_manage_config = models.BooleanField(default=False, verbose_name='Может изменять конфигурацию')
-    
-    is_active = models.BooleanField(default=True, verbose_name='Активен')
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
-    
-    class Meta:
-        verbose_name = 'Администратор'
-        verbose_name_plural = 'Администраторы'
-    
-    def __str__(self):
-        name = self.first_name or self.username or str(self.telegram_id)
-        return f'Админ: {name}'
-
-
-class SystemLog(models.Model):
-    """Модель для логирования системных событий"""
-    
-    LOG_LEVELS = [
-        ('DEBUG', 'Debug'),
-        ('INFO', 'Info'),
-        ('WARNING', 'Warning'),
-        ('ERROR', 'Error'),
-        ('CRITICAL', 'Critical'),
-    ]
-    
-    level = models.CharField(max_length=20, choices=LOG_LEVELS, default='INFO', verbose_name='Уровень')
-    message = models.TextField(verbose_name='Сообщение')
-    module = models.CharField(max_length=100, blank=True, verbose_name='Модуль')
-    user_id = models.BigIntegerField(null=True, blank=True, verbose_name='ID пользователя')
-    extra_data = models.JSONField(null=True, blank=True, verbose_name='Дополнительные данные')
-    
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создано')
-    
-    class Meta:
-        verbose_name = 'Системный лог'
-        verbose_name_plural = 'Системные логи'
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f'[{self.level}] {self.message[:50]}...'
