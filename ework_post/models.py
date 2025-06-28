@@ -218,6 +218,7 @@ class BannerPost(models.Model):
     order = models.PositiveIntegerField(default=0, db_index=True, verbose_name=_("Порядок отображения"))
 
     class Meta:
+        app_label = 'ework_premium'
         verbose_name = _("Баннер")
         verbose_name_plural = _("Баннеры")
         ordering = ["order", "-created_at"]

@@ -11,6 +11,7 @@ from django.views.generic import ListView, DetailView, View
 from django.db.models import Q, Count
 import json
 
+
 from ework_rubric.models import SuperRubric, SubRubric
 from ework_post.models import AbsPost, Favorite, BannerPost, PostView
 from ework_post.views import BasePostListView
@@ -225,7 +226,7 @@ def banner_view(request, banner_id):
 
 def banner_ad_info(request):
     """Информация о баннерной рекламе"""
-    return render(request, 'includes/banner_ad_modal.html', {'admin_telegram': '@newpunknot'})
+    return render(request, 'includes/banner_ad_modal.html')
 
 
 def premium(request):
