@@ -31,24 +31,19 @@
             <form hx-post="{% url 'user:create_rating' user_id=to_user.id %}" hx-target="#rating-result" hx-swap="innerHTML">
                 {% csrf_token %}
                 
-                <div class="mb-3">
-                    <label class="form-label">{{ form.rating.label }}</label>
-                    <div class="rating-stars d-flex align-items-center">
+                <div class="mb-4">
+                    <label class="form-label text-center d-block mb-3">{{ form.rating.label }}</label>
+                    <div class="rating-stars d-flex justify-content-center align-items-center">
                         {% for choice in form.rating.field.choices %}
-                            <div class="form-check me-2">
+                            <div class="form-check me-3">
                                 <input class="form-check-input d-none" type="radio" name="rating" id="rating{{ choice.0 }}" value="{{ choice.0 }}">
-                                <label class="form-check-label star-label" for="rating{{ choice.0 }}" style="cursor: pointer; font-size: 1.5em;">
-                                    <i class="material-icons text-muted star-icon">star_border</i>
+                                <label class="form-check-label star-label" for="rating{{ choice.0 }}" style="cursor: pointer; font-size: 3em; transition: all 0.2s ease;">
+                                    <i class="material-icons text-muted star-icon" style="text-shadow: 0 1px 2px rgba(0,0,0,0.1);">star_border</i>
                                 </label>
                             </div>
                         {% endfor %}
                     </div>
-                    <small class="form-text text-muted">{{ form.rating.help_text }}</small>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.comment.id_for_label }}" class="form-label">{{ form.comment.label }}</label>
-                    {% render_field form.comment class="form-control" %}
+                    <small class="form-text text-muted text-center d-block mt-2">{{ form.rating.help_text }}</small>
                 </div>
                 
                 <div id="rating-result"></div>
@@ -63,64 +58,74 @@
 </div>
 
 <script>
-// Интерактивные звезды
-document.addEventListener('DOMContentLoaded', function() {
+// Интерактивные звезды - инициализируем сразу
+function initStars() {
     const starLabels = document.querySelectorAll('.star-label');
     const starIcons = document.querySelectorAll('.star-icon');
+    
+    if (starLabels.length === 0) return; // Элементы еще не загружены
+    
+    let selectedRating = 0; // Запоминаем выбранный рейтинг
     
     starLabels.forEach((label, index) => {
         // Подсветка при наведении
         label.addEventListener('mouseenter', function() {
-            for (let i = 0; i <= index; i++) {
-                starIcons[i].textContent = 'star';
-                starIcons[i].classList.remove('text-muted');
-                starIcons[i].classList.add('text-warning');
-            }
-            for (let i = index + 1; i < starIcons.length; i++) {
-                starIcons[i].textContent = 'star_border';
-                starIcons[i].classList.remove('text-warning');
-                starIcons[i].classList.add('text-muted');
-            }
+            highlightStars(index);
         });
         
         // Клик по звезде
-        label.addEventListener('click', function() {
-            const radio = document.getElementById('rating' + (index + 1));
-            radio.checked = true;
-            updateStars(index);
+        label.addEventListener('click', function(e) {
+            e.preventDefault();
+            selectedRating = index + 1;
+            const radio = document.getElementById('rating' + selectedRating);
+            if (radio) {
+                radio.checked = true;
+                // Создаем событие изменения для совместимости
+                radio.dispatchEvent(new Event('change'));
+            }
+            highlightStars(index);
         });
     });
     
     // Восстановление состояния при уходе мыши
-    document.querySelector('.rating-stars').addEventListener('mouseleave', function() {
-        const checkedRadio = document.querySelector('input[name="rating"]:checked');
-        if (checkedRadio) {
-            updateStars(parseInt(checkedRadio.value) - 1);
-        } else {
-            resetStars();
-        }
-    });
+    const ratingStars = document.querySelector('.rating-stars');
+    if (ratingStars) {
+        ratingStars.addEventListener('mouseleave', function() {
+            if (selectedRating > 0) {
+                highlightStars(selectedRating - 1);
+            } else {
+                resetStars();
+            }
+        });
+    }
     
-    function updateStars(selectedIndex) {
-        for (let i = 0; i <= selectedIndex; i++) {
-            starIcons[i].textContent = 'star';
-            starIcons[i].classList.remove('text-muted');
-            starIcons[i].classList.add('text-warning');
-        }
-        for (let i = selectedIndex + 1; i < starIcons.length; i++) {
-            starIcons[i].textContent = 'star_border';
-            starIcons[i].classList.remove('text-warning');
-            starIcons[i].classList.add('text-muted');
-        }
+    function highlightStars(upToIndex) {
+        starIcons.forEach((icon, i) => {
+            if (i <= upToIndex) {
+                icon.textContent = 'star';
+                icon.className = 'material-icons text-warning star-icon';
+            } else {
+                icon.textContent = 'star_border';
+                icon.className = 'material-icons text-muted star-icon';
+            }
+        });
     }
     
     function resetStars() {
         starIcons.forEach(icon => {
             icon.textContent = 'star_border';
-            icon.classList.remove('text-warning');
-            icon.classList.add('text-muted');
+            icon.className = 'material-icons text-muted star-icon';
         });
     }
+}
+
+// Инициализируем звезды при загрузке DOM
+document.addEventListener('DOMContentLoaded', initStars);
+
+// Инициализируем звезды после загрузки HTMX контента
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    // Небольшая задержка чтобы DOM успел обновиться
+    setTimeout(initStars, 100);
 });
 
 // Обработка успешной отправки отзыва

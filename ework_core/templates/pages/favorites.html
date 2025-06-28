@@ -10,38 +10,7 @@
     {% if posts %}
       {% for post in posts %}
       <div class="col">
-        <div class="card h-100 position-relative">
-          <div class="card-img-top-placeholder"
-            hx-get="{% url 'core:product_detail' pk=post.pk %}"
-            hx-target="#dialog"
-            aria-label="пост">
-            {% if post.image %}
-            <img src="{{ post.image.url }}"
-                 class="card-img-top object-fit-cover"
-                 alt="{{ post.title }}"
-                 style="height: 150px;">
-            {% else %}
-            <i class="material-icons text-muted" style="font-size: 48px;">image</i>
-            {% endif %}
-          </div>
-          <div class="card-body p-2">
-            <h5 class="card-title mb-1 text-truncate" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ post.title }}</h5>
-            <p class="card-price mb-1">{{ post.price }} {{ post.currency.code }}</p>
-            <p class="card-location mb-0">
-              <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">location_on</i>
-              {{ post.city }}
-            </p>
-          </div>
-          {% if user.is_authenticated %}
-          <button type="button"
-                  data-post-id="{{ post.pk }}"
-                  data-is-favorite="true"
-                  class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn text-danger"
-                  aria-label="Избранное">
-            <i class="material-icons">favorite</i>
-          </button>
-          {% endif %}
-        </div>
+        {% include 'components/unified_card.html' with post=post show_seller=True show_controls=False favorite_post_ids=favorite_post_ids %}
       </div>
       {% endfor %}
 
