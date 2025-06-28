@@ -4,6 +4,8 @@ from django.views.decorators.http import require_POST
 from aiogram import Bot
 import asyncio
 import time
+from asgiref.sync import sync_to_async
+
 
 
 @csrf_exempt

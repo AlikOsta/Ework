@@ -11,6 +11,8 @@ from django.views.generic import ListView, DetailView, View
 from django.db.models import Q, Count
 import json
 from django.utils.decorators import method_decorator
+from asgiref.sync import sync_to_async
+import asyncio
 
 from ework_rubric.models import SuperRubric, SubRubric
 from ework_post.models import AbsPost, Favorite, BannerPost, PostView
@@ -262,15 +264,23 @@ class CreateInvoiceView(View):
             if not request.user.telegram_id:
                 return JsonResponse({'success': False, 'error': 'У пользователя не задан telegram_id'}, status=400)
 
-            # Создаём инвойс-ссылку
             from ework_bot_tg.bot.bot import create_invoice_link
-            invoice_link = create_invoice_link(
-                user_id=request.user.telegram_id,
-                payment_id=payment.id,
-                payload=payment.get_payload(),
-                amount=payment.amount,
-                order_id=payment.order_id,
-                addons_data=payment.addons_data
+            
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            invoice_link = loop.run_until_complete(
+                create_invoice_link(
+                    user_id=request.user.telegram_id,
+                    payment_id=payment.id,
+                    payload=payment.get_payload(),
+                    amount=payment.amount,
+                    order_id=payment.order_id,
+                    addons_data=payment.addons_data
+                )
             )
 
             if not invoice_link:
@@ -283,27 +293,32 @@ class CreateInvoiceView(View):
             traceback.print_exc()
             return JsonResponse({'success': False, 'error': f'Внутренняя ошибка: {e}'}, status=500)
 
-@login_required
+
 def publish_post_after_payment(user_id, payment_id):
     """Функция для публикации поста после успешной оплаты"""
     try:
         from ework_premium.models import Payment
-        payment = Payment.objects.select_related('user').get(
+        payment = Payment.objects.select_related('user', 'post').get(
             id=payment_id,
             user__telegram_id=user_id,
             status='pending'
         )
     
         if not payment.post:
-            payment.mark_as_paid()
+            # Если нет поста, просто отмечаем платеж как оплаченный
+            payment.status = 'paid'
+            payment.save(update_fields=['status'])
             return False
         
-        post = payment.post
-
-        post.status = 0  
-        post.save(update_fields=['status'])
-
-        payment.mark_as_paid()
+        print(f"🔄 Найден платеж {payment_id} для поста {payment.post.title}")
+        print(f"📊 Текущий статус поста: {payment.post.status}")
+        
+        # Отмечаем платеж как оплаченный
+        # Это должно вызвать сигнал handle_payment_save
+        payment.status = 'paid'
+        payment.save(update_fields=['status'])
+        
+        print(f"✅ Платеж {payment_id} отмечен как оплаченный")
         return True
         
     except Exception as e:
@@ -311,6 +326,8 @@ def publish_post_after_payment(user_id, payment_id):
         import traceback
         print(f"❌ Traceback: {traceback.format_exc()}")
         return False
+
+
 
 
 @login_required

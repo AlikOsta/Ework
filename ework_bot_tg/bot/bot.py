@@ -3,7 +3,7 @@ import django
 import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
-from django.utils.translation import gettext_lazy as _ 
+from django.utils.translation import gettext as _ 
 
 import httpx
 from aiogram import Dispatcher, types
@@ -17,6 +17,7 @@ from aiogram.types import (
     LabeledPrice,
 )
 from asgiref.sync import sync_to_async
+
 
 from ework_job.models import PostJob
 from ework_services.models import PostServices
@@ -99,7 +100,7 @@ async def create_invoice_link(
         "description": description,
         "payload": payload,
         "provider_token": cfg['payment_provider_token'],
-        "currency": "UAH",
+        "currency": "RUB",
         "prices": [{"label": "Публикация объявления", "amount": price_kopecks}],
         "need_name": False,
         "need_phone_number": False,
@@ -130,45 +131,97 @@ async def create_invoice_link(
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
     webapp_button = InlineKeyboardButton(
-        text=text_button,
+        text=text_button, 
         web_app=WebAppInfo(url=cfg['miniapp_url'])
     )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[webapp_button]])
     await message.answer(
-        text=f"Привет!\n{welcome_text}",
+        text=f"Привет!\n{welcome_text}", 
         reply_markup=keyboard
     )
 
-# Обработка коллбеков модерации
-@dp.callback_query(lambda c: c.data.startswith('approve_') or c.data.startswith('reject_'))
+
+# Обработка коллбеков модерации - ИСПРАВЛЕННАЯ ВЕРСИЯ
+@dp.callback_query(lambda c: c.data and (c.data.startswith('approve_post_') or c.data.startswith('reject_post_')))
 async def handle_moderation_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
-    data = callback_query.data.split('_')
-    action, _, post_id = data[:3]
+    callback_data = callback_query.data
+    
+    print(f"🔔 Получен коллбек: {callback_data} от пользователя {user_id}")
+    
     try:
+        # Парсим callback_data правильно
+        if callback_data.startswith('approve_post_'):
+            action = 'approve'
+            post_id = callback_data.replace('approve_post_', '')
+        elif callback_data.startswith('reject_post_'):
+            action = 'reject'
+            post_id = callback_data.replace('reject_post_', '')
+        else:
+            print(f"❌ Неизвестный callback_data: {callback_data}")
+            await callback_query.answer("❌ Неизвестная команда", show_alert=True)
+            return
+        
+        print(f"📊 Обработка: action={action}, post_id={post_id}")
+        
         # Ищем пост в двух моделях
         post = None
         try:
-            post = await sync_to_async(PostJob.objects.get)(id=post_id, status=1)
-        except PostJob.DoesNotExist:
-            post = await sync_to_async(PostServices.objects.get)(id=post_id, status=1)
+            post = await sync_to_async(PostJob.objects.get)(id=int(post_id), status=1)  # На модерации
+            print(f"📋 Найден пост-вакансия: {post.title}")
+        except (PostJob.DoesNotExist, ValueError):
+            try:
+                post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)  # На модерации
+                print(f"🛠️ Найден пост-услуга: {post.title}")
+            except (PostServices.DoesNotExist, ValueError):
+                print(f"❌ Пост с ID {post_id} не найден или не на модерации")
+                await callback_query.answer("❌ Пост не найден или уже обработан", show_alert=True)
+                return
 
         if action == 'approve':
-            post.status = 3
-            await sync_to_async(post.save)()
-            await sync_to_async(__import__('ework_core.signals').signsend_telegram_notification_async)(post)
+            # Одобряем пост
+            post.status = 3  # Опубликовано
+            await sync_to_async(post.save)(update_fields=['status'])
+            
             response_text = f"✅ Пост '{post.title}' одобрен и опубликован!"
-        else:
-            post.status = 2
-            await sync_to_async(post.save)()
-            await sync_to_async(__import__('ework_core.signals').refund_if_paid)(post)
+            print(f"✅ Пост {post_id} одобрен и опубликован")
+            
+        elif action == 'reject':
+            # Отклоняем пост
+            post.status = 2  # Отклонено
+            await sync_to_async(post.save)(update_fields=['status'])
+            
+            # Возвращаем деньги если пост был платным
+            from ework_core.signals import refund_if_paid
+            await sync_to_async(refund_if_paid)(post)
+            
             response_text = f"❌ Пост '{post.title}' отклонен"
+            print(f"❌ Пост {post_id} отклонен")
 
-        await callback_query.message.delete()
+        # Редактируем сообщение вместо удаления
+        try:
+            await callback_query.message.edit_text(
+                f"✅ Обработано!\n\n{response_text}",
+                parse_mode="HTML"
+            )
+        except Exception as e:
+            print(f"⚠️ Не удалось отредактировать сообщение: {e}")
+            # Если не получилось отредактировать, удаляем
+            try:
+                await callback_query.message.delete()
+            except:
+                pass
+        
+        # Отправляем ответ
         await callback_query.answer(response_text, show_alert=True)
-    except Exception:
-        logger.exception("Error processing moderation callback")
-        await callback_query.answer(_("❌ Произошла ошибка при модерации"), show_alert=True)
+        
+    except Exception as e:
+        print(f"❌ Ошибка при обработке модерации: {e}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
+        await callback_query.answer("❌ Произошла ошибка при модерации", show_alert=True)
+
+
 
 # Pre-checkout
 @dp.pre_checkout_query()
@@ -185,7 +238,10 @@ async def successful_payment(message: types.Message):
     try:
         user_id_str, payment_id_str = payload.split('&&&')
         user_id, payment_id = int(user_id_str), int(payment_id_str)
-        success = await sync_to_async(__import__('ework_core.views').publish_post_after_payment)(user_id, payment_id)
+        
+        from ework_core.views import publish_post_after_payment
+        success = await sync_to_async(publish_post_after_payment)(user_id, payment_id)
+        
         if success:
             await message.answer(_("✅ Оплата прошла успешно! Ваше объявление опубликовано и отправлено на модерацию."))
         else:
