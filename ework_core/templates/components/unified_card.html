@@ -41,25 +41,11 @@
             {{ post.city }}
         </p>
         
-        {% if show_seller|default:True and post.user %}
-        <!-- Блок продавца - ссылка на профиль -->
-        <a href="{% url 'user:author_profile' author_id=post.user.id %}" class="card-seller mb-0 text-decoration-none">
-            <small class="text-muted d-flex align-items-center">
-                <i class="material-icons me-1" style="font-size: 1em;">person</i>
-                <span class="text-truncate">{{ post.user.username }}</span>
-                {% if post.user.average_rating > 0 %}
-                <i class="material-icons text-warning ms-1" style="font-size: 0.8em;">star</i>
-                <span class="ms-1" style="font-size: 0.8em;">{{ post.user.average_rating|floatformat:1 }}</span>
-                {% endif %}
-            </small>
-        </a>
-        {% else %}
         <!-- Показываем дату если не показываем продавца -->
         <p class="card-date mb-0 text-muted small">
             <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">schedule</i>
             {{ post.created_at|date:"d.m.y" }}
         </p>
-        {% endif %}
     </div>
 
     <!-- Кнопка избранного -->

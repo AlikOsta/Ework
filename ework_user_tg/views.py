@@ -245,7 +245,8 @@ def profile_edit(request):
             # Обрабатываем смену языка
             new_language = form.cleaned_data.get('language')
             if new_language and new_language != request.LANGUAGE_CODE:
-                request.session[translation.LANGUAGE_SESSION_KEY] = new_language
+                # ИСПРАВЛЕНИЕ: используем строку напрямую
+                request.session['django_language'] = new_language
                 translation.activate(new_language)
             
             if request.headers.get('HX-Request'):
@@ -261,6 +262,7 @@ def profile_edit(request):
         form = UserProfileForm(instance=request.user)
     
     return render(request, 'user_ework/profile_edit.html', {'form': form})
+
 
 
 class Index(TemplateView):
