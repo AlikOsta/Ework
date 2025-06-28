@@ -8,7 +8,7 @@ def moderate_post(text):
     
     if not config.mistral_api_key:
         print("Mistral API ключ не настроен, пропускаем модерацию")
-        return True  # Пропускаем модерацию если нет ключа
+        return True 
     
     client = Mistral(api_key=config.mistral_api_key)
     print("Начало проверки")

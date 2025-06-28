@@ -39,7 +39,7 @@ class AbsPost(PolymorphicModel):
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, db_index=True, verbose_name=_('Автор'))
     user_phone = models.CharField(max_length=20, validators=[phone_regex], verbose_name=_('Телефон'), null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0, db_index=True, verbose_name=_('Статус'))
-    is_premium = models.BooleanField(default=False, db_index=True, verbose_name=_('Премиум'))
+    is_premium = models.BooleanField(default=False, db_index=True, verbose_name=_('Цветной фон карточки'))
     created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_("Дата создания"))    
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
     is_deleted = models.BooleanField(default=False, db_index=True, verbose_name=_("Удалено"))

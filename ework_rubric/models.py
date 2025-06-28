@@ -6,7 +6,6 @@ from django.utils.text import slugify
 
 class SuperRubric(models.Model):
     name = models.CharField(max_length=30, db_index=True, verbose_name=_('Название'), help_text=_('Название рубрики'))
-    image  = models.ImageField(upload_to='rubric_img/', verbose_name=_('Изображение'), help_text=_('Изображение для рубрики'))
     slug = models.SlugField(max_length=50, unique=True, db_index=True, verbose_name=_('Слаг'), help_text=_('Слаг рубрики'))
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_('Порядок'), help_text=_('Порядок рубрики'))
 
@@ -30,7 +29,6 @@ class SuperRubric(models.Model):
 
 class SubRubric(models.Model):
     name = models.CharField(max_length=30, db_index=True, verbose_name=_('Название'), help_text=_('Название подрубрики'))
-    image  = models.ImageField(upload_to='sub_rubric_img/', verbose_name=_('Изображение'), help_text=_('Изображение для подрубрики'))
     slug = models.SlugField(max_length=50, unique=True, db_index=True, verbose_name=_('Слаг'), help_text=_('Слаг подрубрики'))
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_('Порядок'), help_text=_('Порядок подрубрики'))
     super_rubric = models.ForeignKey(SuperRubric, on_delete=models.PROTECT, related_name='sub_rubrics', verbose_name=_('Категория'), help_text=_('Категория подрубрики'))

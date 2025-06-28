@@ -285,35 +285,22 @@ def publish_post_after_payment(user_id, payment_id):
     """Функция для публикации поста после успешной оплаты"""
     try:
         from ework_premium.models import Payment
-        
-        print(f"🔧 Обрабатываем платеж {payment_id} для пользователя {user_id}")
-        
-        # Получаем платеж
         payment = Payment.objects.select_related('user').get(
             id=payment_id,
             user__telegram_id=user_id,
             status='pending'
         )
-        
-        print(f"🔧 Платеж найден: ID={payment.id}, Order={payment.order_id}")
-        
-        # Проверяем, есть ли связанный пост
+    
         if not payment.post:
-            print(f"❌ Нет поста для платежа {payment_id}")
             payment.mark_as_paid()
             return False
         
         post = payment.post
-        print(f"🔧 Найден пост-черновик: {post.title} (ID: {post.id})")
-        
-        # Переводим пост из черновика на модерацию
-        post.status = 0  # На модерацию
+
+        post.status = 0  
         post.save(update_fields=['status'])
-        
-        # Отмечаем платеж как оплаченный
+
         payment.mark_as_paid()
-        
-        print(f"✅ Платеж {payment_id} обработан, пост {post.id} отправлен на модерацию")
         return True
         
     except Exception as e:

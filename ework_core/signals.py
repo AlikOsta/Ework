@@ -8,7 +8,6 @@ from .telegram_bot import send_telegram_message, send_telegram_message_with_keyb
 from ework_job.models import PostJob
 from .utils import moderate_post
 
-# YOUR_PERSONAL_CHAT_ID and TELEGRAM_BOT_TOKEN moved to SiteConfig
 
 def moderate_post_async(instance):
     """Модерация поста в отдельном потоке"""
@@ -175,6 +174,7 @@ def send_telegram_notification_async(instance):
     thread = threading.Thread(target=send_notification)
     thread.daemon = True
     thread.start()
+
 
 @receiver(post_save, sender=PostJob)
 @receiver(post_save, sender=PostServices)

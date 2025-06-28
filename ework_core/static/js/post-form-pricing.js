@@ -20,45 +20,31 @@ class PostFormPricing {
         
         // При показе Bootstrap модалки
         document.addEventListener('shown.bs.modal', (evt) => {
-            console.log('Bootstrap модалка показана:', evt.target);
             this.setupForm();
         });
 
         // После любой подгрузки HTMX
         document.body.addEventListener('htmx:afterSwap', (evt) => {
-            console.log('HTMX afterSwap событие:', evt.detail);
             // если в swap-обновлении была ваша форма
             if (evt.detail.target.closest('form[hx-post]') || 
                 evt.detail.target.querySelector('form[hx-post]')) {
-                console.log('Найдена форма после HTMX, запускаем setupForm');
                 this.setupForm();
             }
         });
     }
 
     setupForm() {
-        console.log('PostFormPricing: setupForm() вызван');
         const form = document.querySelector('form[hx-post]');
         if (!form) {
-            console.log('PostFormPricing: форма не найдена');
-            console.log('Все формы на странице:', document.querySelectorAll('form'));
             return;
         }
-        console.log('PostFormPricing: инициализируем для формы', form);
-
         // Сохраняем референсы
         this.form            = form;
         this.submitBtn       = form.querySelector('#submit-btn');
         this.imageField      = form.querySelector('#image-field');
         this.pricingBreakdown= form.querySelector('#pricing-breakdown');
         this.addonsCheckboxes= Array.from(form.querySelectorAll('input[type=checkbox].pricing-addon'));
-        
-        console.log('PostFormPricing: найдены элементы:');
-        console.log('  submitBtn:', this.submitBtn);
-        console.log('  imageField:', this.imageField);
-        console.log('  pricingBreakdown:', this.pricingBreakdown);
-        console.log('  addonsCheckboxes:', this.addonsCheckboxes);
-
+    
         // Убираем предыдущие слушатели (чтобы не дублировались)
         this.addonsCheckboxes.forEach(cb => cb.replaceWith(cb.cloneNode(true)));
         this.addonsCheckboxes = Array.from(form.querySelectorAll('input[type=checkbox].pricing-addon'));
@@ -79,15 +65,12 @@ class PostFormPricing {
         const photoAddon = this.form.querySelector('input[name="addon_photo"]')?.checked;
         const imageInput = this.form.querySelector('input[name="image"]');
         if (!this.imageField || !imageInput) {
-            console.log('PostFormPricing: imageField или imageInput не найдены');
             return;
         }
         if (photoAddon) {
-            console.log('PostFormPricing: показываем поле изображения');
             this.imageField.style.display = 'block';
             imageInput.setAttribute('required', 'required');
         } else {
-            console.log('PostFormPricing: прячем поле изображения');
             this.imageField.style.display = 'none';
             imageInput.value = '';
             imageInput.removeAttribute('required');
@@ -101,8 +84,6 @@ class PostFormPricing {
             addon_auto_bump: this.form.querySelector('input[name="addon_auto_bump"]')?.checked || false,
         };
 
-        console.log('PostFormPricing: запрашиваем расчёт с', data);
-
         fetch('/api/pricing-calculator/?' + new URLSearchParams(data), {
             method: 'GET',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -112,7 +93,6 @@ class PostFormPricing {
             return res.json();
         })
         .then(json => {
-            console.log('PostFormPricing: пришёл ответ', json);
             this.renderPricing(json.breakdown);
             this.renderButton(json.button);
         })
