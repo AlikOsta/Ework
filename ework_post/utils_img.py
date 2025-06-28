@@ -17,10 +17,9 @@ _ORIENTATION_TAG = next(
     None
 )
 
+
 def apply_exif_orientation(image: Image.Image) -> Image.Image:
-    """
-    Rotate the image according to its EXIF orientation tag.
-    """
+    """Поворот изображения согласно EXIF ориентации"""
     try:
         exif = image._getexif()
         if not exif or _ORIENTATION_TAG not in exif:
@@ -38,22 +37,9 @@ def apply_exif_orientation(image: Image.Image) -> Image.Image:
     return image
 
 
-def process_image(
-    image_field,
-    instance_id=None,
-    max_size=None,
-    img_format=None,
-    quality=None
-) -> ContentFile | None:
+def process_image(image_field, instance_id=None, max_size=None, img_format=None, quality=None):
     """
-    Open, auto-orient, resize, and compress an uploaded image file.
-
-    :param image_field: Uploaded file-like object (e.g. Django ImageField file)
-    :param instance_id: Optional identifier to prefix output filename
-    :param max_size: (width, height) tuple. Defaults to settings or 800x800
-    :param img_format: Output format (e.g. 'WEBP', 'JPEG')
-    :param quality: Quality/compression level (integer)
-    :return: Django ContentFile ready to save or None if no input
+    Оптимизированная обработка изображений: изменение размера и сжатие
     """
     if not image_field:
         return None
@@ -68,26 +54,25 @@ def process_image(
         logger.error("Cannot open image %s: %s", image_field.name, e)
         return None
 
+    # Применяем EXIF ориентацию
     img = apply_exif_orientation(img)
 
+    # Изменяем размер если необходимо
     if img.width > max_size[0] or img.height > max_size[1]:
-        # Заменяем Image.ANTIALIAS на Image.Resampling.LANCZOS
-        # или просто опускаем второй аргумент
-        img.thumbnail(max_size)
+        img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
+    # Определяем формат и режим
     supports_alpha = img_format in ('WEBP', 'PNG')
-    
-    if supports_alpha and img.mode in ('RGBA', 'LA'):
-        mode = 'RGBA'
-    else:
-        mode = 'RGB'
-
+    mode = 'RGBA' if supports_alpha and img.mode in ('RGBA', 'LA') else 'RGB'
     img = img.convert(mode)
 
+    # Удаляем EXIF данные
     img.info.pop('exif', None)
 
+    # Сохраняем в буфер
     buffer = BytesIO()
     save_kwargs = {'quality': quality}
+    
     if img_format == 'WEBP':
         save_kwargs['lossless'] = supports_alpha and mode == 'RGBA'
         save_kwargs['method'] = 6
@@ -102,7 +87,8 @@ def process_image(
 
     buffer.seek(0)
 
-    base, _ = image_field.name.rsplit('.', 1)
+    # Генерируем новое имя файла
+    base, _ = image_field.name.rsplit('.', 1) if '.' in image_field.name else (image_field.name, '')
     prefix = f"{instance_id}_" if instance_id else ''
     unique_id = uuid.uuid4().hex[:8]
     new_name = f"{prefix}{base}_{unique_id}.{img_format.lower()}"
