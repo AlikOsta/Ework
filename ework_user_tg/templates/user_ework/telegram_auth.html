@@ -1,4 +1,4 @@
-{% extends 'app/base.html' %}
+{% extends 'pages/base.html' %}
 {% load static %}
 
 {% block title %}Авторизация через Telegram{% endblock %}
@@ -22,7 +22,7 @@
                     Перейти к боту
                 </a>
                 
-                <a href="{% url 'app:index' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'core:home' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left me-2"></i>
                     Вернуться на главную
                 </a>
