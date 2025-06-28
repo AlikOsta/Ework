@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Package, Payment, FreePostRecord
+from .models import Package, Payment
 
 @admin.register(Package)
 class PackageAdmin(admin.ModelAdmin):
@@ -37,10 +37,4 @@ class PaymentAdmin(admin.ModelAdmin):
             return self.readonly_fields + ['user', 'package', 'amount']
         return self.readonly_fields
 
-@admin.register(FreePostRecord)
-class FreePostRecordAdmin(admin.ModelAdmin):
-    list_display = ['user', 'week_start', 'post', 'created_at']
-    list_filter = ['week_start', 'created_at']
-    readonly_fields = ['created_at']
-    search_fields = ['user__username']
 

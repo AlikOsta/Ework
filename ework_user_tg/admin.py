@@ -1,9 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from django.urls import reverse
-from django.utils.safestring import mark_safe
-from .models import TelegramUser, UserRating
-from ework_post.models import Favorite, PostView
+from .models import TelegramUser
+from ework_post.models import PostView
 
 
 @admin.register(TelegramUser)
@@ -52,47 +50,6 @@ class TelegramUserAdmin(admin.ModelAdmin):
         return format_html('<span style="color: #999;">Нет отзывов</span>')
     rating_display.short_description = 'Рейтинг'
 
-
-@admin.register(UserRating)
-class UserRatingAdmin(admin.ModelAdmin):
-    list_display = ('from_user', 'to_user', 'rating', 'created_at')
-    list_filter = ('rating', 'created_at')
-    search_fields = ('from_user__username', 'to_user__username')
-    readonly_fields = ('created_at',)
-    
-    fieldsets = (
-        ('Отзыв', {
-            'fields': ('from_user', 'to_user', 'rating')
-        }),
-        ('Системная информация', {
-            'fields': ('created_at',),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('from_user', 'to_user')
-
-
-@admin.register(Favorite)
-class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('user', 'post_title', 'post_type', 'created_at')
-    list_filter = ('created_at',)
-    search_fields = ('user__username', 'post__title')
-    readonly_fields = ('created_at',)
-    
-    def post_title(self, obj):
-        return obj.post.title if obj.post else "Удаленный пост"
-    post_title.short_description = 'Пост'
-    
-    def post_type(self, obj):
-        if obj.post:
-            return obj.post.__class__._meta.verbose_name
-        return "Неизвестно"
-    post_type.short_description = 'Тип поста'
-    
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related('user', 'post')
 
 
 @admin.register(PostView)
