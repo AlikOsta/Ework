@@ -4,12 +4,11 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.db.models import Q
-from django.http import HttpResponse
+from django.db.models import Q, Count
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.http import JsonResponse
 
 from ework_post.models import AbsPost, Favorite, PostView
 from ework_rubric.models import SuperRubric, SubRubric
@@ -17,198 +16,84 @@ from ework_premium.models import Package, FreePostRecord
 from ework_premium.utils import create_payment_for_post
 
 
-class PostViewMixin:
-    """Миксин для записи просмотров постов"""
+class BasePostListView(ListView):
+    """Оптимизированное базовое представление для списка объявлений"""
+    model = AbsPost
+    template_name = 'components/card.html'
+    context_object_name = 'posts'
+    paginate_by = 20
     
-    def record_view(self, post, user):
-        """Записать просмотр поста пользователем"""
-        if not user.is_authenticated:
-            return False
-            
-        if post.user == user:
-            return False
-            
-        content_type = ContentType.objects.get_for_model(post)
-        view_obj, created = PostView.objects.get_or_create(
-            user=user,
-            content_type=content_type,
-            object_id=post.pk,
-            defaults={'created_at': timezone.now()}
-        )
-        return created
-    
-    def get_view_count(self, post):
-        """Получить количество просмотров поста"""
-        content_type = ContentType.objects.get_for_model(post)
-        return PostView.objects.filter(
-            content_type=content_type,
-            object_id=post.pk
-        ).count()
-    
-    def get_user_views(self, user, post_queryset=None):
-        """Получить просмотры пользователя"""
-        views = PostView.objects.filter(user=user)
-        if post_queryset is not None:
-            content_types = ContentType.objects.get_for_models(
-                *[type(post) for post in post_queryset]
-            ).values()
-            views = views.filter(content_type__in=content_types)
-        return views
-
-
-class FavoriteMixin:
-    """Миксин для работы с избранными постами"""
-    
-    def toggle_favorite(self, post, user):
-        """Переключить статус избранного для поста"""
-        if not user.is_authenticated:
-            return False, False
-            
-        favorite, created = Favorite.objects.get_or_create(
-            user=user,
-            post=post
-        )
+    def get_queryset(self):
+        """Получить отфильтрованный queryset с оптимизированными запросами"""
+        queryset = self.model.objects.filter(
+            status=3,  # Опубликовано
+            is_deleted=False
+        ).select_related(
+            'user', 'city', 'currency', 'sub_rubric', 'sub_rubric__super_rubric'
+        ).prefetch_related('favorited_by')
         
-        if not created:
-            favorite.delete()
-            return False, True  # removed, action_performed
-        
-        return True, True  # added, action_performed
-    
-    def is_favorite(self, post, user):
-        """Проверить, находится ли пост в избранном у пользователя"""
-        if not user.is_authenticated:
-            return False
-        return Favorite.objects.filter(user=user, post=post).exists()
-    
-    def get_favorite_post_ids(self, user, post_queryset):
-        """Получить ID избранных постов из queryset"""
-        if not user.is_authenticated:
-            return []
-        return list(Favorite.objects.filter(
-            user=user,
-            post__in=post_queryset
-        ).values_list('post_id', flat=True))
-
-
-class PostFilterMixin:
-    """Миксин для фильтрации постов"""
-    
-    def apply_search_filter(self, queryset, search_query):
-        """Применить поисковый фильтр"""
+        # Поиск
+        search_query = self.request.GET.get('q', '').strip()
         if search_query:
-            return queryset.filter(
+            queryset = queryset.filter(
                 Q(title__icontains=search_query) | 
                 Q(description__icontains=search_query)
             )
-        return queryset
-    
-    def apply_rubric_filter(self, queryset, rubric_pk=None, sub_rubric_pk=None):
-        """Применить фильтр по рубрикам"""
-        if sub_rubric_pk:
-            return queryset.filter(sub_rubric_id=sub_rubric_pk)
-        elif rubric_pk:
-            super_rubric = get_object_or_404(SuperRubric, pk=rubric_pk)
-            sub_rubrics = SubRubric.objects.filter(super_rubric=super_rubric)
-            sub_ids = sub_rubrics.values_list('id', flat=True)
-            return queryset.filter(sub_rubric_id__in=sub_ids)
-        return queryset
-    
-    def apply_price_filter(self, queryset, price_min=None, price_max=None):
-        """Применить фильтр по цене"""
+        
+        # Фильтрация по рубрике
+        rubric_pk = self.kwargs.get('rubric_pk')
+        if rubric_pk:
+            queryset = queryset.filter(sub_rubric__super_rubric_id=rubric_pk)
+        
+        # Фильтрация по подрубрике
+        sub_rubric = self.request.GET.get('sub_rubric')
+        if sub_rubric and sub_rubric.isdigit():
+            queryset = queryset.filter(sub_rubric_id=int(sub_rubric))
+        
+        # Фильтрация по цене
+        price_min = self.request.GET.get('price_min')
+        price_max = self.request.GET.get('price_max')
         if price_min and price_min.isdigit():
             queryset = queryset.filter(price__gte=int(price_min))
         if price_max and price_max.isdigit():
             queryset = queryset.filter(price__lte=int(price_max))
-        return queryset
-    
-    def apply_location_filter(self, queryset, city_id=None):
-        """Применить фильтр по городу"""
-        if city_id and city_id.isdigit():
-            return queryset.filter(city_id=city_id)
-        return queryset
-    
-    def apply_sorting(self, queryset, sort_type='newest'):
-        """Применить сортировку"""
+        
+        # Фильтрация по городу
+        city = self.request.GET.get('city')
+        if city and city.isdigit():
+            queryset = queryset.filter(city_id=int(city))
+        
+        # Сортировка
+        sort_type = self.request.GET.get('sort', 'newest')
         sort_options = {
             'newest': '-created_at',
             'oldest': 'created_at',
             'price_asc': 'price',
             'price_desc': '-price',
-            'premium': ['-is_premium', '-created_at'],
         }
+        ordering = sort_options.get(sort_type, '-created_at')
         
-        sort_fields = sort_options.get(sort_type, '-created_at')
-        if isinstance(sort_fields, list):
-            return queryset.order_by(*sort_fields)
-        return queryset.order_by(sort_fields)
-
-
-class BasePostListView(ListView, PostFilterMixin, FavoriteMixin):
-    """Базовое представление для списка объявлений"""
-    model = AbsPost
-    template_name = 'partials/post_list.html'
-    context_object_name = 'posts'
-    paginate_by = 20
-    
-    def get_queryset(self):
-        """Получить отфильтрованный queryset постов"""
-        # Базовый queryset - только опубликованные и не удаленные посты
-        queryset = self.model.objects.filter(
-            status=3,  # Опубликовано
-            is_deleted=False
-        ).select_related('user', 'city', 'currency', 'sub_rubric')
-        
-        # Применяем фильтры
-        search_query = self.request.GET.get('q')
-        queryset = self.apply_search_filter(queryset, search_query)
-        
-        # Фильтрация по рубрикам
-        rubric_pk = self.kwargs.get('rubric_pk')
-        sub_rubric_pk = self.kwargs.get('sub_rubric_pk')
-        queryset = self.apply_rubric_filter(queryset, rubric_pk, sub_rubric_pk)
-        
-        # Фильтрация по цене
-        price_min = self.request.GET.get('price_min')
-        price_max = self.request.GET.get('price_max')
-        queryset = self.apply_price_filter(queryset, price_min, price_max)
-        
-        # Фильтрация по городу
-        city_id = self.request.GET.get('city')
-        queryset = self.apply_location_filter(queryset, city_id)
-        
-        # Сортировка
-        sort_type = self.request.GET.get('sort', 'newest')
-        queryset = self.apply_sorting(queryset, sort_type)
-        
-        return queryset
+        return queryset.order_by(ordering)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Добавляем избранные посты
+        # Избранные посты для текущего пользователя
         if self.request.user.is_authenticated:
-            context['favorite_post_ids'] = self.get_favorite_post_ids(
-                self.request.user, 
-                context['posts']
-            )
+            favorite_ids = Favorite.objects.filter(
+                user=self.request.user,
+                post__in=context['posts']
+            ).values_list('post_id', flat=True)
+            context['favorite_post_ids'] = list(favorite_ids)
         else:
             context['favorite_post_ids'] = []
         
-        # Добавляем категории в зависимости от параметров
-        rubric_pk = self.kwargs.get('rubric_pk')
-        if rubric_pk:
-            super_rubric = get_object_or_404(SuperRubric, pk=rubric_pk)
-            context['categories'] = SubRubric.objects.filter(super_rubric=super_rubric)
-            context['current_rubric'] = super_rubric
-        else:
-            context['categories'] = SuperRubric.objects.all()
-        
-        # Добавляем параметры фильтрации для сохранения состояния
+        # Сохраняем параметры фильтрации
         context.update({
             'search_query': self.request.GET.get('q', ''),
             'price_min': self.request.GET.get('price_min', ''),
             'price_max': self.request.GET.get('price_max', ''),
+            'sub_rubric': self.request.GET.get('sub_rubric', ''),
             'selected_city': self.request.GET.get('city', ''),
             'sort': self.request.GET.get('sort', 'newest'),
         })
@@ -216,62 +101,73 @@ class BasePostListView(ListView, PostFilterMixin, FavoriteMixin):
         return context
 
 
-class BasePostDetailView(DetailView, PostViewMixin, FavoriteMixin):
-    """Базовое представление для детального просмотра поста"""
+class BasePostDetailView(DetailView):
+    """Оптимизированное базовое представление для детального просмотра поста"""
     model = AbsPost
-    template_name = 'post/post_detail.html'
+    template_name = 'includes/post_detail.html'
     context_object_name = 'post'
 
     def get_queryset(self):
         """Получить queryset с оптимизированными связями"""
         return AbsPost.objects.select_related(
             'user', 'city', 'currency', 'sub_rubric', 'sub_rubric__super_rubric'
-        ).filter(
-            status=3, 
-            is_deleted=False 
-        )
+        ).filter(status=3, is_deleted=False)
 
     def get_object(self, queryset=None):
         """Получить объект и записать просмотр"""
         obj = super().get_object(queryset)
         
-        if self.request.user.is_authenticated:
-            self.record_view(obj, self.request.user)
+        # Записываем просмотр только для авторизованных пользователей
+        if (self.request.user.is_authenticated and 
+            obj.user_id != self.request.user.id):
+            ct = ContentType.objects.get_for_model(obj)
+            PostView.objects.get_or_create(
+                user=self.request.user,
+                content_type=ct,
+                object_id=obj.pk,
+                defaults={'created_at': timezone.now()}
+            )
         
         return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        if self.request.user.is_authenticated:
-            context['is_favorite'] = self.is_favorite(self.object, self.request.user)
-            context['favorite_post_ids'] = [self.object.pk] if context['is_favorite'] else []
-        else:
-            context['is_favorite'] = False
-            context['favorite_post_ids'] = []
-        
-        context['view_count'] = self.get_view_count(self.object)
-        
-        context['is_author'] = (
-            self.request.user.is_authenticated and 
-            self.request.user == self.object.user
+        # Статистика просмотров
+        stats = PostView.objects.filter(
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk
+        ).aggregate(
+            total_views=Count('id'),
+            unique_viewers=Count('user', distinct=True)
         )
+        
+        context.update({
+            'view_count': stats['total_views'],
+            'unique_viewers': stats['unique_viewers'],
+            'is_favorite': False,
+            'favorite_post_ids': []
+        })
+        
+        if self.request.user.is_authenticated:
+            is_favorite = Favorite.objects.filter(
+                user=self.request.user,
+                post=self.object
+            ).exists()
+            context['is_favorite'] = is_favorite
+            context['favorite_post_ids'] = [self.object.pk] if is_favorite else []
         
         return context
 
 
 class BasePostCreateView(LoginRequiredMixin, CreateView):
-    """Базовое представление для создания объявления"""
+    """Оптимизированное базовое представление для создания объявления"""
     template_name = 'post/post_form.html'
-    category_slug = None
     success_message = _('Объявление успешно создано и отправлено на модерацию')
     
     def get_form_kwargs(self):
-        """Передать дополнительные параметры в форму"""
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
-        if self.category_slug:
-            kwargs['category_slug'] = self.category_slug
         return kwargs
     
     def form_valid(self, form):
@@ -295,22 +191,16 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         # Если платеж не требуется (бесплатная публикация)
         if payment is None:
-            return self._publish_free_post(form, addon_photo, addon_highlight, addon_auto_bump)
+            return self._publish_free_post(form)
         else:
             return self._handle_paid_post(form, payment)
     
-    def _publish_free_post(self, form, addon_photo, addon_highlight, addon_auto_bump):
+    def _publish_free_post(self, form):
         """Опубликовать бесплатный пост"""
         try:
             self.object = form.save(commit=False)
             self.object.user = self.request.user
-            
-            # Аддоны для бесплатной публикации не применяются
-            self.object.has_photo_addon = False
-            self.object.has_highlight_addon = False
-            self.object.has_auto_bump_addon = False
-            
-            self.object.full_clean()
+            self.object.status = 0  # На модерацию
             self.object.save()
             
             # Отметить использование бесплатной публикации
@@ -335,7 +225,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def _handle_paid_post(self, form, payment):
         """Обработать платную публикацию"""
-        # Создаем пост-черновик сразу
+        # Создаем пост-черновик
         post = form.save(commit=False)
         post.user = self.request.user
         post.package = payment.package
@@ -354,7 +244,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         payment.post = post
         payment.save(update_fields=['post'])
         
-        # Если это HTMX запрос, возвращаем JSON с данными для оплаты
+        # HTMX запрос
         if self.request.headers.get('HX-Request'):
             return JsonResponse({
                 'action': 'payment_required',
@@ -365,44 +255,15 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
                 'order_id': payment.order_id
             })
         
-        # Для обычного запроса перенаправляем на страницу оплаты
         return redirect('payments:payment_page', payment_id=payment.id)
     
     def get_success_url(self):
-        """URL для перенаправления после успешного создания"""
         return reverse_lazy('core:home')
-    
-    def _determine_post_type(self, request):
-        """Определить тип поста (job, service и т.д.)"""
-        # Можно определить по referrer или передать в параметрах
-        referrer = request.META.get('HTTP_REFERER', '')
-        
-        if 'jobs' in referrer or 'job' in referrer:
-            return 'job'
-        elif 'services' in referrer or 'service' in referrer:
-            return 'service'
-        else:
-            return 'job'  # по умолчанию
-    
-    def _get_post_model(self, post_type):
-        """Получить модель поста по типу"""
-        if post_type == 'job':
-            from ework_job.models import PostJob
-            return PostJob
-        elif post_type == 'service':
-            from ework_services.models import PostServices
-            return PostServices
-        else:
-            from ework_job.models import PostJob
-            return PostJob
-
 
 
 class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Базовое представление для редактирования объявления"""
+    """Оптимизированное базовое представление для редактирования объявления"""
     template_name = 'post/post_form.html'
-    
-    category_slug = None
     success_message = _('Объявление успешно обновлено и отправлено на модерацию')
     
     def test_func(self):
@@ -411,11 +272,8 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return self.request.user == post.user
     
     def get_form_kwargs(self):
-        """Передать дополнительные параметры в форму"""
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
-        if self.category_slug:
-            kwargs['category_slug'] = self.category_slug
         return kwargs
     
     def form_valid(self, form):
@@ -426,141 +284,19 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         
         messages.success(self.request, self.success_message)
         
-        # Если это HTMX запрос, возвращаем специальный ответ
         if self.request.headers.get('HX-Request'):
             return HttpResponse(
                 status=200,
                 headers={
                     'HX-Trigger': 'closeModal',
-                    'HX-Redirect': reverse('user:author_profile', kwargs={'author_id': self.request.user.id})
+                    'HX-Redirect': reverse('users:author_profile', kwargs={'author_id': self.request.user.id})
                 }
             )
         
         return redirect(self.get_success_url())
     
-    def form_invalid(self, form):
-        """Обработка невалидной формы"""
-        # Для HTMX запросов возвращаем форму с ошибками
-        if self.request.headers.get('HX-Request'):
-            return self.render_to_response(self.get_context_data(form=form))
-        return super().form_invalid(form)
-    
     def get_success_url(self):
-        """URL для перенаправления после успешного обновления"""
-        return reverse_lazy('user:author_profile', kwargs={'author_id': self.request.user.id})
-
-
-
-class BasePostDeleteView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
-    """Базовое представление для мягкого удаления поста"""
-    model = AbsPost
-    
-    def test_func(self):
-        """Проверка прав доступа - только автор может удалять"""
-        post = self.get_object()
-        return self.request.user == post.user
-    
-    def post(self, request, *args, **kwargs):
-        """Обработка POST запроса для удаления"""
-        post = self.get_object()
-        post.soft_delete()
-        messages.success(request, _('Объявление успешно удалено'))
-        
-        # Возвращаем HTMX ответ или обычное перенаправление
-        if request.headers.get('HX-Request'):
-            return HttpResponse(
-                status=200,
-                                headers={'HX-Trigger': f'post-deleted-{post.pk}'}
-            )
-        
-        return redirect('user:author_profile', author_id=request.user.id)
-
-
-class CategorySpecificMixin:
-    """Миксин для работы с категориями постов"""
-    
-    def get_category_filters(self, category_slug):
-        """Получить специфичные фильтры для категории"""
-        filters = {}
-        
-        if category_slug == 'rabota':
-            # Фильтры для вакансий
-            experience = self.request.GET.get('experience')
-            work_format = self.request.GET.get('work_format')
-            work_schedule = self.request.GET.get('work_schedule')
-            
-            if experience and experience.isdigit():
-                filters['postjob__experience'] = experience
-            if work_format and work_format.isdigit():
-                filters['postjob__work_format'] = work_format
-            if work_schedule and work_schedule.isdigit():
-                filters['postjob__work_schedule'] = work_schedule
-                
-        elif category_slug == 'uslugi':
-            # Фильтры для услуг (пока нет специфичных)
-            pass
-            
-        return filters
-    
-    def get_category_context(self, category_slug):
-        """Получить контекст специфичный для категории"""
-        context = {}
-        
-        if category_slug == 'rabota':
-            from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHEDULE_CHOICES
-            context.update({
-                'experience_choices': EXPERIENCE_CHOICES,
-                'work_format_choices': WORK_FORMAT_CHOICES,
-                'work_schedule_choices': WORK_SCHEDULE_CHOICES,
-                'experience': self.request.GET.get('experience', ''),
-                'work_format': self.request.GET.get('work_format', ''),
-                'work_schedule': self.request.GET.get('work_schedule', ''),
-                'is_job_category': True,
-            })
-        elif category_slug == 'uslugi':
-            context.update({
-                'is_service_category': True,
-            })
-            
-        return context
-
-
-class PostSearchMixin:
-    """Миксин для поиска постов"""
-    
-    def get_search_queryset(self, base_queryset=None):
-        """Получить queryset для поиска"""
-        if base_queryset is None:
-            base_queryset = AbsPost.objects.filter(
-                status=3,
-                is_deleted=False
-            )
-        
-        search_query = self.request.GET.get('q', '').strip()
-        rubric_id = self.request.GET.get('rubric_id')
-        
-        queryset = base_queryset
-        
-        # Фильтрация по рубрике
-        if rubric_id and rubric_id.isdigit():
-            try:
-                super_rubric = SuperRubric.objects.get(pk=rubric_id)
-                sub_rubrics = SubRubric.objects.filter(super_rubric=super_rubric)
-                sub_ids = sub_rubrics.values_list('id', flat=True)
-                queryset = queryset.filter(sub_rubric_id__in=sub_ids)
-            except SuperRubric.DoesNotExist:
-                pass
-        
-        # Поисковый запрос
-        if search_query:
-            queryset = queryset.filter(
-                Q(title__icontains=search_query) | 
-                Q(description__icontains=search_query)
-            )
-        
-        return queryset.select_related(
-            'user', 'city', 'currency', 'sub_rubric'
-        ).order_by('-created_at')
+        return reverse_lazy('users:author_profile', kwargs={'author_id': self.request.user.id})
 
 
 class PricingCalculatorView(View):
@@ -571,7 +307,7 @@ class PricingCalculatorView(View):
         from ework_premium.utils import PricingCalculator
         from django.contrib.auth import get_user_model
         
-        # Получаем параметры аддонов из GET параметров
+        # Получаем параметры аддонов
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
         addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'
@@ -621,9 +357,7 @@ class PostPaymentSuccessView(LoginRequiredMixin, View):
     def post(self, request, payment_id, *args, **kwargs):
         """Опубликовать пост после успешной оплаты"""
         from ework_premium.models import Payment
-        from django.forms.models import model_to_dict
         
-        # Получаем платеж
         try:
             payment = Payment.objects.get(
                 id=payment_id,
@@ -635,51 +369,16 @@ class PostPaymentSuccessView(LoginRequiredMixin, View):
                 'error': 'Платеж не найден или не оплачен'
             }, status=400)
         
-        # Получаем данные формы из сессии
-        session_key = f'post_data_{payment.id}'
-        post_data = request.session.get(session_key)
-        
-        if not post_data:
+        if not payment.post:
             return JsonResponse({
-                'error': 'Данные формы не найдены'
+                'error': 'Пост не найден'
             }, status=400)
         
         try:
-            # Создаем пост
-            form_data = post_data['form_data']
-            
-            # Определяем тип поста из URL или параметров
-            post_type = self._determine_post_type(request)
-            post_model = self._get_post_model(post_type)
-            
-            # Создаем объект поста
-            post = post_model()
-            
-            # Восстанавливаем объекты моделей по их ID
-            for field_name, value in form_data.items():
-                if hasattr(post, field_name) and not field_name.startswith('addon_'):
-                    # Проверяем, является ли поле внешним ключом
-                    field = post._meta.get_field(field_name)
-                    if hasattr(field, 'related_model') and field.related_model:
-                        # Это ForeignKey - получаем объект по ID
-                        if value:
-                            related_obj = field.related_model.objects.get(pk=value)
-                            setattr(post, field_name, related_obj)
-                    else:
-                        # Обычное поле
-                        setattr(post, field_name, value)
-            
-            post.user = request.user
-            post.package = payment.package
-            
-            # Применяем аддоны из платежа
-            post.apply_addons_from_payment(payment)
-            
-            # Сохраняем пост
-            post.save()
-            
-            # Очищаем данные из сессии
-            del request.session[session_key]
+            # Переводим пост из черновика на модерацию
+            post = payment.post
+            post.status = 0  # На модерацию
+            post.save(update_fields=['status'])
             
             messages.success(request, _('Объявление успешно опубликовано!'))
             
@@ -693,29 +392,3 @@ class PostPaymentSuccessView(LoginRequiredMixin, View):
             return JsonResponse({
                 'error': f'Ошибка при создании объявления: {str(e)}'
             }, status=500)
-    
-    def _determine_post_type(self, request):
-        """Определить тип поста (job, service и т.д.)"""
-        # Можно определить по referrer или передать в параметрах
-        referrer = request.META.get('HTTP_REFERER', '')
-        
-        if 'jobs' in referrer:
-            return 'job'
-        elif 'services' in referrer:
-            return 'service'
-        else:
-            return 'job'  # по умолчанию
-    
-    def _get_post_model(self, post_type):
-        """Получить модель поста по типу"""
-        if post_type == 'job':
-            from ework_job.models import PostJob
-            return PostJob
-        elif post_type == 'service':
-            from ework_services.models import PostServices
-            return PostServices
-        else:
-            from ework_job.models import PostJob
-            return PostJob
-
-
