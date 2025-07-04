@@ -9,7 +9,6 @@ urlpatterns = [
     path('rosetta/', include('rosetta.urls')),
     path('admin/', admin.site.urls),
     path('users/', include('ework_user_tg.urls', namespace='users')),
-    path('rosetta/', include('rosetta.urls')),
     path('jobs/', include('ework_job.urls', namespace='jobs')),
     path('services/', include('ework_services.urls')),
     path('payments/', include('ework_payment.urls')),
