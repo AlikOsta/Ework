@@ -22,17 +22,17 @@ class BasePostForm(forms.ModelForm):
         label=_('Выделить цветом'),
         help_text=_('Объявление будет выделено цветом (3 дня)')
     )
-    addon_auto_bump = forms.BooleanField(
-        required=False,
-        label=_('Автоподнятие'),
-        help_text=_('Автоматическое поднятие в топ каждые 12 часов (7 дней)')
-    )
+    # addon_auto_bump = forms.BooleanField(
+    #     required=False,
+    #     label=_('Автоподнятие'),
+    #     help_text=_('Автоматическое поднятие в топ каждые 12 часов (7 дней)')
+    # )
 
     class Meta:
         model = AbsPost
         fields = [
             'title', 'description', 'image', 'price', 'currency',
-            'sub_rubric', 'city', 'user_phone'
+            'sub_rubric', 'city', 'user_phone', 'address'
         ]
         widgets = {
             'title': forms.TextInput(attrs={
@@ -60,6 +60,11 @@ class BasePostForm(forms.ModelForm):
             'user_phone': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': _('Ваш номер телефона')
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': _('Введите адресс'),
+                'maxlength': '50'
             }),
         }
 

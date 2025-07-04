@@ -41,8 +41,8 @@
         <!-- Финансовая информация -->
         <div class="row mb-3">
             <div class="col-8">
-                <label for="{{ form.price.id_for_label }}" class="form-label">{% trans "Оплата" %}</label>
-                {% render_field form.price class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите оплату" %}
+                <label for="{{ form.price.id_for_label }}" class="form-label">{% trans "Зарплата" %}</label>
+                {% render_field form.price class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите заплату" %}
                 <div class="invalid-feedback">{{ form.price.errors|first }}</div>
             </div>
             <div class="col-4">
@@ -57,6 +57,12 @@
             <label for="{{ form.city.id_for_label }}" class="form-label">{% trans "Город" %}</label>
             {% render_field form.city class="form-control" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.city.errors|first }}</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.address.id_for_label }}" class="form-label">{% trans "Адресс" %}</label>
+            {% render_field form.address class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите адресс" %}
+            <div class="invalid-feedback">{{ form.address.errors|first }}</div>
         </div>
 
         <!-- Подрубрика -->
@@ -88,7 +94,7 @@
         <!-- Телефон для связи -->
         <div class="mb-3">
             <label for="{{ form.user_phone.id_for_label }}" class="form-label">{% trans "Телефон для связи" %}</label>
-            {% render_field form.user_phone class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="+7 (XXX) XXX-XX-XX" %}
+            {% render_field form.user_phone class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="+3 (XXX) XXX-XX-XX" %}
             <div class="invalid-feedback">{{ form.user_phone.errors|first }}</div>
             <div class="form-text">{% trans "Укажите номер телефона для связи с вами" %}</div>
         </div>
@@ -116,13 +122,13 @@
                     </label>
                 </div>
                 
-                <div class="mb-3 form-check">
+                {% comment %} <div class="mb-3 form-check">
                     {% render_field form.addon_auto_bump class="form-check-input pricing-addon" %}
                     <label class="form-check-label" for="{{ form.addon_auto_bump.id_for_label }}">
                         {{ form.addon_auto_bump.label }}
                         <small class="text-muted">({{ form.addon_auto_bump.help_text }})</small>
                     </label>
-                </div>
+                </div> {% endcomment %}
             </div>
         </div>
 
@@ -162,11 +168,9 @@
 <!-- ОТЛАДОЧНЫЙ СКРИПТ - временно -->
 {% if not object %}
 <script>
-console.log('=== ОТЛАДКА НАЧАЛО ===');
 
 // Запускаем сразу, так как скрипт уже в DOM
 (function() {
-    console.log('Отладочный скрипт запущен сразу');
     
     // Проверяем наличие элементов
     const form = document.querySelector('form[hx-post]');
@@ -174,27 +178,16 @@ console.log('=== ОТЛАДКА НАЧАЛО ===');
     const imageField = document.querySelector('#image-field');
     const pricingBreakdown = document.querySelector('#pricing-breakdown');
     const checkboxes = document.querySelectorAll('input[type=checkbox].pricing-addon');
-    
-    console.log('Элементы найдены:');
-    console.log('  form:', form);
-    console.log('  submitBtn:', submitBtn);
-    console.log('  imageField:', imageField);
-    console.log('  pricingBreakdown:', pricingBreakdown);
-    console.log('  checkboxes:', checkboxes.length);
-    
+        
     // Добавляем обработчики напрямую
     checkboxes.forEach((cb, i) => {
-        console.log(`Чекбокс ${i}:`, cb.name, cb.checked);
         cb.addEventListener('change', function() {
-            console.log(`Чекбокс ${cb.name} изменен на:`, cb.checked);
             
             // Показать/скрыть поле изображения
             if (cb.name === 'addon_photo') {
                 if (cb.checked) {
-                    console.log('Показываем поле изображения');
                     imageField.style.display = 'block';
                 } else {
-                    console.log('Скрываем поле изображения');
                     imageField.style.display = 'none';
                 }
             }
@@ -205,13 +198,10 @@ console.log('=== ОТЛАДКА НАЧАЛО ===');
     });
     
     function updatePrice() {
-        console.log('Обновляем цену...');
         const photoChecked = document.querySelector('input[name="addon_photo"]').checked;
         const highlightChecked = document.querySelector('input[name="addon_highlight"]').checked; 
         const autoBumpChecked = document.querySelector('input[name="addon_auto_bump"]').checked;
-        
-        console.log('Состояние аддонов:', {photoChecked, highlightChecked, autoBumpChecked});
-        
+                
         // Простая заглушка для проверки
         if (photoChecked || highlightChecked || autoBumpChecked) {
             pricingBreakdown.innerHTML = '<div class="text-info">Тестовая цена: 100 руб</div>';
@@ -228,7 +218,6 @@ console.log('=== ОТЛАДКА НАЧАЛО ===');
     updatePrice();
 })(); // Вызываем IIFE сразу
 
-console.log('=== ОТЛАДКА КОНЕЦ ===');
 </script>
 {% endif %}
 
