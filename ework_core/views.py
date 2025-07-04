@@ -197,6 +197,7 @@ class FavoriteListView(ListView):
             'has_more': total > len(ctx['posts']),
         })
         return ctx
+    
 
 
 @login_required
@@ -237,7 +238,11 @@ def premium(request):
     """Страница тарифов"""
     packages = Package.objects.filter(is_active=True).order_by('order')
     context = {'packages': packages}
-    return render(request, 'pages/premium.html', context)
+    if request.headers.get('HX-Request'):
+        # Возвращаем контент для модального окна
+        return render(request, 'pages/premium.html', context)
+    
+    return redirect('core:home')
 
 
 @method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
@@ -326,8 +331,6 @@ def publish_post_after_payment(user_id, payment_id):
         import traceback
         print(f"❌ Traceback: {traceback.format_exc()}")
         return False
-
-
 
 
 @login_required
