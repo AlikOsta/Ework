@@ -45,15 +45,16 @@ class Command(BaseCommand):
             
             # Удаляем существующие задачи с теми же именами
             for job in scheduler.get_jobs():
-                if job.id in ['archive_expired_posts']:
+                if job.id == 'archive_expired_posts':
                     job.delete()
             
             # Создаем задачу архивирования постов (ежедневно в 00:00)
-            scheduler.cron(
+            job = scheduler.cron(
                 '0 0 * * *',  # cron expression для ежедневного запуска в 00:00
-                func='ework_core.tasks.archive_expired_posts',
-                job_id='archive_expired_posts'
+                func='ework_core.tasks.archive_expired_posts'
             )
+            job.id = 'archive_expired_posts'
+            job.save()
             
             self.stdout.write(
                 self.style.SUCCESS('✅ Периодические задачи настроены:')
