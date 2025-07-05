@@ -1,0 +1,218 @@
+a {
+    color: inherit; 
+    text-decoration: none; 
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: max(884px, 100dvh);
+}
+
+.sticky-top-stories {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1020;
+    padding-top: 1rem;
+    padding-bottom: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+}
+
+.story-banner {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0.5rem;
+    overflow: hidden;
+}
+
+.story-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.search-bar {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    border-bottom-color: #0d6efd;
+    font-weight: bold;
+}
+
+.filter-button {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    width: 100%;
+}
+
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .075);
+    background-color: #fff;
+}
+
+.card-img-top-placeholder {
+    height: 150px;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.card-price {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #0d6efd;
+    margin-bottom: 0.25rem;
+}
+
+.card-location {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.footer-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    border-top: 1px solid #dee2e6;
+    padding: 0.5rem 0;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, .05);
+}
+
+.footer-nav .nav-link {
+    color: #6c757d;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.footer-nav .nav-link .material-icons {
+    font-size: 1.5rem;
+    margin-bottom: 0.125rem;
+}
+
+.footer-nav .nav-link.active {
+    color: #0d6efd;
+}
+
+.create-button {
+    background-color: #0d6efd;
+    color: white;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, .5);
+    margin-top: -15px;
+}
+
+.create-button .material-icons {
+    font-size: 2rem;
+}
+
+.btn-filter-custom {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    color: #495057;
+}
+
+.btn-filter-custom:hover,
+.btn-filter-custom:focus {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.scrollable-stories {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.scrollable-stories::-webkit-scrollbar {
+    display: none;
+}
+
+/* Стили для бесконечной прокрутки */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+
+.load-more-trigger {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.htmx-cards-batch {
+    margin-bottom: 1rem;
+}
+
+/* Анимация для новых карточек */
+.htmx-cards-batch .col {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для индикатора загрузки */
+#loading-spinner {
+    transition: opacity 0.3s ease;
+}
+
+#loading-spinner.htmx-request {
+    opacity: 1;
+}
+
+/* Отступы для контейнера с постами */
+#posts-container {
+    position: relative;
+}
