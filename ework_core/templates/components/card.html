@@ -1,32 +1,53 @@
 {% load i18n %}
 
-<!-- Кнопки подкатегорий с HTMX -->
 {% if categories %}
-<div class="mb-3">
-    <div class="d-flex flex-wrap gap-2">
+<div>
+    <div class="d-flex gap-2 gap-md-3 overflow-auto pb-2" style="scroll-behavior: smooth;">
         <!-- Кнопка "Показать все" -->
-        <button type="button" 
-                class="btn btn-sm {% if not sub_rubric %}btn-primary{% else %}btn-outline-primary{% endif %}"
-                hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}"
-                hx-target="#content-area"
-                hx-swap="innerHTML">
-            {% trans "Показать все" %}
-        </button>
+        <div class="card border-2 flex-shrink-0 {% if not sub_rubric %}border-primary bg-primary text-white{% else %}border-light{% endif %}" 
+             style="width: 100px; height: 70px; cursor: pointer;"
+             class="d-block d-md-none"
+             hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}"
+             hx-target="#content-area"
+             hx-swap="innerHTML">
+            <div class="card-body p-1 d-flex flex-column justify-content-between h-100">
+                <div class="fw-bold text-break" style="font-size: 0.7rem; line-height: 1.1; word-break: break-word; hyphens: auto;">
+                    {% trans "Все" %}
+                </div>
+                <div class="align-self-end">
+                    <i class="material-icons {% if not sub_rubric %}text-white-50{% else %}text-muted{% endif %}" style="font-size: 16px;">apps</i>
+                </div>
+            </div>
+        </div>
         
-        <!-- Кнопки подкатегорий -->
         {% for category in categories %}
-        <button type="button" 
-                class="btn btn-sm {% if sub_rubric == category.id|stringformat:'s' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+            <div class="card border-2 flex-shrink-0 position-relative 
+                {% if sub_rubric == category.id|stringformat:'s' %}border-primary bg-primary text-white{% else %}border-light{% endif %} 
+                d-block d-md-none" 
+                style="width: 100px; height: 70px; cursor: pointer;"
                 hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}?sub_rubric={{ category.id }}"
                 hx-target="#content-area"
                 hx-swap="innerHTML">
-            {% trans category.name %}
-        </button>
+
+                <div class="card-body p-1 d-flex flex-column justify-content-between h-100 position-relative">
+                    <div class="fw-bold text-break" style="font-size: 0.7rem; line-height: 1.1; word-break: break-word; hyphens: auto;">
+                    {% trans category.name %}
+                    </div>
+                    {% if category.icon %}
+                        <img src="{{ category.icon.url }}" alt="{{ category.name }}"
+                            class="rounded position-absolute bottom-0 end-0 z-0"
+                            style="width: 60px; height: 60px; object-fit: cover;">
+                    {% else %}
+                        <i class="material-icons position-absolute bottom-0 end-0 z-0 
+                        {% if sub_rubric == category.id|stringformat:'s' %}text-white-50{% else %}text-muted{% endif %}"
+                        style="font-size: 24px;">category</i>
+                    {% endif %}
+                </div>
+            </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
-
 
 {% include 'components/filter.html' %}
 
