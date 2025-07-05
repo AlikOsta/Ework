@@ -1,9 +1,9 @@
 """
-Команда для настройки периодических задач Django-Q
+Команда для настройки периодических задач Django RQ
 """
 from django.core.management.base import BaseCommand
-from django_q.models import Schedule
-from django_q.tasks import schedule
+from django_rq import get_scheduler
+import django_rq
 
 
 class Command(BaseCommand):
@@ -40,64 +40,73 @@ class Command(BaseCommand):
         """Создать или обновить периодические задачи"""
         self.stdout.write('Настройка периодических задач...')
         
-        # Удаляем существующие задачи с теми же именами
-        Schedule.objects.filter(name__in=[
-            'archive_expired_posts',
-            'cleanup_old_tasks'
-        ]).delete()
-        
-        # Создаем задачу архивирования постов (ежедневно в 00:00)
-        schedule(
-            'ework_core.tasks.archive_expired_posts',
-            name='archive_expired_posts',
-            schedule_type=Schedule.DAILY,
-            next_run=None,  # Будет запланировано на следующую полночь
-            repeats=-1  # Бесконечно
-        )
-        
-        # Создаем задачу очистки старых задач (еженедельно)
-        schedule(
-            'ework_core.tasks.cleanup_old_tasks',
-            name='cleanup_old_tasks',
-            schedule_type=Schedule.WEEKLY,
-            repeats=-1
-        )
-        
-        self.stdout.write(
-            self.style.SUCCESS('✅ Периодические задачи настроены:')
-        )
-        self.stdout.write('  - archive_expired_posts: ежедневно в 00:00')
-        self.stdout.write('  - cleanup_old_tasks: еженедельно')
+        try:
+            scheduler = get_scheduler('default')
+            
+            # Удаляем существующие задачи с теми же именами
+            for job in scheduler.get_jobs():
+                if job.id in ['archive_expired_posts']:
+                    job.delete()
+            
+            # Создаем задачу архивирования постов (ежедневно в 00:00)
+            scheduler.cron(
+                '0 0 * * *',  # cron expression для ежедневного запуска в 00:00
+                func='ework_core.tasks.archive_expired_posts',
+                id='archive_expired_posts',
+                replace_existing=True
+            )
+            
+            self.stdout.write(
+                self.style.SUCCESS('✅ Периодические задачи настроены:')
+            )
+            self.stdout.write('  - archive_expired_posts: ежедневно в 00:00')
+            
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'❌ Ошибка настройки задач: {e}')
+            )
 
     def show_status(self):
         """Показать статус периодических задач"""
-        schedules = Schedule.objects.all()
-        
-        if not schedules:
-            self.stdout.write(
-                self.style.WARNING('⚠️  Периодические задачи не настроены')
-            )
-            return
-        
-        self.stdout.write('📅 Статус периодических задач:')
-        self.stdout.write('-' * 50)
-        
-        for schedule_obj in schedules:
-            status = '✅ Активна' if schedule_obj.enabled else '❌ Отключена'
-            next_run = schedule_obj.next_run.strftime('%Y-%m-%d %H:%M:%S') if schedule_obj.next_run else 'Не запланирована'
+        try:
+            scheduler = get_scheduler('default')
+            jobs = scheduler.get_jobs()
             
-            self.stdout.write(f"Название: {schedule_obj.name}")
-            self.stdout.write(f"Функция: {schedule_obj.func}")
-            self.stdout.write(f"Статус: {status}")
-            self.stdout.write(f"Тип: {schedule_obj.get_schedule_type_display()}")
-            self.stdout.write(f"Следующий запуск: {next_run}")
-            self.stdout.write('-' * 30)
+            if not jobs:
+                self.stdout.write(
+                    self.style.WARNING('⚠️  Периодические задачи не настроены')
+                )
+                return
+            
+            self.stdout.write('📅 Статус периодических задач:')
+            self.stdout.write('-' * 50)
+            
+            for job in jobs:
+                self.stdout.write(f"ID: {job.id}")
+                self.stdout.write(f"Функция: {job.func_name}")
+                self.stdout.write(f"Следующий запуск: {job.get_next_run_time()}")
+                self.stdout.write('-' * 30)
+                
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'❌ Ошибка получения статуса: {e}')
+            )
 
     def remove_schedules(self):
         """Удалить все периодические задачи"""
-        count = Schedule.objects.count()
-        Schedule.objects.all().delete()
-        
-        self.stdout.write(
-            self.style.SUCCESS(f'🗑️  Удалено {count} периодических задач')
-        )
+        try:
+            scheduler = get_scheduler('default')
+            jobs = scheduler.get_jobs()
+            count = len(jobs)
+            
+            for job in jobs:
+                job.delete()
+            
+            self.stdout.write(
+                self.style.SUCCESS(f'🗑️  Удалено {count} периодических задач')
+            )
+            
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'❌ Ошибка удаления задач: {e}')
+            )
