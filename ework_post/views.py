@@ -213,7 +213,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         try:
             self.object = form.save(commit=False)
             self.object.user = self.request.user
-            self.object.status = 0  # На модерацию
+            self.object.status = 0  # На модерацию - это вызовет сигнал модерации
             self.object.save()
             
             # Отметить использование бесплатной публикации
@@ -235,6 +235,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         except ValidationError as e:
             form.add_error(None, e)
             return self.form_invalid(form)
+
     
     def _handle_paid_post(self, form, payment):
         """Обработать платную публикацию"""

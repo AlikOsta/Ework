@@ -11,98 +11,67 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
     <div class="modal-body">
-        <form method="post" enctype="multipart/form-data" id="services-post-form">
-            {% csrf_token %}
-            
-            <!-- Основные поля -->
-            <div class="mb-3">
-                <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
-                {{ form.title|add_class:"form-control" }}
-                {% if form.title.errors %}
-                    <div class="text-danger">{{ form.title.errors.0 }}</div>
-                {% endif %}
-            </div>
+        <!-- Отображение общих ошибок формы -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
 
-            <div class="mb-3">
-                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-                {{ form.description|add_class:"form-control"|attr:"rows:3" }}
-                {% if form.description.errors %}
-                    <div class="text-danger">{{ form.description.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="{{ form.price.id_for_label }}" class="form-label">{{ form.price.label }}</label>
-                    {{ form.price|add_class:"form-control" }}
-                    {% if form.price.errors %}
-                        <div class="text-danger">{{ form.price.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    <label for="{{ form.currency.id_for_label }}" class="form-label">{{ form.currency.label }}</label>
-                    {{ form.currency|add_class:"form-select" }}
-                    {% if form.currency.errors %}
-                        <div class="text-danger">{{ form.currency.errors.0 }}</div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label for="{{ form.city.id_for_label }}" class="form-label">{{ form.city.label }}</label>
-                    {{ form.city|add_class:"form-select" }}
-                    {% if form.city.errors %}
-                        <div class="text-danger">{{ form.city.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{{ form.sub_rubric.label }}</label>
-                    {{ form.sub_rubric|add_class:"form-select" }}
-                    {% if form.sub_rubric.errors %}
-                        <div class="text-danger">{{ form.sub_rubric.errors.0 }}</div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="{{ form.user_phone.id_for_label }}" class="form-label">{{ form.user_phone.label }}</label>
-                {{ form.user_phone|add_class:"form-control" }}
-                {% if form.user_phone.errors %}
-                    <div class="text-danger">{{ form.user_phone.errors.0 }}</div>
-                {% endif %}
-            </div>
-
-            <!-- Выбор тарифа -->
-            <div class="mb-3">
-                <label for="package-select" class="form-label">{% trans "Выберите тариф" %}</label>
-                <select name="package" id="package-select" class="form-select" required>
-                    {% for package in package_info %}
-                        <option value="{{ package.id }}" 
-                                data-allows-photo="{{ package.allows_photo|yesno:'true,false' }}"
-                                data-price="{{ package.price }}"
-                                data-is-free="{{ package.is_free|yesno:'true,false' }}"
-                                {% if not package.available %}disabled{% endif %}
-                                {% if forloop.first %}selected{% endif %}>
-                            {{ package.name }} 
-                            {% if package.is_free %}
-                                ({% trans "Бесплатно" %})
-                            {% else %}
-                                ({{ package.price }} {{ package.currency }})
-                            {% endif %}
-                            {% if package.icon_flag %} {{ package.icon_flag }}{% endif %}
-                            {% if not package.available %} - {{ package.disabled_reason }}{% endif %}
-                        </option>
-                    {% endfor %}
-                </select>
-                {% if form.package.errors %}
-                    <div class="text-danger">{{ form.package.errors.0 }}</div>
-                {% endif %}
-            </div>
+        <!-- Основная информация -->
+        <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label">{% trans "Название услуги" %}</label>
+            {% render_field form.title class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите название услуги" %}
+            <div class="invalid-feedback">{{ form.title.errors|first }}</div>
+        </div>
 
         <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label">{% trans "Описание услуги" %}</label>
+            {% render_field form.description class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите описание услуги" rows="5" %}
+            <div class="invalid-feedback">{{ form.description.errors|first }}</div>
+        </div>
+
+        <!-- Финансовая информация -->
+        <div class="row mb-3">
+            <div class="col-8">
+                <label for="{{ form.price.id_for_label }}" class="form-label">{% trans "Стоимость" %}</label>
+                {% render_field form.price class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите стоимость" %}
+                <div class="invalid-feedback">{{ form.price.errors|first }}</div>
+            </div>
+            <div class="col-4">
+                <label for="{{ form.currency.id_for_label }}" class="form-label">{% trans "Валюта" %}</label>
+                {% render_field form.currency class="form-control" error_class=WIDGET_ERROR_CLASS %}
+                <div class="invalid-feedback">{{ form.currency.errors|first }}</div>
+            </div>
+        </div>
+
+        <!-- Город -->
+        <div class="mb-3">
+            <label for="{{ form.city.id_for_label }}" class="form-label">{% trans "Город" %}</label>
+            {% render_field form.city class="form-control" error_class=WIDGET_ERROR_CLASS %}
+            <div class="invalid-feedback">{{ form.city.errors|first }}</div>
+        </div>
+
+        <!-- Адресс -->
+        <div class="mb-3">
+            <label for="{{ form.address.id_for_label }}" class="form-label">{% trans "Адресс" %}</label>
+            {% render_field form.address class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите адресс" %}
+            <div class="invalid-feedback">{{ form.address.errors|first }}</div>
+        </div>
+        
+        <!-- Подрубрика -->
+        <div class="mb-3">
+            <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Категория" %}</label>
+            {% render_field form.sub_rubric class="form-control" error_class=WIDGET_ERROR_CLASS %}
+            <div class="invalid-feedback">{{ form.sub_rubric.errors|first }}</div>
+        </div>
+
+        <!-- Телефон для связи -->
+        <div class="mb-3">
             <label for="{{ form.user_phone.id_for_label }}" class="form-label">{% trans "Телефон для связи" %}</label>
-            {% render_field form.user_phone class="form-control" error_class=WIDGET_ERROR_CLASS %}
+            {% render_field form.user_phone class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="+3 (XXX) XXX-XX-XX" %}
+            <div class="invalid-feedback">{{ form.user_phone.errors|first }}</div>
+            <div class="form-text">{% trans "Укажите номер телефона для связи с вами" %}</div>
         </div>
 
         <!-- Аддоны продвижения -->
@@ -128,13 +97,13 @@
                     </label>
                 </div>
                 
-                <div class="mb-3 form-check">
+                {% comment %} <div class="mb-3 form-check">
                     {% render_field form.addon_auto_bump class="form-check-input pricing-addon" %}
                     <label class="form-check-label" for="{{ form.addon_auto_bump.id_for_label }}">
                         {{ form.addon_auto_bump.label }}
                         <small class="text-muted">({{ form.addon_auto_bump.help_text }})</small>
                     </label>
-                </div>
+                </div> {% endcomment %}
             </div>
         </div>
 
@@ -172,23 +141,16 @@
 <!-- ОТЛАДОЧНЫЙ СКРИПТ - временно -->
 {% if not object %}
 <script>
-console.log('=== ОТЛАДКА УСЛУГ НАЧАЛО ===');
 
 (function() {
-    console.log('Отладочный скрипт услуг запущен');
-    
     const form = document.querySelector('form[hx-post]');
     const submitBtn = document.querySelector('#submit-btn');
     const imageField = document.querySelector('#image-field');
     const pricingBreakdown = document.querySelector('#pricing-breakdown');
     const checkboxes = document.querySelectorAll('input[type=checkbox].pricing-addon');
-    
-    console.log('Элементы найдены:', {form, submitBtn, imageField, pricingBreakdown, checkboxes: checkboxes.length});
-    
+        
     checkboxes.forEach((cb, i) => {
-        cb.addEventListener('change', function() {
-            console.log(`Услуги: чекбокс ${cb.name} = ${cb.checked}`);
-            
+        cb.addEventListener('change', function() {            
             if (cb.name === 'addon_photo') {
                 imageField.style.display = cb.checked ? 'block' : 'none';
             }
@@ -216,7 +178,6 @@ console.log('=== ОТЛАДКА УСЛУГ НАЧАЛО ===');
     updatePrice();
 })();
 
-console.log('=== ОТЛАДКА УСЛУГ КОНЕЦ ===');
 </script>
 {% endif %}
 

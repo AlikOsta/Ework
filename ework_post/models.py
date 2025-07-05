@@ -21,7 +21,7 @@ from ework_premium.models import Package
 
 phone_regex = RegexValidator(
     regex=r'^\+?1?\d{9,15}$',
-    message=_("Номер телефона должен быть в формате: '+7(xxx)xxx-xx-xx'")
+    message=_("Номер телефона должен быть в формате: '+3(xxx)xxx-xx-xx'")
 )
 
 
@@ -36,10 +36,11 @@ class AbsPost(PolymorphicModel):
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'))
     sub_rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, db_index=True, related_name='%(app_label)s_%(class)s_posts', verbose_name=_('Рубрика'))
     city = models.ForeignKey(City, verbose_name=_('Город работы'), db_index=True, on_delete=models.PROTECT)
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Адрес'))
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, db_index=True, verbose_name=_('Автор'))
     user_phone = models.CharField(max_length=20, validators=[phone_regex], verbose_name=_('Телефон'), null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0, db_index=True, verbose_name=_('Статус'))
-    is_premium = models.BooleanField(default=False, db_index=True, verbose_name=_('Премиум'))
+    is_premium = models.BooleanField(default=False, db_index=True, verbose_name=_('Цветной фон карточки'))
     created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_("Дата создания"))    
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
     is_deleted = models.BooleanField(default=False, db_index=True, verbose_name=_("Удалено"))
@@ -218,6 +219,7 @@ class BannerPost(models.Model):
     order = models.PositiveIntegerField(default=0, db_index=True, verbose_name=_("Порядок отображения"))
 
     class Meta:
+        app_label = 'ework_premium'
         verbose_name = _("Баннер")
         verbose_name_plural = _("Баннеры")
         ordering = ["order", "-created_at"]

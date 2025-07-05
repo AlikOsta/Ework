@@ -7,6 +7,7 @@ class City(models.Model):
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_("Порядок"), help_text=_("Порядок города"))
 
     class Meta:
+        app_label = "ework_config"
         verbose_name = _("Город")
         verbose_name_plural = _("Города")
         ordering = ['order']

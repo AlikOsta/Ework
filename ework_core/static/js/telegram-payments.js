@@ -1,6 +1,3 @@
-/**
- * Простая обработка платежей через Telegram WebApp
- */
 
 class TelegramPayments {
     constructor() {
@@ -13,7 +10,6 @@ class TelegramPayments {
             this.tg = window.Telegram.WebApp;
             this.tg.ready();
             this.tg.expand();
-            console.log('TelegramPayments: WebApp готов');
         } else {
             console.warn('TelegramPayments: Telegram WebApp недоступен');
             this.tg = null;
@@ -30,11 +26,10 @@ class TelegramPayments {
                     const response = JSON.parse(xhr.responseText);
                     
                     if (response.action === 'payment_required') {
-                        console.log('TelegramPayments: нужна оплата', response);
                         this.openPayment(response);
                     }
                 } catch (e) {
-                    // Не JSON ответ - игнорируем
+                    console.error('TelegramPayments: ошибка обработки ответа', e);
                 }
             }
         });
@@ -47,8 +42,6 @@ class TelegramPayments {
         }
 
         try {
-            console.log('TelegramPayments: создаем инвойс на сервере');
-            
             // Создаем инвойс на сервере
             const response = await fetch('/api/create-invoice/', {
                 method: 'POST',
@@ -65,19 +58,14 @@ class TelegramPayments {
             const result = await response.json();
             
             if (result.success && result.invoice_link) {
-                console.log('TelegramPayments: открываем платеж');
                 
                 // Открываем платеж через Telegram WebApp
                 this.tg.openInvoice(result.invoice_link, (status) => {
-                    console.log('Payment status:', status);
                     
                     if (status === 'paid') {
-                        console.log('✅ Платеж успешен!');
                         this.showSuccess();
-                        // Перезагружаем страницу через 2 секунды
-                        setTimeout(() => window.location.reload(), 2000);
+                        setTimeout(() => window.location.reload(), 1000);
                     } else {
-                        console.log('❌ Платеж отменен');
                         alert('Оплата не была завершена');
                     }
                 });

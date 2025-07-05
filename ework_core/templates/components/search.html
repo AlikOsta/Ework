@@ -25,6 +25,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const searchForm = document.getElementById('search-form');
     const searchInput = document.getElementById('search-input');
     const clearBtn = document.getElementById('clear-search-btn');
     let searchTimeout;
@@ -53,18 +54,39 @@ document.addEventListener('DOMContentLoaded', function() {
             target: '#content-area'
         });
     }
+
+    // Обработка ввода текста (с задержкой)
     searchInput.addEventListener('input', function() {
         toggleClearButton();
         
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(performSearch, 500);
     });
+
+    // Обработка отправки формы (Enter)
+    searchForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Предотвращаем стандартную отправку формы
+        clearTimeout(searchTimeout); // Отменяем задержку
+        performSearch(); // Выполняем поиск немедленно
+    });
+
+    // Обработка нажатия Enter в поле ввода
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            clearTimeout(searchTimeout);
+            performSearch();
+        }
+    });
+
+    // Функция очистки поиска
     window.clearSearchInput = function() {
         searchInput.value = '';
         toggleClearButton();
         performSearch(); 
     };
 
+    // Инициализация
     toggleClearButton();
 });
 </script>

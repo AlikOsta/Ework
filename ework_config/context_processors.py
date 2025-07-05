@@ -9,12 +9,6 @@ def site_config(request):
             'site_name': config.site_name,
             'site_description': config.site_description,
             'bot_username': config.bot_username,
-            'telegram_channel': config.telegram_channel,
-            'telegram_group': config.telegram_group,
-            'contact_email': config.contact_email,
-            'support_email': config.support_email,
-            'meta_keywords': config.meta_keywords,
-            'meta_description': config.meta_description,
-            'maintenance_mode': config.maintenance_mode,
+            'admin_telegram': config.admin_username if config else '@admin'
         }
     }

@@ -16,11 +16,11 @@ class TelegramUser(AbstractUser):
     username = models.CharField(max_length=30, unique=True, verbose_name=_("Telegram Username"), help_text=_("Telegram @Username"))
     first_name = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Имя"), help_text=_("Имя"))
     last_name = models.CharField(max_length=50, blank=True, null=True, verbose_name=_("Фамилия"), help_text=_("Фамилия"))
-    photo_url = models.URLField(blank=True, null=True, verbose_name=_("URL фото"), help_text=_("URL на фото")) #добавить путь и заглушку
+    photo_url = models.URLField(blank=True, null=True, verbose_name=_("URL фото"), help_text=_("URL на фото"))
     language = models.CharField( max_length=10, choices=settings.LANGUAGES, default='ru', verbose_name=_('Язык интерфейса')
     )
     city = models.ForeignKey(City, on_delete=models.PROTECT, verbose_name=_("Город"),help_text=_("Город"), null=True, blank=True)
-    # Эти поля переопределены как property ниже
+
     phone = models.CharField(max_length=15, blank=True, unique=True, null=True, verbose_name=_("Номер телефона"), help_text=_("Номер телефона"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))    
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))

@@ -37,6 +37,12 @@
     {% comment %} Подвал {% endcomment %}
     {% include "components/footer.html" %}
 
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready(); 
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script defer src="{% static 'js/main.js' %}"></script>
@@ -44,7 +50,7 @@
     <script defer src="{% static 'js/favorites.js' %}"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="{% static 'js/post-form-pricing.js' %}"></script>
-<script src="{% static 'js/telegram-payments.js' %}"></script>
+    <script src="{% static 'js/telegram-payments.js' %}"></script>
 
 </body>
 

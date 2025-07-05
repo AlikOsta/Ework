@@ -1,6 +1,5 @@
 .venv  
 .env
-db.sqlite3
 __pycache__
 post_img/
 rubric_img/

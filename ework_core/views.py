@@ -10,6 +10,9 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
 from django.db.models import Q, Count
 import json
+from django.utils.decorators import method_decorator
+from asgiref.sync import sync_to_async
+import asyncio
 
 from ework_rubric.models import SuperRubric, SubRubric
 from ework_post.models import AbsPost, Favorite, BannerPost, PostView
@@ -28,6 +31,7 @@ def home(request):
     return render(request, "pages/index.html", context)
 
 
+@login_required
 def modal_select_post(request):
     """Модальное окно выбора типа поста"""
     return render(request, 'includes/modal_select_post.html')
@@ -115,7 +119,7 @@ class PostListByRubricView(BasePostListView):
         
         return context
 
-
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class PostDetailView(DetailView):
     """Оптимизированный детальный просмотр поста"""
     model = AbsPost
@@ -170,7 +174,7 @@ class PostDetailView(DetailView):
         
         return context
 
-
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class FavoriteListView(ListView):
     """Список избранных постов"""
     model = AbsPost
@@ -193,8 +197,10 @@ class FavoriteListView(ListView):
             'has_more': total > len(ctx['posts']),
         })
         return ctx
+    
 
 
+@login_required
 @require_POST
 def toggle_favorite(request, post_pk):
     """Переключить статус избранного"""
@@ -225,16 +231,21 @@ def banner_view(request, banner_id):
 
 def banner_ad_info(request):
     """Информация о баннерной рекламе"""
-    return render(request, 'includes/banner_ad_modal.html', {'admin_telegram': '@newpunknot'})
+    return render(request, 'includes/banner_ad_modal.html')
 
 
 def premium(request):
     """Страница тарифов"""
     packages = Package.objects.filter(is_active=True).order_by('order')
     context = {'packages': packages}
-    return render(request, 'pages/premium.html', context)
+    if request.headers.get('HX-Request'):
+        # Возвращаем контент для модального окна
+        return render(request, 'pages/premium.html', context)
+    
+    return redirect('core:home')
 
 
+@method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class CreateInvoiceView(View):
     """API для создания инвойса через Telegram Bot"""
     
@@ -258,15 +269,23 @@ class CreateInvoiceView(View):
             if not request.user.telegram_id:
                 return JsonResponse({'success': False, 'error': 'У пользователя не задан telegram_id'}, status=400)
 
-            # Создаём инвойс-ссылку
             from ework_bot_tg.bot.bot import create_invoice_link
-            invoice_link = create_invoice_link(
-                user_id=request.user.telegram_id,
-                payment_id=payment.id,
-                payload=payment.get_payload(),
-                amount=payment.amount,
-                order_id=payment.order_id,
-                addons_data=payment.addons_data
+            
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            invoice_link = loop.run_until_complete(
+                create_invoice_link(
+                    user_id=request.user.telegram_id,
+                    payment_id=payment.id,
+                    payload=payment.get_payload(),
+                    amount=payment.amount,
+                    order_id=payment.order_id,
+                    addons_data=payment.addons_data
+                )
             )
 
             if not invoice_link:
@@ -284,35 +303,27 @@ def publish_post_after_payment(user_id, payment_id):
     """Функция для публикации поста после успешной оплаты"""
     try:
         from ework_premium.models import Payment
-        
-        print(f"🔧 Обрабатываем платеж {payment_id} для пользователя {user_id}")
-        
-        # Получаем платеж
-        payment = Payment.objects.select_related('user').get(
+        payment = Payment.objects.select_related('user', 'post').get(
             id=payment_id,
             user__telegram_id=user_id,
             status='pending'
         )
-        
-        print(f"🔧 Платеж найден: ID={payment.id}, Order={payment.order_id}")
-        
-        # Проверяем, есть ли связанный пост
+    
         if not payment.post:
-            print(f"❌ Нет поста для платежа {payment_id}")
-            payment.mark_as_paid()
+            # Если нет поста, просто отмечаем платеж как оплаченный
+            payment.status = 'paid'
+            payment.save(update_fields=['status'])
             return False
         
-        post = payment.post
-        print(f"🔧 Найден пост-черновик: {post.title} (ID: {post.id})")
-        
-        # Переводим пост из черновика на модерацию
-        post.status = 0  # На модерацию
-        post.save(update_fields=['status'])
+        print(f"🔄 Найден платеж {payment_id} для поста {payment.post.title}")
+        print(f"📊 Текущий статус поста: {payment.post.status}")
         
         # Отмечаем платеж как оплаченный
-        payment.mark_as_paid()
+        # Это должно вызвать сигнал handle_payment_save
+        payment.status = 'paid'
+        payment.save(update_fields=['status'])
         
-        print(f"✅ Платеж {payment_id} обработан, пост {post.id} отправлен на модерацию")
+        print(f"✅ Платеж {payment_id} отмечен как оплаченный")
         return True
         
     except Exception as e:

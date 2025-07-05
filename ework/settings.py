@@ -129,7 +129,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'ework_user_tg.TelegramUser'
 
-USE_I18N = True
 USE_L10N = True 
 
 LANGUAGES = [
@@ -137,11 +136,13 @@ LANGUAGES = [
     ('uk', 'Ukrainian'),
 ]
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 LOCALE_PATHS = [
-    os.path.join(BASE_DIR, 'locale'),
+    BASE_DIR / 'locale',
 ]
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+
 
 ROSETTA_MESSAGES_PER_PAGE = 50
 ROSETTA_ENABLE_TRANSLATION_SUGGESTIONS = True

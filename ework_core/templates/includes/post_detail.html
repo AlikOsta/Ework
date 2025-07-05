@@ -1,210 +1,103 @@
+{% load widget_tweaks %}
 {% load i18n %}
 
+{# Подключаем Material Icons и HTMX #}
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script src="https://unpkg.com/htmx.org@1.9.2"></script>
+
+<style>
+  .rating {
+    display: inline-flex;
+    flex-direction: row-reverse; /* чтобы ~ работал "вперёд" по списку */
+    gap: 0.25rem;
+  }
+  .rating input {
+    display: none;
+  }
+  .rating label {
+    cursor: pointer;
+    font-size: 2.5rem;
+    color: var(--bs-gray-300);
+    transition: color 0.1s ease-in-out;
+  }
+  /* при наведении: все звёзды до курсора */
+  .rating label:hover,
+  .rating label:hover ~ label {
+    color: var(--bs-warning);
+  }
+  /* при выборе: все звёзды до выбранной остаются окрашенными */
+  .rating input:checked ~ label,
+  .rating input:checked ~ label ~ label {
+    color: var(--bs-warning);
+  }
+</style>
+
 <div class="modal-content">
-    <div class="modal-header">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
+  <div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+      {% blocktrans with user=to_user.get_full_name %}Оставить отзыв пользователю {{ user }}{% endblocktrans %}
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+  </div>
 
-    <div class="product-detail mt-3 modal-body" 
-        data-is-author="{% if user == post.author %}true{% else %}false{% endif %}"
-        data-username="{{ post.author.username }}"
-        data-product-id="{{ post.id }}"
-        data-product-title="{{ post.title|escapejs }}"
-        data-product-price="{{ post.price }} {{ post.currency }}">
-
-        <!-- Изображение с кнопкой избранного -->
-        <div class="product-gallery mb-4">
-            <div class="main-image-container rounded overflow-hidden position-relative">
-                {% if post.image %}
-                <img src="{{ post.image.url }}"
-                    width="300"
-                    class="img-fluid w-100 main-product-image"
-                    alt="{{ post.title }}">
-                {% else %}
-                <div class="d-flex align-items-center justify-content-center" style="height: 100px;">
-                    <i class="material-icons text-muted" style="font-size: 100px;">image</i>
-                </div>
-                {% endif %}
-                
-                {% if user.is_authenticated %}
-                <button type="button"
-                        data-post-id="{{ post.pk }}"
-                        data-is-favorite="{% if post.pk in favorite_post_ids %}true{% else %}false{% endif %}"
-                        class="btn position-absolute top-0 end-0 mt-2 me-2 p-1 favorite-btn {% if post.pk in favorite_post_ids %}text-danger{% else %}text-muted{% endif %}"
-                        aria-label="Избранное">
-                    <i class="material-icons">{% if post.pk in favorite_post_ids %}favorite{% else %}favorite_border{% endif %}</i>
-                </button>
-                {% endif %}
-            </div>
-
-        </div>
-
-        <!-- Информация о товаре -->
-        <div class="product-info">
-            <h4 class="product-title mb-4">{{ post.title }}</h4>
-            <h3 class="product-price fw-bold mb-4 text-primary">{{ post.price }} {{ post.currency }}</h3>
-        </div>
-
-        <!-- Описание -->
-        <div class="product-description mb-4">
-            <h5 class="section-title fw-bold mb-3">
-                {% trans "Описание" %}
-            </h5>
-            <div class="description-content">
-                <p>{{ post.description }}</p>
-            </div>
-        </div>
-           <!-- Дополнительные поля для работы -->
-        {% if post.postjob %}
-        <div class="job-details">
-            <h5 class="section-title fw-bold mb-3">{% trans "Детали вакансии" %}</h5>
-            <div class="row">
-                <div class="col-12 mb-3">
-                    <div class="card border-0 bg-light">
-                        <div class="card-body p-3">
-                            {% if post.postjob.experience is not None %}
-                            <div class="mb-2">
-                                <strong>{% trans "Опыт работы" %}:</strong>
-                                <span class="text-muted">{{ post.postjob.get_experience_display }}</span>
-                            </div>
-                            {% endif %}
-                            
-                            {% if post.postjob.work_schedule is not None %}
-                            <div class="mb-2">
-                                <strong>{% trans "График работы" %}:</strong>
-                                <span class="text-muted">{{ post.postjob.get_work_schedule_display }}</span>
-                            </div>
-                            {% endif %}
-                            
-                            {% if post.postjob.work_format is not None %}
-                            <div class="mb-0">
-                                <strong>{% trans "Формат работы" %}:</strong>
-                                <span class="text-muted">{{ post.postjob.get_work_format_display }}</span>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="modal-body">
+    {% if existing_rating %}
+      <div class="alert alert-info">
+        <h6>{% trans "Вы уже оценивали этого пользователя" %}</h6>
+        <p>
+          {% for i in "12345" %}
+            {% if forloop.counter <= existing_rating.rating %}⭐{% else %}☆{% endif %}
+          {% endfor %}
+          ({{ existing_rating.rating }}/5)
+        </p>
+        {% if existing_rating.comment %}
+          <p><strong>{% trans "Комментарий:" %}</strong> {{ existing_rating.comment }}</p>
         {% endif %}
+        <small class="text-muted">{{ existing_rating.created_at|date:"d.m.Y H:i" }}</small>
+      </div>
+    {% elif not can_rate %}
+      <div class="alert alert-warning">
+        {% trans "Вы не можете оценить этого пользователя" %}
+      </div>
+    {% else %}
+      <form
+        hx-post="{% url 'user:create_rating' user_id=to_user.id %}"
+        hx-trigger="change"
+        hx-target="#rating-result"
+        hx-swap="innerHTML"
+      >
+        {% csrf_token %}
 
-
-        <!-- Информация о продавце -->
-        <div class="seller-info mb-4">
-            <h5 class="section-title fw-bold mb-3">
-                {% trans "Продавец" %}
-            </h5>
-            <div class="card border-0 bg-light">
-                <div class="card-body p-3">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <a href="{% url 'user:author_profile' author_id=post.user.id %}" class="d-flex align-items-center flex-grow-1 text-decoration-none">
-                            <div class="seller-avatar me-3">
-                                {% if post.user.photo_url %}
-                                    <img src="{{ post.user.photo_url }}" alt="{{ post.user.username }}" class="rounded-circle" width="50" height="50">
-                                {% else %}
-                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                                        <i class="material-icons text-muted">person</i>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div>
-                                {% if post.user.first_name %}
-                                <h6 class="mb-1 text-dark">{{ post.user.first_name }}</h6>
-                                {% else %}
-                                <h6 class="mb-1 text-dark">{{ post.user.username }}</h6>
-                                {% endif %}
-                                <p class="text-muted mb-0 small">
-                                    {% trans "Рейтинг: " %}
-                                    {% if post.user.average_rating > 0 %}
-                                        {{ post.user.average_rating|floatformat:1 }}/5 ({{ post.user.ratings_count }})
-                                    {% else %}
-                                        {% trans "Нет оценок" %}
-                                    {% endif %}
-                                    <i class="material-icons text-warning" style="font-size: 1em;">star</i>
-                                </p>
-                                <p class="text-muted mb-0 small">
-                                    {% trans "На сайте с: " %}
-                                    {{ post.user.date_joined|date:"d.m.y" }}</p>
-                            </div>
-                        </a>
-
-                    </div>
-                </div>
-            </div>
+        <div class="mb-4 text-center">
+          <label class="form-label mb-3">{{ form.rating.label }}</label>
+          <div class="rating">
+            {% for choice in form.rating.field.choices %}
+              <input
+                type="radio"
+                name="rating"
+                id="rating{{ choice.0 }}"
+                value="{{ choice.0 }}"
+                {% if existing_rating and existing_rating.rating == choice.0 %}checked{% endif %}
+              >
+              <label for="rating{{ choice.0 }}">
+                <i class="material-icons">star</i>
+              </label>
+            {% endfor %}
+          </div>
+          <div class="form-text mt-2">{{ form.rating.help_text }}</div>
         </div>
 
-        <div class="product-info mb-4">
-            <div class="product-meta d-flex flex-wrap mb-3">
-                <div class="me-4 mb-2 d-flex align-items-center">
-                    <i class="material-icons text-muted me-2">location_on</i>
-                    <span>{{ post.city }}</span>
-                </div>
-                <div class="me-4 mb-2 d-flex align-items-center">
-                    <i class="material-icons text-muted me-2">schedule</i>
-                    <span>{{ post.created_at|date:"d.m.y" }}</span>
-                </div>
-            </div>
+        <div id="rating-result"></div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            {% trans "Отмена" %}
+          </button>
+          <button type="submit" class="btn btn-primary">
+            {% trans "Отправить отзыв" %}
+          </button>
         </div>
-
-        {% if user != post.author %}
-        <div class="phone-reveal-container mb-3">
-            {% if post.user_phone%}
-                <!-- Ссылка с номером изначально скрыта -->
-                <a
-                id="phoneLink"
-                href="tel:{{ post.user_phone }}"
-                class="btn btn-success w-100 py-2 rounded-3 d-flex justify-content-center align-items-center d-none"
-                role="button"
-                aria-label="Позвонить продавцу"
-                >
-                <i class="material-icons me-2">phone</i>
-                {{ post.user_phone }}
-                </a>
-
-                <!-- Кнопка: при клике заменяется на ссылку -->
-                <button
-                class="btn btn-outline-primary w-100 py-2 rounded-3 d-flex justify-content-center align-items-center mt-0"
-                type="button"
-                onclick="
-                    var link = document.getElementById('phoneLink');
-                    link.classList.remove('d-none');
-                    this.replaceWith(link);
-                "
-                >
-                <i class="material-icons me-2">phone</i>
-                <span>
-                    {% trans "Показать номер телефона" %}
-                </span>
-                </button>
-            </div>
-            {% endif %}
-
-            <!-- Кнопка связи через чат -->
-            <div class="chat-button-container">
-                <button
-                    id="contactSellerBtn"
-                    type="button"
-                    class="btn btn-primary w-100 py-3 rounded-3 d-flex justify-content-center align-items-center"
-                    onclick="
-                    (function(){
-                        var detail = this.closest('.product-detail').dataset;
-                        var msg = 'Здравствуйте! Меня интересует «' + detail.productTitle +
-                                '» за ' + detail.productPrice + '. Ещё актуально?';
-                        window.open(
-                        'https://t.me/{{ post.user.username }}?text=' + encodeURIComponent(msg),
-                        '_blank'
-                        );
-                    }).call(this);
-                    "
-                    onmousedown="this.style.transform='scale(0.98)'; this.style.opacity='0.9';"
-                    onmouseup="this.style.transform='scale(1)'; this.style.opacity='1';"
-                >
-                    <i class="material-icons me-2">chat</i>
-                    <span>{% trans "Связаться с продавцом" %}</span>
-                </button>
-            </div>
-        </div>
+      </form>
     {% endif %}
-
+  </div>
 </div>
