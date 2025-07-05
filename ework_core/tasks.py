@@ -51,35 +51,6 @@ def archive_expired_posts():
         }
 
 
-def cleanup_old_tasks():
-    """
-    Очистка старых выполненных задач Django-Q (опционально)
-    """
-    try:
-        from django_q.models import Task
-        
-        # Удаляем задачи старше 7 дней
-        cutoff_date = timezone.now() - timedelta(days=7)
-        deleted_count, _ = Task.objects.filter(
-            started__lt=cutoff_date,
-            stopped__isnull=False  # Только завершенные задачи
-        ).delete()
-        
-        logger.info(f"Удалено {deleted_count} старых задач Django-Q")
-        
-        return {
-            'success': True,
-            'deleted_count': deleted_count
-        }
-        
-    except Exception as e:
-        logger.error(f"Ошибка при очистке задач: {e}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
-
-
 def get_expiry_stats():
     """
     Получить статистику по истекающим постам (для мониторинга)
