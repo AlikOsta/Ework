@@ -37,6 +37,64 @@ def modal_select_post(request):
     return render(request, 'includes/modal_select_post.html')
 
 
+class PostListByRubricHTMXView(BasePostListView):
+    """HTMX view для бесконечной прокрутки карточек"""
+    template_name = 'components/cards_infinite.html'
+    paginate_by = 20
+
+    def dispatch(self, request, *args, **kwargs):
+        # Копируем логику из основного view
+        self.super_rubric = None
+        rubric_pk = self.kwargs.get('rubric_pk')
+        if rubric_pk:
+            self.super_rubric = SuperRubric.objects.select_related().filter(pk=rubric_pk).first()
+        self.is_job_category = bool(self.super_rubric and self.super_rubric.slug == 'rabota')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        """Получить оптимизированный queryset с фильтрами"""
+        qs = super().get_queryset()
+        
+        # Фильтрация по рубрике
+        if self.super_rubric:
+            qs = qs.filter(sub_rubric__super_rubric=self.super_rubric)
+        
+        # Дополнительные фильтры для работы
+        if self.is_job_category:
+            qs = self._apply_job_filters(qs)
+        
+        return qs
+
+    def _apply_job_filters(self, qs):
+        """Применить фильтры специфичные для вакансий"""
+        from ework_job.models import PostJob
+        
+        # Ограничиваем только постами работы
+        job_ids = PostJob.objects.values_list('id', flat=True)
+        qs = qs.filter(id__in=job_ids)
+        
+        # Применяем фильтры
+        params = {
+            'postjob__experience': self.request.GET.get('experience'),
+            'postjob__work_format': self.request.GET.get('work_format'),
+            'postjob__work_schedule': self.request.GET.get('work_schedule'),
+        }
+        
+        for field, value in params.items():
+            if value and value.isdigit():
+                qs = qs.filter(**{field: int(value)})
+        
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Добавляем rubric_pk для генерации URL
+        context['rubric_pk'] = getattr(self.super_rubric, 'pk', None)
+        
+        return context
+
+
 class PostListByRubricView(BasePostListView):
     """Оптимизированный список постов по рубрике"""
     template_name = 'components/card.html'
