@@ -92,36 +92,48 @@ class AbsPost(PolymorphicModel):
         self.deleted_at = timezone.now()
         self.save(update_fields=['is_deleted', 'deleted_at'])
     
-    def set_addons(self, photo=False, highlight=False, auto_bump=False):
+    def set_addons(self, photo=False, highlight=False):
         """Установить аддоны для поста"""
         from datetime import timedelta
+        from ework_config.models import SiteConfig
         
+        config = SiteConfig.get_config()
+        now = timezone.now()
+        
+        # Устанавливаем аддоны
         self.has_photo_addon = photo
         self.has_highlight_addon = highlight
-        self.has_auto_bump_addon = auto_bump
         
         # Если есть выделение цветом - делаем пост премиум
         self.is_premium = highlight
         
         # Устанавливаем время истечения для аддонов
-        now = timezone.now()
-        
         if highlight:
-            self.highlight_expires_at = now + timedelta(days=3)
+            self.highlight_expires_at = now + timedelta(days=config.highlight_addon_duration_days)
         
-        if auto_bump:
-            self.auto_bump_expires_at = now + timedelta(days=7)
+        if photo:
+            # Для фото: продлеваем до 30 дней от текущей даты или добавляем время до 30 дней
+            days_to_add = config.photo_addon_duration_days
+            target_date = now + timedelta(days=days_to_add)
+            
+            # Если объявление создается заново или срок истек
+            if not self.photo_expires_at or self.photo_expires_at < now:
+                self.photo_expires_at = target_date
+            else:
+                # Если есть активная услуга фото, продлеваем до нужного срока
+                current_remaining = (self.photo_expires_at - now).days
+                if current_remaining < days_to_add:
+                    self.photo_expires_at = target_date
 
     def apply_addons_from_payment(self, payment):
         """Применить аддоны из платежа к посту"""
         self.set_addons(
             photo=payment.has_photo_addon(),
-            highlight=payment.has_highlight_addon(),
-            auto_bump=payment.has_auto_bump_addon()
+            highlight=payment.has_highlight_addon()
         )
         self.save(update_fields=[
-            'has_photo_addon', 'has_highlight_addon', 'has_auto_bump_addon',
-            'highlight_expires_at', 'auto_bump_expires_at', 'is_premium'
+            'has_photo_addon', 'has_highlight_addon',
+            'highlight_expires_at', 'photo_expires_at', 'is_premium'
         ])
     
     def is_highlight_active(self):
@@ -130,28 +142,28 @@ class AbsPost(PolymorphicModel):
                 self.highlight_expires_at and 
                 self.highlight_expires_at > timezone.now())
     
-    def is_auto_bump_active(self):
-        """Проверить, активно ли автоподнятие"""
-        return (self.has_auto_bump_addon and 
-                self.auto_bump_expires_at and 
-                self.auto_bump_expires_at > timezone.now())
+    def is_photo_active(self):
+        """Проверить, активна ли услуга фото"""
+        return (self.has_photo_addon and 
+                self.photo_expires_at and 
+                self.photo_expires_at > timezone.now())
     
-    def can_be_bumped(self):
-        """Проверить, можно ли поднять пост (прошло 12 часов)"""
-        from datetime import timedelta
-        
-        if not self.is_auto_bump_active():
-            return False
-            
-        if not self.last_bump_at:
-            return True
-            
-        return self.last_bump_at + timedelta(hours=12) <= timezone.now()
-    
-    def bump_post(self):
-        """Поднять пост в топ"""
-        self.last_bump_at = timezone.now()
-        self.save(update_fields=['last_bump_at'])
+    def get_addons_info(self):
+        """Получить информацию об активных аддонах"""
+        now = timezone.now()
+        info = {
+            'photo': {
+                'active': self.is_photo_active(),
+                'expires_at': self.photo_expires_at,
+                'days_left': (self.photo_expires_at - now).days if self.photo_expires_at and self.photo_expires_at > now else 0
+            },
+            'highlight': {
+                'active': self.is_highlight_active(),
+                'expires_at': self.highlight_expires_at,
+                'days_left': (self.highlight_expires_at - now).days if self.highlight_expires_at and self.highlight_expires_at > now else 0
+            }
+        }
+        return info
 
 
 class PostView(models.Model):
