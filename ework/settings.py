@@ -157,21 +157,24 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'ework_core', 'static'),
 ]
 
-# Django-Q Configuration
-Q_CLUSTER = {
-    'name': 'ework',
-    'workers': 4,
-    'recycle': 500,
-    'timeout': 60,
-    'compress': True,
-    'save_limit': 250,
-    'queue_limit': 500,
-    'cpu_affinity': 1,
-    'label': 'Django Q',
-    'redis': {
-        'host': '127.0.0.1',
-        'port': 6379,
-        'db': 0,
+# Django RQ Configuration
+RQ_QUEUES = {
+    'default': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': 360,
     },
-    'orm': 'default',  # Use database if Redis is not available
+    'high': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': 360,
+    },
+    'low': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'DEFAULT_TIMEOUT': 360,
+    }
 }
