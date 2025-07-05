@@ -89,3 +89,79 @@ def get_expiry_stats():
         return {
             'error': str(e)
         }
+
+
+def remove_expired_highlights():
+    """
+    Убирает выделение цветом у постов с истекшим сроком
+    Запускается ежедневно
+    """
+    try:
+        now = timezone.now()
+        
+        # Находим посты с истекшим выделением
+        expired_highlights = AbsPost.objects.filter(
+            has_highlight_addon=True,
+            highlight_expires_at__lt=now,
+            is_premium=True
+        )
+        
+        # Убираем выделение
+        updated_count = 0
+        for post in expired_highlights:
+            post.is_premium = False
+            post.has_highlight_addon = False
+            post.highlight_expires_at = None
+            post.save(update_fields=['is_premium', 'has_highlight_addon', 'highlight_expires_at'])
+            updated_count += 1
+        
+        logger.info(f"Убрано выделение у {updated_count} постов с истекшим сроком")
+        
+        return {
+            'success': True,
+            'removed_highlights': updated_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Ошибка при удалении истекших выделений: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+def remove_expired_photo_addons():
+    """
+    Убирает услугу фото у постов с истекшим сроком
+    Запускается ежедневно
+    """
+    try:
+        now = timezone.now()
+        
+        # Находим посты с истекшей услугой фото
+        expired_photos = AbsPost.objects.filter(
+            has_photo_addon=True,
+            photo_expires_at__lt=now
+        )
+        
+        # Убираем услугу фото
+        updated_count = 0
+        for post in expired_photos:
+            post.has_photo_addon = False
+            post.photo_expires_at = None
+            post.save(update_fields=['has_photo_addon', 'photo_expires_at'])
+            updated_count += 1
+        
+        logger.info(f"Убрана услуга фото у {updated_count} постов с истекшим сроком")
+        
+        return {
+            'success': True,
+            'removed_photo_addons': updated_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Ошибка при удалении истекших фото услуг: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
