@@ -50,12 +50,10 @@ class AbsPost(PolymorphicModel):
     # Поля для промо-функций
     has_photo_addon = models.BooleanField(default=False, verbose_name=_("Аддон фото"))
     has_highlight_addon = models.BooleanField(default=False, verbose_name=_("Аддон выделения"))
-    has_auto_bump_addon = models.BooleanField(default=False, verbose_name=_("Аддон автоподнятия"))
     
     # Даты истечения промо
     highlight_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Выделение до"))
-    auto_bump_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Автоподнятие до"))
-    last_bump_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Последнее поднятие"))
+    photo_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Фото до"))
 
     class Meta:
         verbose_name = _("Объявление")
