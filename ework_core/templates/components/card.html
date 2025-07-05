@@ -54,12 +54,36 @@
 {% if posts %}
 <div class="tab-content" id="myTabContent">
   <div class="tab-pane fade show active" id="work" role="tabpanel" aria-labelledby="work-tab">
-    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
-      {% for post in posts %}
-      <div class="col">
-        {% include 'components/unified_card.html' with post=post show_seller=True show_controls=False favorite_post_ids=favorite_post_ids %}
+    <div id="posts-container">
+      <!-- Первые карточки -->
+      <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
+        {% for post in posts %}
+        <div class="col">
+          {% include 'components/unified_card.html' with post=post show_seller=True show_controls=False favorite_post_ids=favorite_post_ids %}
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
+      
+      <!-- Триггер для загрузки следующей страницы -->
+      {% if page_obj.has_next %}
+      <div class="load-more-trigger" 
+           hx-get="{% url 'core:post_list_by_rubric_htmx' rubric_pk %}?page={{ page_obj.next_page_number }}{% if request.GET.sub_rubric %}&sub_rubric={{ request.GET.sub_rubric }}{% endif %}{% if request.GET.experience %}&experience={{ request.GET.experience }}{% endif %}{% if request.GET.work_format %}&work_format={{ request.GET.work_format }}{% endif %}{% if request.GET.work_schedule %}&work_schedule={{ request.GET.work_schedule }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.city %}&city={{ request.GET.city }}{% endif %}{% if request.GET.price_min %}&price_min={{ request.GET.price_min }}{% endif %}{% if request.GET.price_max %}&price_max={{ request.GET.price_max }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}"
+           hx-trigger="revealed"
+           hx-swap="afterend"
+           hx-indicator="#loading-spinner"
+           style="height: 1px;">
+      </div>
+      {% endif %}
+    </div>
+    
+    <!-- Индикатор загрузки -->
+    <div id="loading-spinner" class="htmx-indicator text-center my-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{% trans "Загрузка..." %}</span>
+      </div>
+      <div class="mt-2">
+        <small class="text-muted">{% trans "Загружаем больше объявлений..." %}</small>
+      </div>
     </div>
   </div>
 </div>
