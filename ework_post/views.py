@@ -400,7 +400,15 @@ class PricingCalculatorView(View):
         # Получаем параметры аддонов
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
-        addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'
+        
+        # Получаем ID поста для редактирования (если есть)
+        post_id = request.GET.get('post_id')
+        existing_post = None
+        if post_id:
+            try:
+                existing_post = AbsPost.objects.get(id=post_id, user=request.user)
+            except AbsPost.DoesNotExist:
+                pass
         
         # Для неавторизованных пользователей создаем временного пользователя
         if request.user.is_authenticated:
@@ -416,14 +424,14 @@ class PricingCalculatorView(View):
         breakdown = calculator.get_pricing_breakdown(
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
+            existing_post=existing_post
         )
         
         # Получаем конфигурацию кнопки
         button_config = calculator.get_button_config(
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
+            existing_post=existing_post
         )
         
         # Сериализуем currency объект
@@ -437,7 +445,8 @@ class PricingCalculatorView(View):
         return JsonResponse({
             'breakdown': breakdown,
             'button': button_config,
-            'show_image_field': addon_photo
+            'show_image_field': addon_photo,
+            'is_update': existing_post is not None
         })
 
 
