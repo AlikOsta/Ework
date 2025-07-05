@@ -152,25 +152,38 @@ class PricingCalculator:
                 }
 
 
-def create_payment_for_post(user, package, photo=False, highlight=False, auto_bump=False):
+def create_payment_for_post(user, package, photo=False, highlight=False, existing_post=None):
     """Создать платеж для публикации поста с аддонами"""
     from .models import Payment
     
     calculator = PricingCalculator(user, package)
-    total_price = calculator.calculate_total_price(photo, highlight, auto_bump)
+    total_price = calculator.calculate_total_price(photo, highlight, existing_post)
     
     if total_price == 0:
-        return None  # Бесплатная публикация
+        return None  # Бесплатная публикация или обновление
     
     payment = Payment.objects.create(
         user=user,
         package=package,
         amount=total_price,
-        order_id=Payment.generate_order_id(user.id)
+        order_id=Payment.generate_order_id(user.id),
+        post=existing_post  # Связываем с существующим постом если есть
     )
     
     # Сохранить информацию об аддонах
-    payment.set_addons(photo=photo, highlight=highlight, auto_bump=auto_bump)
+    payment.set_addons(photo=photo, highlight=highlight)
     payment.save()
     
     return payment
+
+
+def can_user_restore_from_archive_free(user, post):
+    """Проверить, может ли пользователь восстановить пост из архива бесплатно"""
+    from .models import FreePostRecord
+    
+    # Если у поста есть активные аддоны - нужна оплата
+    if post.has_photo_addon or post.has_highlight_addon:
+        return False
+    
+    # Проверяем лимит бесплатных постов
+    return FreePostRecord.can_user_post_free(user)
