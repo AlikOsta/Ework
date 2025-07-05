@@ -168,3 +168,51 @@ body {
 .scrollable-stories::-webkit-scrollbar {
     display: none;
 }
+
+/* Стили для бесконечной прокрутки */
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+
+.load-more-trigger {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.htmx-cards-batch {
+    margin-bottom: 1rem;
+}
+
+/* Анимация для новых карточек */
+.htmx-cards-batch .col {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стили для индикатора загрузки */
+#loading-spinner {
+    transition: opacity 0.3s ease;
+}
+
+#loading-spinner.htmx-request {
+    opacity: 1;
+}
+
+/* Отступы для контейнера с постами */
+#posts-container {
+    position: relative;
+}
