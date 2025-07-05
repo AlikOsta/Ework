@@ -84,7 +84,10 @@ class Command(BaseCommand):
             for job in jobs:
                 self.stdout.write(f"ID: {job.id}")
                 self.stdout.write(f"Функция: {job.func_name}")
-                self.stdout.write(f"Следующий запуск: {job.get_next_run_time()}")
+                # Для cron job используем meta информацию
+                if hasattr(job, 'meta') and 'cron_string' in job.meta:
+                    self.stdout.write(f"Расписание: {job.meta['cron_string']}")
+                self.stdout.write(f"Создано: {job.created_at}")
                 self.stdout.write('-' * 30)
                 
         except Exception as e:
