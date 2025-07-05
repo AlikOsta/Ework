@@ -10,6 +10,7 @@ urlpatterns = [
     path('modal-select-post/', views.modal_select_post, name='modal_select_post'),
     path("favorites/", views.FavoriteListView.as_view(), name='favorites'),
     path('post_list/<int:rubric_pk>/', views.PostListByRubricView.as_view(), name='post_list_by_rubric'),
+    path('api/post_list/<int:rubric_pk>/', views.PostListByRubricHTMXView.as_view(), name='post_list_by_rubric_htmx'),
     path('post/<int:post_pk>/favorite/', views.toggle_favorite, name='favorite_toggle'),
     path('product/<int:pk>/', views.PostDetailView.as_view(), name='product_detail'),
 
