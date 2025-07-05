@@ -43,23 +43,41 @@ class Command(BaseCommand):
         try:
             scheduler = get_scheduler('default')
             
-            # Удаляем существующие задачи с теми же именами
+            # Удаляем существующие задачи
             for job in scheduler.get_jobs():
-                if job.id == 'archive_expired_posts':
+                if job.id in ['archive_expired_posts', 'remove_expired_highlights', 'remove_expired_photo_addons']:
                     job.delete()
             
             # Создаем задачу архивирования постов (ежедневно в 00:00)
-            job = scheduler.cron(
-                '0 0 * * *',  # cron expression для ежедневного запуска в 00:00
+            job1 = scheduler.cron(
+                '0 0 * * *',  # ежедневно в 00:00
                 func='ework_core.tasks.archive_expired_posts'
             )
-            job.id = 'archive_expired_posts'
-            job.save()
+            job1.id = 'archive_expired_posts'
+            job1.save()
+            
+            # Создаем задачу снятия выделения (ежедневно в 01:00)
+            job2 = scheduler.cron(
+                '0 1 * * *',  # ежедневно в 01:00
+                func='ework_core.tasks.remove_expired_highlights'
+            )
+            job2.id = 'remove_expired_highlights'
+            job2.save()
+            
+            # Создаем задачу снятия фото услуг (ежедневно в 02:00)
+            job3 = scheduler.cron(
+                '0 2 * * *',  # ежедневно в 02:00
+                func='ework_core.tasks.remove_expired_photo_addons'
+            )
+            job3.id = 'remove_expired_photo_addons'
+            job3.save()
             
             self.stdout.write(
                 self.style.SUCCESS('✅ Периодические задачи настроены:')
             )
             self.stdout.write('  - archive_expired_posts: ежедневно в 00:00')
+            self.stdout.write('  - remove_expired_highlights: ежедневно в 01:00')
+            self.stdout.write('  - remove_expired_photo_addons: ежедневно в 02:00')
             
         except Exception as e:
             self.stdout.write(
