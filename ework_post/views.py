@@ -278,10 +278,99 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return kwargs
     
     def form_valid(self, form):
-        """Обработка валидной формы"""
-        # При обновлении отправляем на модерацию
-        form.instance.status = 0  # Не проверено
+        """Обработка валидной формы при редактировании"""
+        # Получаем аддоны из формы
+        addon_photo = form.cleaned_data.get('addon_photo', False)
+        addon_highlight = form.cleaned_data.get('addon_highlight', False)
+        
+        # Проверяем, нужна ли оплата
+        need_payment = addon_photo or addon_highlight
+        
+        if need_payment:
+            return self._handle_paid_update(form, addon_photo, addon_highlight)
+        else:
+            return self._handle_free_update(form)
+    
+    def _handle_free_update(self, form):
+        """Обработка бесплатного обновления (без аддонов)"""
+        # Сохраняем пост без изменения статуса услуг
+        form.instance.status = 0  # На модерацию
         form.save()
+        
+        messages.success(self.request, self.success_message)
+        
+        if self.request.headers.get('HX-Request'):
+            return HttpResponse(
+                status=200,
+                headers={
+                    'HX-Trigger': 'closeModal',
+                    'HX-Redirect': reverse('users:author_profile', kwargs={'author_id': self.request.user.id})
+                }
+            )
+        
+        return redirect(self.get_success_url())
+    
+    def _handle_paid_update(self, form, addon_photo, addon_highlight):
+        """Обработка платного обновления (с аддонами)"""
+        from ework_premium.utils import create_payment_for_post
+        from ework_premium.models import Package
+        
+        # Получаем пакет по умолчанию
+        package = Package.objects.filter(is_active=True, package_type='PAID').first()
+        
+        # Создаем платеж только для новых аддонов
+        payment = create_payment_for_post(
+            user=self.request.user,
+            package=package,
+            photo=addon_photo,
+            highlight=addon_highlight,
+            existing_post=self.object  # Передаем существующий пост
+        )
+        
+        if payment is None:
+            # Если оплата не требуется (например, уже есть активные услуги)
+            return self._update_post_with_addons(form, addon_photo, addon_highlight)
+        
+        # Сохраняем пост
+        form.save()
+        
+        # Связываем платеж с постом
+        payment.post = self.object
+        payment.save(update_fields=['post'])
+        
+        # HTMX запрос
+        if self.request.headers.get('HX-Request'):
+            return JsonResponse({
+                'action': 'payment_required',
+                'payment_id': payment.id,
+                'amount': str(payment.amount),
+                'currency': payment.package.currency.symbol if payment.package.currency else '$',
+                'payload': payment.get_payload(),
+                'order_id': payment.order_id,
+                'is_update': True  # Флаг что это обновление
+            })
+        
+        return redirect('payments:payment_page', payment_id=payment.id)
+    
+    def _update_post_with_addons(self, form, addon_photo, addon_highlight):
+        """Обновление поста с применением аддонов без оплаты"""
+        # Сохраняем основные изменения
+        form.save()
+        
+        # Применяем аддоны
+        if addon_photo or addon_highlight:
+            self.object.set_addons(
+                photo=addon_photo,
+                highlight=addon_highlight
+            )
+            self.object.save(update_fields=[
+                'has_photo_addon', 'has_highlight_addon',
+                'photo_expires_at', 'highlight_expires_at', 'is_premium'
+            ])
+        
+        # Отправляем на модерацию
+        self.object.status = 0
+        self.object.save(update_fields=['status'])
         
         messages.success(self.request, self.success_message)
         
