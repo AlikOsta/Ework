@@ -23,7 +23,7 @@
                     data-category-id="{{ category.id }}"
                     data-url="{% url 'core:post_list_by_rubric' category.id %}"
                 >
-                    {{ category.name }}
+                    {% trans category.name %}
                 </a>
             </li>
             {% endfor %}

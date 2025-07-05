@@ -1,5 +1,33 @@
 {% load i18n %}
 
+<!-- Кнопки подкатегорий с HTMX -->
+{% if categories %}
+<div class="mb-3">
+    <div class="d-flex flex-wrap gap-2">
+        <!-- Кнопка "Показать все" -->
+        <button type="button" 
+                class="btn btn-sm {% if not sub_rubric %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}"
+                hx-target="#content-area"
+                hx-swap="innerHTML">
+            {% trans "Показать все" %}
+        </button>
+        
+        <!-- Кнопки подкатегорий -->
+        {% for category in categories %}
+        <button type="button" 
+                class="btn btn-sm {% if sub_rubric == category.id|stringformat:'s' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}?sub_rubric={{ category.id }}"
+                hx-target="#content-area"
+                hx-swap="innerHTML">
+            {% trans category.name %}
+        </button>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
 {% include 'components/filter.html' %}
 
 {% if posts %}
