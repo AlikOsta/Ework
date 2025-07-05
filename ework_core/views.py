@@ -19,7 +19,8 @@ from ework_post.models import AbsPost, Favorite, BannerPost, PostView
 from ework_post.views import BasePostListView
 from ework_locations.models import City
 from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHEDULE_CHOICES
-from ework_premium.models import Package
+from ework_premium.models import Package, FreePostRecord
+from ework_premium.utils import can_user_restore_from_archive_free, create_payment_for_post
 
 
 def home(request):
