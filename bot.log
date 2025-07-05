@@ -1,0 +1,55 @@
+2025-06-28 16:50:55,875 - aiogram.dispatcher - INFO - Polling stopped
+2025-06-28 16:50:56,141 - aiogram.dispatcher - INFO - Polling stopped for bot @eWork_Robot id=7554067474 - 'eWork_Robot'
+2025-06-28 18:31:48,190 | ework_bot_tg.bot.bot | ERROR | Failed to create invoice link for payment 4 (user 7727039536)
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\ework_bot_tg\bot\bot.py", line 116, in create_invoice_link
+    response.raise_for_status()
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://api.telegram.org/bot7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g/createInvoiceLink'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+2025-06-28 18:34:18,142 | ework_bot_tg.bot.bot | ERROR | Error handling successful payment payload=7727039536&&&5
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\ework_bot_tg\bot\bot.py", line 187, in successful_payment
+    user_id, payment_id = int(user_id_str), int(payment_id_str)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'ework_core' has no attribute 'publish_post_after_payment'
+2025-06-28 19:09:35,884 | ework_bot_tg.bot.bot | ERROR | Error handling successful payment payload=7727039536&&&7
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\ework_bot_tg\bot\bot.py", line 188, in successful_payment
+    success = await sync_to_async(__import__('ework_core.views').publish_post_after_payment)(user_id, payment_id)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'ework_core' has no attribute 'publish_post_after_payment'
+2025-06-28 19:14:52,974 | ework_bot_tg.bot.bot | ERROR | Error handling successful payment payload=7727039536&&&8
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\ework_bot_tg\bot\bot.py", line 190, in successful_payment
+    success = await sync_to_async(publish_post_after_payment)(user_id, payment_id)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\asgiref\sync.py", line 468, in __call__
+    ret = await asyncio.shield(exec_coro)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\asgiref\sync.py", line 522, in thread_handler
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\auth\decorators.py", line 56, in _view_wrapper
+    test_pass = test_func(request.user)
+                          ^^^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'user'
+2025-06-28 19:35:11,724 | ework_bot_tg.bot.bot | ERROR | Error handling successful payment payload=7727039536&&&13
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\ework_bot_tg\bot\bot.py", line 195, in successful_payment
+    await message.answer(_("✅ Оплата прошла успешно! Ваше объявление отправлено на модерацию."))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\aiogram\types\message.py", line 2074, in answer
+    return SendMessage(
+           ^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\pydantic\main.py", line 253, in __init__
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+pydantic_core._pydantic_core.ValidationError: 1 validation error for SendMessage
+text
+  Input should be a valid string [type=string_type, input_value='✅ Оплата про...а модерацию.', input_type=lazy.<locals>.__proxy__]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type
