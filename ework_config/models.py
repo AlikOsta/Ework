@@ -45,6 +45,10 @@ class SiteConfig(models.Model):
     max_free_posts_per_user = models.PositiveIntegerField(default=1, verbose_name=_('Максимум бесплатных постов на пользователя'))
     post_expiry_days = models.PositiveIntegerField(default=30, verbose_name=_('Дни до истечения поста'))
     
+    # Настройки дополнительных услуг
+    photo_addon_duration_days = models.PositiveIntegerField(default=30, verbose_name=_('Длительность услуги "Фото" (дней)'))
+    highlight_addon_duration_days = models.PositiveIntegerField(default=3, verbose_name=_('Длительность услуги "Цвет фона" (дней)'))
+    
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Создано'))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Обновлено'))
