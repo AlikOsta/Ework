@@ -1,0 +1,45 @@
+{% extends "pages/base.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}Тест бесконечной ленты | eWork{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3 px-3">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-3">{% trans "Тест бесконечной ленты" %}</h2>
+            <p class="text-muted mb-4">{% trans "Прокрутите страницу вниз, чтобы автоматически загрузить больше карточек" %}</p>
+            
+            <div id="posts-container">
+                <!-- Первые карточки будут загружены через HTMX -->
+                <div hx-get="{% url 'core:post_list_by_rubric_htmx' 1 %}?page=1"
+                     hx-trigger="load"
+                     hx-swap="innerHTML"
+                     hx-indicator="#initial-loading">
+                     
+                    <!-- Индикатор первичной загрузки -->
+                    <div id="initial-loading" class="text-center my-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">{% trans "Загрузка..." %}</span>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">{% trans "Загружаем объявления..." %}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Индикатор загрузки новых карточек -->
+                <div id="loading-spinner" class="htmx-indicator text-center my-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">{% trans "Загрузка..." %}</span>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">{% trans "Загружаем больше объявлений..." %}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
