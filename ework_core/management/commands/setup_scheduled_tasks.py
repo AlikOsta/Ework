@@ -52,8 +52,7 @@ class Command(BaseCommand):
             scheduler.cron(
                 '0 0 * * *',  # cron expression для ежедневного запуска в 00:00
                 func='ework_core.tasks.archive_expired_posts',
-                id='archive_expired_posts',
-                replace_existing=True
+                job_id='archive_expired_posts'
             )
             
             self.stdout.write(
