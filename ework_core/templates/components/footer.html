@@ -1,3 +1,5 @@
+{% load i18n %}
+
 <footer id="main-footer">
   <div style="height: 40px;"></div>
   <nav class="footer-nav">
@@ -10,7 +12,7 @@
             href="/"
             data-path="{% url 'core:home' %}">
             <i class="material-icons">home</i>
-            <span>Домой</span>
+            <span>{% trans "Домой" %}</span>
           </a>
         </div>
 
@@ -27,7 +29,7 @@
             aria-label="Избранное"
           >
             <i class="material-icons">favorite_border</i>
-            <span>Избранное</span>
+            <span>{% trans "Избранное" %}</span>
           </a>
         </div>
 
@@ -58,7 +60,7 @@
             aria-label="Тарифы"
           >
             <i class="material-icons">credit_card</i>
-            <span>Тарифы</span>
+            <span>{% trans "Тарифы" %}</span>
           </a>
         </div>
 
@@ -76,7 +78,7 @@
             aria-label="Профиль"
           >
             <i class="material-icons">person_outline</i>
-            <span>Профиль</span>
+            <span>{% trans "Профиль" %}</span>
           </a>
           {% else %}
           <a
@@ -90,7 +92,7 @@
             aria-label="Войти"
           >
             <i class="material-icons">person_outline</i>
-            <span>Войти</span>
+            <span>{% trans "Войти" %}</span>
           </a>
           {% endif %}
         </div>
