@@ -98,7 +98,7 @@ class PostListByRubricHTMXView(BasePostListView):
 class PostListByRubricView(BasePostListView):
     """Оптимизированный список постов по рубрике"""
     template_name = 'components/card.html'
-    paginate_by = 5  # Уменьшаем для тестирования
+    paginate_by = 2  # Еще меньше для тестирования
 
     def dispatch(self, request, *args, **kwargs):
         self.super_rubric = None
