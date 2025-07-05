@@ -33,7 +33,6 @@ urlpatterns = [
     path('api/create-invoice/', views.CreateInvoiceView.as_view(), name='create_invoice'),
 
     path("", views.home, name='home'),
-    path("test-infinite/", views.test_infinite, name='test_infinite'),
 
 ]
 
