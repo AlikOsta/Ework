@@ -45,7 +45,7 @@ def modal_select_post(request):
 class PostListByRubricHTMXView(BasePostListView):
     """HTMX view для бесконечной прокрутки карточек"""
     template_name = 'components/cards_infinite.html'
-    paginate_by = 2  # Еще меньше для тестирования
+    paginate_by = 20
 
     def dispatch(self, request, *args, **kwargs):
         # Копируем логику из основного view
