@@ -201,7 +201,13 @@
                     onmouseup="this.style.transform='scale(1)'; this.style.opacity='1';"
                 >
                     <i class="material-icons me-2">chat</i>
-                    <span>{% trans "Связаться с продавцом" %}</span>
+                    <span>
+                        {% if post.sub_rubric.super_rubric.slug == 'rabota' %}
+                            {% trans "Связаться с работодателем" %}
+                        {% elif post.sub_rubric.super_rubric.slug == 'uslugi' %}
+                            {% trans "Связаться с автором" %}
+                        {% endif %}
+                    </span>
                 </button>
             </div>
         </div>
