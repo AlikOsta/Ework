@@ -31,6 +31,11 @@ def home(request):
     return render(request, "pages/index.html", context)
 
 
+def test_infinite(request):
+    """Тестовая страница для демонстрации бесконечной ленты"""
+    return render(request, "pages/test_infinite.html")
+
+
 @login_required
 def modal_select_post(request):
     """Модальное окно выбора типа поста"""
