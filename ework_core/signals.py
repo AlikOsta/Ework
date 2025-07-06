@@ -223,8 +223,11 @@ def _handle_republish_on_publish(instance):
         from ework_premium.models import Payment
         payment = Payment.objects.filter(post=instance, status='paid').first()
         
+        print(f"ТЕСТ: Поиск платежа для поста {instance.id}: {payment}")
+        
         if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
             copy_from_id = payment.addons_data['copy_from_id']
+            print(f"ТЕСТ: Найден copy_from_id = {copy_from_id}")
         
         if copy_from_id:
             from ework_post.models import AbsPost
@@ -238,6 +241,8 @@ def _handle_republish_on_publish(instance):
                 is_deleted=False
             ).first()
             
+            print(f"ТЕСТ: Найден старый пост: {old_post}")
+            
             if old_post:
                 # Копируем просмотры
                 copy_post_views(old_post, instance)
@@ -247,8 +252,12 @@ def _handle_republish_on_publish(instance):
                 old_post.is_deleted = True
                 old_post.save(update_fields=['status', 'is_deleted'])
                 
+                print(f"ТЕСТ: Старый пост {old_post.id} помечен как удаленный")
+                
     except Exception as e:
         print(f"Ошибка при обработке переопубликации: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 
