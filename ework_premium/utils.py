@@ -110,7 +110,14 @@ def create_payment_for_post(user, package, photo=False, highlight=False, auto_bu
     calculator = PricingCalculator(user, package)
     total_price = calculator.calculate_total_price(photo, highlight, auto_bump)
     
+    print(f"💰 Расчет стоимости публикации:")
+    print(f"   Пользователь: {user.username}")
+    print(f"   Может публиковать бесплатно: {calculator.can_post_free()}")
+    print(f"   Общая стоимость: {total_price}")
+    print(f"   copy_from_id: {copy_from_id} (тип: {type(copy_from_id)})")
+    
     if total_price == 0:
+        print(f"💸 Бесплатная публикация - платеж не создается")
         return None  # Бесплатная публикация
     
     payment = Payment.objects.create(
@@ -120,12 +127,17 @@ def create_payment_for_post(user, package, photo=False, highlight=False, auto_bu
         order_id=Payment.generate_order_id(user.id)
     )
     
-    # Сохранить информацию об аддонах и copy_from_id
+    print(f"💳 Создан платеж {payment.id} на сумму {total_price}")
+    
+    # Сохранить информацию об аддонах
     payment.set_addons(photo=photo, highlight=highlight, auto_bump=auto_bump)
     
-    if copy_from_id:
-        payment.addons_data = payment.addons_data or {}
+    # Сохранить copy_from_id если передан
+    if copy_from_id is not None:
+        if not payment.addons_data:
+            payment.addons_data = {}
         payment.addons_data['copy_from_id'] = copy_from_id
+        print(f"💾 Добавлен copy_from_id в платеж: {copy_from_id}")
     
     payment.save()
     
