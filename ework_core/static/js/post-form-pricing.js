@@ -38,6 +38,20 @@ class PostFormPricing {
         if (!form) {
             return;
         }
+        
+        // КРИТИЧЕСКАЯ ПРОВЕРКА: не запускаем для форм редактирования
+        const isEditMode = form.querySelector('input[name="csrfmiddlewaretoken"]') && 
+                          (form.action.includes('/edit/') || 
+                           document.querySelector('.modal-title')?.textContent?.includes('Редактировать') ||
+                           document.querySelector('button[type="submit"]')?.textContent?.includes('Сохранить изменения'));
+                           
+        if (isEditMode) {
+            console.log('PostFormPricing: Форма редактирования обнаружена - расчет стоимости ОТКЛЮЧЕН');
+            return;
+        }
+        
+        console.log('PostFormPricing: Форма создания поста - расчет стоимости ВКЛЮЧЕН');
+        
         // Сохраняем референсы
         this.form            = form;
         this.submitBtn       = form.querySelector('#submit-btn');
