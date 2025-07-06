@@ -196,11 +196,13 @@ def handle_post_save(sender, instance, created, **kwargs):
     Обработка создания/обновления поста
     ВАЖНО: Модерация запускается только для статуса 0 (На модерации)
     """
-    print(f"🔔 Сигнал handle_post_save: post_id={instance.id}, status={instance.status} ({instance.get_status_display()}), created={created}")
+    
+    # Если пост стал опубликованным, проверяем есть ли переопубликация
+    if instance.status == 3:  # Опубликовано
+        _handle_republish_on_publish(instance)
     
     # Запускаем модерацию только если статус = 0 (На модерации)
     if instance.status == 0:
-        print(f"🔄 Запуск модерации для поста {instance.title} (статус: {instance.get_status_display()})")
         
         # Переводим в статус "На модерации" чтобы избежать повторных срабатываний
         type(instance).objects.filter(pk=instance.pk).update(status=1)
@@ -209,9 +211,43 @@ def handle_post_save(sender, instance, created, **kwargs):
         thread = threading.Thread(target=moderate_post_async, args=(instance,))
         thread.daemon = True
         thread.start()
-        print("✅ Модерация запущена в фоновом режиме")
-    else:
-        print(f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})")
+
+
+def _handle_republish_on_publish(instance):
+    """Обработка переопубликации при публикации поста"""
+    try:
+        # Проверяем есть ли связанный платеж с copy_from_id
+        copy_from_id = None
+        
+        # Ищем в платеже
+        if hasattr(instance, 'payment_set'):
+            payment = instance.payment_set.filter(status='paid').first()
+            if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
+                copy_from_id = payment.addons_data['copy_from_id']
+        
+        if copy_from_id:
+            from ework_post.models import AbsPost
+            from ework_post.views import copy_post_views
+            
+            # Находим старый пост
+            old_post = AbsPost.objects.filter(
+                id=copy_from_id,
+                user=instance.user,
+                status=4,  # Архивный
+                is_deleted=False
+            ).first()
+            
+            if old_post:
+                # Копируем просмотры
+                copy_post_views(old_post, instance)
+                
+                # Удаляем старый пост
+                old_post.status = 5  # Удален
+                old_post.is_deleted = True
+                old_post.save(update_fields=['status', 'is_deleted'])
+                
+    except Exception as e:
+        print(f"Ошибка при обработке переопубликации: {e}")
 
 
 
