@@ -1,0 +1,145 @@
+INFO 2025-07-05 21:06:01,225 autoreload 16624 11104 Watching for file changes with StatReloader
+INFO 2025-07-05 21:06:29,655 autoreload 4792 19292 Watching for file changes with StatReloader
+ERROR 2025-07-05 21:06:33,903 log 4792 2716 Internal Server Error: /admin/ework_post/postjob/
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\options.py", line 719, in wrapper
+    return self.admin_site.admin_view(view)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\utils\decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\utils\decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 246, in inner
+    return view(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\utils\decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\utils\decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\utils\decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\options.py", line 2161, in changelist_view
+    **self.admin_site.each_context(request),
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 343, in each_context
+    "available_apps": self.get_app_list(request),
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 546, in get_app_list
+    app_dict = self._build_app_dict(request, app_label)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 530, in _build_app_dict
+    "app_url": reverse(
+               ^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'app_list' not found. 'app_list' is not a valid view function or pattern name.
+ERROR 2025-07-05 21:06:33,907 basehttp 4792 2716 "GET /admin/ework_post/postjob/ HTTP/1.1" 500 149996
+INFO 2025-07-05 21:06:44,467 basehttp 4792 2716 "GET / HTTP/1.1" 200 11134
+INFO 2025-07-05 21:06:44,495 basehttp 4792 2716 "GET /static/css/main.css HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,498 basehttp 4792 5176 "GET /static/js/post-form-pricing.js HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,499 basehttp 4792 18912 "GET /static/js/main.js HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,499 basehttp 4792 5548 "GET /static/js/telegram-payments.js HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,564 basehttp 4792 5548 "GET /post_list/1/ HTTP/1.1" 200 35319
+INFO 2025-07-05 21:06:44,594 basehttp 4792 5176 "GET /icons/cat_27.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,612 basehttp 4792 18912 "GET /icons/cat_8_v2.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,628 basehttp 4792 5548 "GET /icons/cat_88.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,645 basehttp 4792 2716 "GET /icons/cat_10_v2.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:06:44,651 basehttp 4792 6444 "GET /post_img/24_post_img/24_post_img/IMG_4114_e72412b7_e0644ebf.webp HTTP/1.1" 304 0
+WARNING 2025-07-05 21:06:49,817 log 4792 6444 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2025-07-05 21:06:49,818 basehttp 4792 6444 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 8928
+INFO 2025-07-05 21:06:56,253 basehttp 4792 6444 "GET / HTTP/1.1" 200 11134
+WARNING 2025-07-05 21:06:56,285 log 4792 6444 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2025-07-05 21:06:56,286 basehttp 4792 6444 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 8928
+INFO 2025-07-05 21:06:56,358 basehttp 4792 2716 "GET /static/css/main.css HTTP/1.1" 200 4154
+INFO 2025-07-05 21:06:56,364 basehttp 4792 2716 "GET /static/js/favorites.js HTTP/1.1" 200 6187
+INFO 2025-07-05 21:06:56,414 basehttp 4792 5548 "GET /banner/1_banner/ChatGPT_Image_22_%D0%B8%D1%8E%D0%BD._2025_%D0%B3._18_33_40_a1059c9a.webp HTTP/1.1" 200 23192
+INFO 2025-07-05 21:06:56,439 basehttp 4792 18912 "GET /static/js/telegram-payments.js HTTP/1.1" 200 3690
+INFO 2025-07-05 21:06:56,441 basehttp 4792 11376 "GET /static/js/dialog.js HTTP/1.1" 200 1175
+INFO 2025-07-05 21:06:56,443 basehttp 4792 6444 "GET /static/js/post-form-pricing.js HTTP/1.1" 200 5708
+INFO 2025-07-05 21:06:56,443 basehttp 4792 5176 "GET /static/js/main.js HTTP/1.1" 200 2674
+INFO 2025-07-05 21:06:57,216 basehttp 4792 5176 "GET /post_list/1/ HTTP/1.1" 200 35319
+INFO 2025-07-05 21:06:57,251 basehttp 4792 5548 "GET /post_img/24_post_img/24_post_img/IMG_4114_e72412b7_e0644ebf.webp HTTP/1.1" 200 8286
+INFO 2025-07-05 21:06:57,264 basehttp 4792 18912 "GET /icons/cat_10_v2.png HTTP/1.1" 200 8021
+INFO 2025-07-05 21:06:57,282 basehttp 4792 11376 "GET /icons/cat_27.png HTTP/1.1" 200 7121
+INFO 2025-07-05 21:06:57,291 basehttp 4792 2716 "GET /post_img/2_post_img/%D0%9E%D0%B1%D0%BB%D0%BE%D0%B6%D0%BA%D0%B8-1200%D1%85630-2088767050_5ef9a3eb.webp HTTP/1.1" 200 74500
+INFO 2025-07-05 21:06:57,307 basehttp 4792 6444 "GET /icons/cat_8_v2.png HTTP/1.1" 200 17022
+INFO 2025-07-05 21:06:57,323 basehttp 4792 5176 "GET /icons/cat_88.png HTTP/1.1" 200 4097
+INFO 2025-07-05 21:06:59,016 basehttp 4792 5176 "GET /users/author/1/ HTTP/1.1" 200 7686
+INFO 2025-07-05 21:06:59,060 basehttp 4792 5176 "GET /banner/1_banner/ChatGPT_Image_22_%D0%B8%D1%8E%D0%BD._2025_%D0%B3._18_33_40_a1059c9a.webp HTTP/1.1" 200 23192
+INFO 2025-07-05 21:06:59,073 basehttp 4792 5176 "GET /post_img/2_post_img/%D0%9E%D0%B1%D0%BB%D0%BE%D0%B6%D0%BA%D0%B8-1200%D1%85630-2088767050_5ef9a3eb.webp HTTP/1.1" 200 74500
+INFO 2025-07-05 21:06:59,078 basehttp 4792 6444 "GET /icons/cat_88.png HTTP/1.1" 200 4097
+INFO 2025-07-05 21:06:59,090 basehttp 4792 2716 "GET /icons/cat_8_v2.png HTTP/1.1" 200 17022
+INFO 2025-07-05 21:06:59,105 basehttp 4792 11376 "GET /icons/cat_27.png HTTP/1.1" 200 7121
+INFO 2025-07-05 21:06:59,121 basehttp 4792 5548 "GET /post_img/24_post_img/24_post_img/IMG_4114_e72412b7_e0644ebf.webp HTTP/1.1" 200 8286
+INFO 2025-07-05 21:06:59,137 basehttp 4792 18912 "GET /icons/cat_10_v2.png HTTP/1.1" 200 8021
+INFO 2025-07-05 21:07:08,896 basehttp 4792 15428 "GET / HTTP/1.1" 200 11128
+INFO 2025-07-05 21:07:09,001 basehttp 4792 15428 "GET /static/js/main.js HTTP/1.1" 304 0
+INFO 2025-07-05 21:07:09,118 basehttp 4792 15428 "GET /post_list/1/ HTTP/1.1" 200 35295
+INFO 2025-07-05 21:07:09,237 basehttp 4792 15428 "GET /icons/cat_88.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:07:09,253 basehttp 4792 17512 "GET /icons/cat_10_v2.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:07:09,263 basehttp 4792 17524 "GET /post_img/24_post_img/24_post_img/IMG_4114_e72412b7_e0644ebf.webp HTTP/1.1" 304 0
+INFO 2025-07-05 21:07:09,278 basehttp 4792 2040 "GET /icons/cat_8_v2.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:07:09,293 basehttp 4792 24524 "GET /icons/cat_27.png HTTP/1.1" 304 0
+INFO 2025-07-05 21:07:10,974 basehttp 4792 17512 "GET /users/author/2/ HTTP/1.1" 200 50638
+INFO 2025-07-05 21:07:12,720 basehttp 4792 17512 "GET /post/28/edit/ HTTP/1.1" 302 0
+INFO 2025-07-05 21:07:12,816 basehttp 4792 17512 "GET /services/edit/28/ HTTP/1.1" 200 5078
+INFO 2025-07-05 21:07:12,940 basehttp 4792 17512 "GET /api/pricing-calculator/?addon_photo=false&addon_highlight=false&addon_auto_bump=false HTTP/1.1" 200 950
+INFO 2025-07-05 21:07:13,431 basehttp 4792 17512 "GET /api/pricing-calculator/?addon_photo=false&addon_highlight=false&addon_auto_bump=false HTTP/1.1" 200 950
+ERROR 2025-07-05 21:07:23,652 log 4792 18912 Internal Server Error: /admin/
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 265, in wrapper
+    return self.admin_view(view, cacheable)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\utils\decorators.py", line 192, in _view_wrapper
+    result = _process_exception(request, e)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\utils\decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 246, in inner
+    return view(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 562, in index
+    app_list = self.get_app_list(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 546, in get_app_list
+    app_dict = self._build_app_dict(request, app_label)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 530, in _build_app_dict
+    "app_url": reverse(
+               ^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\urls\base.py", line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\django\urls\resolvers.py", line 831, in _reverse_with_prefix
+    raise NoReverseMatch(msg)
+django.urls.exceptions.NoReverseMatch: Reverse for 'app_list' not found. 'app_list' is not a valid view function or pattern name.
+ERROR 2025-07-05 21:07:23,653 basehttp 4792 18912 "GET /admin/ HTTP/1.1" 500 124409
+WARNING 2025-07-05 21:07:23,689 log 4792 18912 Not Found: /.well-known/appspecific/com.chrome.devtools.json
+WARNING 2025-07-05 21:07:23,690 basehttp 4792 18912 "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 8928
