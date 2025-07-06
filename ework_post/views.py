@@ -16,6 +16,73 @@ from ework_premium.models import Package, FreePostRecord
 from ework_premium.utils import create_payment_for_post
 
 
+def copy_post_views(from_post, to_post):
+    """Копирование статистики просмотров с одного поста на другой"""
+    try:
+        from_content_type = ContentType.objects.get_for_model(from_post)
+        to_content_type = ContentType.objects.get_for_model(to_post)
+        
+        # Получаем все просмотры старого поста
+        old_views = PostView.objects.filter(
+            content_type=from_content_type,
+            object_id=from_post.pk
+        )
+        
+        # Создаем новые просмотры для нового поста
+        new_views = []
+        for view in old_views:
+            new_views.append(PostView(
+                user=view.user,
+                content_type=to_content_type,
+                object_id=to_post.pk,
+                created_at=view.created_at
+            ))
+        
+        # Массовое создание
+        if new_views:
+            PostView.objects.bulk_create(new_views, ignore_conflicts=True)
+            
+        return len(new_views)
+        
+    except Exception as e:
+        print(f"Ошибка при копировании просмотров: {e}")
+        return 0
+
+
+class RepublishPostView(LoginRequiredMixin, View):
+    """View для переопубликования архивного поста"""
+    
+    def get(self, request, post_id, *args, **kwargs):
+        """Перенаправить на форму создания с параметром copy_from"""
+        # Проверяем, что пост архивный и принадлежит пользователю
+        try:
+            post = AbsPost.objects.get(
+                id=post_id,
+                user=request.user,
+                status=4,  # Архивный
+                is_deleted=False
+            )
+        except AbsPost.DoesNotExist:
+            messages.error(request, _('Архивный пост не найден'))
+            return redirect('users:author_profile', author_id=request.user.id)
+        
+        # Определяем тип поста и перенаправляем на соответствующую форму
+        try:
+            job_post = post.postjob
+            return redirect(f"{reverse('jobs:job_create')}?copy_from={post_id}")
+        except:
+            pass
+        
+        try:
+            services_post = post.postservices
+            return redirect(f"{reverse('services:services_create')}?copy_from={post_id}")
+        except:
+            pass
+        
+        messages.error(request, _('Неизвестный тип объявления'))
+        return redirect('users:author_profile', author_id=request.user.id)
+
+
 class BasePostListView(ListView):
     """Оптимизированное базовое представление для списка объявлений"""
     model = AbsPost
