@@ -25,8 +25,8 @@ class Package(models.Model):
     currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Валюта"), help_text=_("Валюта"))
     
     # Поля для аддонов продвижения
-    photo_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за фото"), help_text=_("Цена аддона 'Фото' (30 дней)"))
-    highlight_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за выделение"), help_text=_("Цена аддона 'Цветное выделение' (3 дня)"))
+    photo_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за фото"), help_text=_("Цена аддона 'Фото'"))
+    highlight_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за выделение"), help_text=_("Цена аддона 'Цветное выделение'"))
     auto_bump_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за автоподнятие"), help_text=_("Цена аддона 'Автоподнятие' (7 дней)"))
     
     # Настройки отображения

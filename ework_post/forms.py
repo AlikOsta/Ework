@@ -15,12 +15,12 @@ class BasePostForm(forms.ModelForm):
     addon_photo = forms.BooleanField(
         required=False,
         label=_('Добавить фото'),
-        help_text=_('Возможность добавлять фото к объявлению (30 дней)')
+        help_text=_('Возможность добавлять фото к объявлению')
     )
     addon_highlight = forms.BooleanField(
         required=False,
         label=_('Выделить цветом'),
-        help_text=_('Объявление будет выделено цветом (3 дня)')
+        help_text=_('Объявление будет выделено цветом для привлечения внимания')
     )
     # addon_auto_bump = forms.BooleanField(
     #     required=False,
