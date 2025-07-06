@@ -3,7 +3,13 @@
 {% load static %}
 
 {% with WIDGET_ERROR_CLASS="is-invalid" %}
-<form hx-post="{% if form_action %}{{ form_action }}{% else %}{{ request.path }}{% endif %}" hx-target="this" hx-swap="outerHTML" hx-encoding="multipart/form-data" class="modal-content" enctype="multipart/form-data">
+<form hx-post="{% if form_action %}{{ form_action }}{% else %}{{ request.path }}{% endif %}" 
+      hx-target="this" 
+      hx-swap="outerHTML" 
+      hx-encoding="multipart/form-data" 
+      class="modal-content" 
+      enctype="multipart/form-data"
+      {% if object %}data-mode="edit"{% else %}data-mode="create"{% endif %}>
     {% csrf_token %}
 
     <div class="modal-header">
@@ -166,69 +172,5 @@
     </div>
 </form>
 
-<!-- ОТЛАДОЧНЫЙ СКРИПТ - временно -->
-{% if not object %}
-<script>
-
-// Запускаем сразу, так как скрипт уже в DOM
-(function() {
-    
-    // Проверяем наличие элементов
-    const form = document.querySelector('form[hx-post]');
-    const submitBtn = document.querySelector('#submit-btn');
-    const imageField = document.querySelector('#image-field');
-    const pricingBreakdown = document.querySelector('#pricing-breakdown');
-    const checkboxes = document.querySelectorAll('input[type=checkbox].pricing-addon');
-        
-    // Добавляем обработчики напрямую
-    checkboxes.forEach((cb, i) => {
-        cb.addEventListener('change', function() {
-            
-            // Показать/скрыть поле изображения
-            if (cb.name === 'addon_photo') {
-                if (cb.checked) {
-                    imageField.style.display = 'block';
-                } else {
-                    imageField.style.display = 'none';
-                }
-            }
-            
-            // Обновить цену
-            updatePrice();
-        });
-    });
-    
-    function updatePrice() {
-        const photoChecked = document.querySelector('input[name="addon_photo"]').checked;
-        const highlightChecked = document.querySelector('input[name="addon_highlight"]').checked; 
-        const autoBumpChecked = document.querySelector('input[name="addon_auto_bump"]').checked;
-                
-        // Простая заглушка для проверки
-        if (photoChecked || highlightChecked || autoBumpChecked) {
-            pricingBreakdown.innerHTML = '<div class="text-info">Тестовая цена: 100 руб</div>';
-            submitBtn.textContent = 'Оплатить 100 руб';
-            submitBtn.className = 'btn btn-success';
-        } else {
-            pricingBreakdown.innerHTML = '<div class="text-success">Бесплатная публикация</div>';
-            submitBtn.textContent = 'Опубликовать бесплатно';
-            submitBtn.className = 'btn btn-primary';
-        }
-    }
-    
-    // Первоначальный вызов
-    updatePrice();
-})(); // Вызываем IIFE сразу
-
-</script>
-{% endif %}
-
-<script>
-// Простое переключение поля изображения
-document.addEventListener('change', function(e) {
-    if (e.target.dataset.toggle === 'image-field') {
-        document.getElementById('image-field').style.display = e.target.checked ? 'block' : 'none';
-    }
-});
-</script>
 
 {% endwith %}

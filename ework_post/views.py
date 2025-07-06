@@ -456,40 +456,40 @@ class PricingCalculatorView(View):
     
     def get(self, request, *args, **kwargs):
         """Рассчитать стоимость на основе выбранных аддонов"""
-        from ework_premium.utils import PricingCalculator
-        from django.contrib.auth import get_user_model
         
-        # КРИТИЧЕСКАЯ ПРОВЕРКА: если это может быть запрос от формы редактирования
-        # проверяем referer на наличие /edit/
+        # ПРОВЕРКА: это запрос для редактирования?
         referer = request.META.get('HTTP_REFERER', '')
-        if '/edit/' in referer:
-            print(f"🚨 PricingCalculatorView: БЛОКИРОВАН запрос от формы редактирования")
-            print(f"   Referer: {referer}")
-            
-            # Возвращаем "бесплатно" для форм редактирования
+        is_edit_request = (
+            '/edit/' in referer or 
+            request.GET.get('mode') == 'edit' or
+            request.headers.get('X-Edit-Mode') == 'true'
+        )
+        
+        if is_edit_request:
+            print("💰 PricingCalculatorView: БЛОКИРОВАН запрос для редактирования поста")
             return JsonResponse({
                 'breakdown': {
-                    'can_post_free': True,
-                    'is_free': True,
-                    'total_price': 0,
-                    'base_price': 0,
-                    'addons_total': 0,
-                    'currency': {'symbol': 'руб', 'name': 'Рубль'}
+                    'total': 0,
+                    'currency': {'symbol': 'руб', 'name': 'Рубль', 'code': 'RUB'}
                 },
                 'button': {
                     'text': 'Сохранить изменения',
-                    'class': 'btn btn-primary',
-                    'action': 'save_changes'
+                    'is_free': True
                 },
                 'show_image_field': False
             })
+        
+        print("💰 PricingCalculatorView: РАЗРЕШЕН запрос для создания поста")
+        
+        # Остальная логика остается без изменений...
+        from ework_premium.utils import PricingCalculator
+        from django.contrib.auth import get_user_model
         
         # Получаем параметры аддонов
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
         addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'
         
-        print(f"💰 PricingCalculatorView: РАЗРЕШЕН запрос для создания поста")
         print(f"   Аддоны: фото={addon_photo}, выделение={addon_highlight}, автоподнятие={addon_auto_bump}")
         
         # Для неавторизованных пользователей создаем временного пользователя
@@ -529,6 +529,7 @@ class PricingCalculatorView(View):
             'button': button_config,
             'show_image_field': addon_photo
         })
+
 
 
 class PostPaymentSuccessView(LoginRequiredMixin, View):
