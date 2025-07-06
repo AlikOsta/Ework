@@ -268,13 +268,14 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         # Получаем пакет по умолчанию
         package = Package.objects.filter(is_active=True, package_type='PAID').first()
         
-        # Создаем платеж
+        # Создаем платеж с copy_from_id
         payment = create_payment_for_post(
             user=self.request.user,
             package=package,
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
+            auto_bump=addon_auto_bump,
+            copy_from_id=copy_from_id
         )
         
         # Если платеж не требуется (бесплатная публикация)
