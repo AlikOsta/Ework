@@ -217,49 +217,64 @@ def handle_post_save(sender, instance, created, **kwargs):
 def _handle_republish_on_publish(instance):
     """Обработка переопубликации при публикации поста"""
     try:
-        # Проверяем есть ли связанный платеж с copy_from_id
         copy_from_id = None
         
-        # Ищем платеж, связанный с этим постом
+        print(f"🔄 Начинаем обработку переопубликации для поста {instance.id}")
+        
+        # Сначала ищем платеж, связанный с этим постом (для платных публикаций)
         from ework_premium.models import Payment
         payment = Payment.objects.filter(post=instance, status='paid').first()
         
-        print(f"ТЕСТ: Поиск платежа для поста {instance.id}: {payment}")
-        
-        if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
-            copy_from_id = payment.addons_data['copy_from_id']
-            print(f"ТЕСТ: Найден copy_from_id в платеже = {copy_from_id}")
+        if payment:
+            print(f"💰 Найден платеж {payment.id} для поста {instance.id}")
+            if payment.addons_data and 'copy_from_id' in payment.addons_data:
+                copy_from_id = payment.addons_data['copy_from_id']
+                print(f"✅ Найден copy_from_id в платеже: {copy_from_id} (тип: {type(copy_from_id)})")
+        else:
+            print(f"💰 Платеж не найден для поста {instance.id}, проверяем сессии (бесплатная публикация)")
         
         # Если не нашли в платеже, проверяем сессию (для бесплатных постов)
         if not copy_from_id:
             from django.contrib.sessions.models import Session
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
             
-            # Ищем активные сессии пользователя
-            user_sessions = Session.objects.filter(expire_date__gte=timezone.now())
-            for session in user_sessions:
-                session_data = session.get_decoded()
-                session_key = f'copy_from_id_{instance.id}'
-                if session_key in session_data:
-                    copy_from_id = session_data[session_key]
-                    print(f"ТЕСТ: Найден copy_from_id в сессии = {copy_from_id}")
-                    # Удаляем из сессии после использования
-                    del session_data[session_key]
-                    session.session_data = session.encode(session_data)
-                    session.save()
-                    break
-        # Ищем в платеже
-        if hasattr(instance, 'payment_set'):
-            payment = instance.payment_set.filter(status='paid').first()
-            if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
-                copy_from_id = payment.addons_data['copy_from_id']
+            session_key = f'copy_from_id_{instance.id}'
+            print(f"🔍 Ищем в сессиях ключ: {session_key}")
+            
+            # Ищем только активные сессии
+            active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+            print(f"📊 Найдено {active_sessions.count()} активных сессий")
+            
+            for session in active_sessions:
+                try:
+                    session_data = session.get_decoded()
+                    if session_key in session_data:
+                        copy_from_id = session_data[session_key]
+                        print(f"✅ Найден copy_from_id в сессии: {copy_from_id} (тип: {type(copy_from_id)})")
+                        
+                        # Удаляем из сессии после использования
+                        del session_data[session_key]
+                        session.session_data = session.encode(session_data)
+                        session.save()
+                        print(f"🗑️ Удален ключ {session_key} из сессии")
+                        break
+                except Exception as e:
+                    print(f"⚠️ Ошибка при обработке сессии {session.session_key}: {e}")
+                    continue
         
         if copy_from_id:
+            # Приводим к int если это строка
+            try:
+                copy_from_id = int(copy_from_id)
+                print(f"🔢 copy_from_id приведен к int: {copy_from_id}")
+            except (ValueError, TypeError) as e:
+                print(f"❌ Ошибка приведения copy_from_id к int: {e}")
+                return
+            
             from ework_post.models import AbsPost
             from ework_post.views import copy_post_views
             
             # Находим старый пост
+            print(f"🔍 Ищем старый пост с ID {copy_from_id}")
             old_post = AbsPost.objects.filter(
                 id=copy_from_id,
                 user=instance.user,
@@ -268,16 +283,28 @@ def _handle_republish_on_publish(instance):
             ).first()
             
             if old_post:
+                print(f"✅ Найден старый пост: '{old_post.title}' (ID: {old_post.id})")
+                
                 # Копируем просмотры
-                copy_post_views(old_post, instance)
+                copied_views = copy_post_views(old_post, instance)
+                print(f"📊 Скопировано просмотров: {copied_views}")
                 
                 # Удаляем старый пост
                 old_post.status = 5  # Удален
                 old_post.is_deleted = True
-                old_post.save(update_fields=['status', 'is_deleted'])
+                old_post.deleted_at = timezone.now()
+                old_post.save(update_fields=['status', 'is_deleted', 'deleted_at'])
+                
+                print(f"🗑️ Старый пост {old_post.id} помечен как удаленный")
+            else:
+                print(f"❌ Старый пост с ID {copy_from_id} не найден или не архивный")
+        else:
+            print(f"ℹ️ copy_from_id не найден - это обычная публикация, не переопубликация")
                 
     except Exception as e:
-        print(f"Ошибка при обработке переопубликации: {e}")
+        print(f"❌ Ошибка при обработке переопубликации: {e}")
+        import traceback
+        print(f"❌ Traceback: {traceback.format_exc()}")
 
 
 
