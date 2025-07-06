@@ -314,7 +314,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def _handle_paid_post(self, form, payment, copy_from_id=None):
         """Обработать платную публикацию"""
-        print(f"🔄 DEBUG: _handle_paid_post вызван с copy_from_id={copy_from_id}")
         # Создаем пост-черновик
         post = form.save(commit=False)
         post.user = self.request.user
@@ -332,7 +331,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         # Сохраняем ID старого поста для обработки после оплаты
         if copy_from_id:
-            print(f"🔄 DEBUG: Сохраняем copy_from_id={copy_from_id} в payment.addons_data")
             payment.addons_data = payment.addons_data or {}
             payment.addons_data['copy_from_id'] = copy_from_id
         
