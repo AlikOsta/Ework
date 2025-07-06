@@ -285,6 +285,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def _publish_free_post(self, form, copy_from_id=None):
         """Опубликовать бесплатный пост"""
+        print(f"🔄 DEBUG: _publish_free_post вызван с copy_from_id={copy_from_id}")
         try:
             self.object = form.save(commit=False)
             self.object.user = self.request.user
@@ -293,6 +294,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             
             # Если это переопубликация, обрабатываем старый пост
             if copy_from_id:
+                print(f"🔄 DEBUG: Это переопубликация, вызываем _handle_republish с copy_from_id={copy_from_id}")
                 self._handle_republish(copy_from_id, self.object)
             
             # Отметить использование бесплатной публикации
@@ -318,6 +320,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def _handle_paid_post(self, form, payment, copy_from_id=None):
         """Обработать платную публикацию"""
+        print(f"🔄 DEBUG: _handle_paid_post вызван с copy_from_id={copy_from_id}")
         # Создаем пост-черновик
         post = form.save(commit=False)
         post.user = self.request.user
@@ -335,6 +338,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         # Сохраняем ID старого поста для обработки после оплаты
         if copy_from_id:
+            print(f"🔄 DEBUG: Сохраняем copy_from_id={copy_from_id} в payment.addons_data")
             payment.addons_data = payment.addons_data or {}
             payment.addons_data['copy_from_id'] = copy_from_id
         
@@ -357,6 +361,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def _handle_republish(self, old_post_id, new_post):
         """Обработка переопубликации: копирование статистики и удаление старого поста"""
+        print(f"🔄 DEBUG: _handle_republish вызван с old_post_id={old_post_id}, new_post_id={new_post.id}")
         try:
             old_post = AbsPost.objects.get(
                 id=old_post_id,
@@ -365,18 +370,20 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
                 is_deleted=False
             )
             
+            print(f"🔄 DEBUG: Найден старый пост {old_post_id}, статус ДО: {old_post.status}")
+            
             # Копируем статистику просмотров
             copied_views = copy_post_views(old_post, new_post)
             
             # Помечаем старый пост как удаленный
             old_post.soft_delete()
             
-            print(f"Переопубликация: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный")
+            print(f"🔄 DEBUG: Переопубликация завершена: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный, новый статус: {old_post.status}")
             
         except AbsPost.DoesNotExist:
-            print(f"Старый пост {old_post_id} не найден при переопубликации")
+            print(f"❌ DEBUG: Старый пост {old_post_id} не найден при переопубликации")
         except Exception as e:
-            print(f"Ошибка при обработке переопубликации: {e}")
+            print(f"❌ DEBUG: Ошибка при обработке переопубликации: {e}")
     
     def get_success_url(self):
         return reverse_lazy('core:home')
