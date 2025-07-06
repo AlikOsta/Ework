@@ -120,6 +120,8 @@ class BasePostForm(forms.ModelForm):
                     del cleaned_data[field]
                     
         return cleaned_data
+        
+    def clean_price(self):
         price = self.cleaned_data.get('price')
         if price is not None and price < 0:
             raise forms.ValidationError(_('Цена не может быть отрицательной'))
