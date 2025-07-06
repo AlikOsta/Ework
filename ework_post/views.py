@@ -459,10 +459,38 @@ class PricingCalculatorView(View):
         from ework_premium.utils import PricingCalculator
         from django.contrib.auth import get_user_model
         
+        # КРИТИЧЕСКАЯ ПРОВЕРКА: если это может быть запрос от формы редактирования
+        # проверяем referer на наличие /edit/
+        referer = request.META.get('HTTP_REFERER', '')
+        if '/edit/' in referer:
+            print(f"🚨 PricingCalculatorView: БЛОКИРОВАН запрос от формы редактирования")
+            print(f"   Referer: {referer}")
+            
+            # Возвращаем "бесплатно" для форм редактирования
+            return JsonResponse({
+                'breakdown': {
+                    'can_post_free': True,
+                    'is_free': True,
+                    'total_price': 0,
+                    'base_price': 0,
+                    'addons_total': 0,
+                    'currency': {'symbol': 'руб', 'name': 'Рубль'}
+                },
+                'button': {
+                    'text': 'Сохранить изменения',
+                    'class': 'btn btn-primary',
+                    'action': 'save_changes'
+                },
+                'show_image_field': False
+            })
+        
         # Получаем параметры аддонов
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
         addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'
+        
+        print(f"💰 PricingCalculatorView: РАЗРЕШЕН запрос для создания поста")
+        print(f"   Аддоны: фото={addon_photo}, выделение={addon_highlight}, автоподнятие={addon_auto_bump}")
         
         # Для неавторизованных пользователей создаем временного пользователя
         if request.user.is_authenticated:
