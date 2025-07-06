@@ -53,3 +53,19 @@ pydantic_core._pydantic_core.ValidationError: 1 validation error for SendMessage
 text
   Input should be a valid string [type=string_type, input_value='✅ Оплата про...а модерацию.', input_type=lazy.<locals>.__proxy__]
     For further information visit https://errors.pydantic.dev/2.11/v/string_type
+2025-07-06 13:43:16,100 | ework_bot_tg.bot.bot | ERROR | Failed to create invoice link for payment 6 (user 7727039536)
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\ework_bot_tg\bot\bot.py", line 117, in create_invoice_link
+    response.raise_for_status()
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://api.telegram.org/bot7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g/createInvoiceLink'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+2025-07-06 13:43:51,085 | ework_bot_tg.bot.bot | ERROR | Failed to create invoice link for payment 7 (user 7727039536)
+Traceback (most recent call last):
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\ework_bot_tg\bot\bot.py", line 117, in create_invoice_link
+    response.raise_for_status()
+  File "C:\Users\Ostro\OneDrive\Рабочий стол\Django_proj\Ework\.venv\Lib\site-packages\httpx\_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '400 Bad Request' for url 'https://api.telegram.org/bot7554067474:AAG75CqnZSiqKiWgpZ4zX6hNW_e6f9uZn1g/createInvoiceLink'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400

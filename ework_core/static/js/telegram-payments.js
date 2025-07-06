@@ -64,7 +64,7 @@ class TelegramPayments {
                     
                     if (status === 'paid') {
                         this.showSuccess();
-                        setTimeout(() => window.location.reload(), 1000);
+                        setTimeout(() => window.location.reload(), 200);
                     } else {
                         alert('Оплата не была завершена');
                     }

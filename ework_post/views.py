@@ -265,21 +265,14 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         # Приводим copy_from_id к int если он есть
         if copy_from_id and copy_from_id.isdigit():
             copy_from_id = int(copy_from_id)
-            print(f"🔄 Переопубликация поста: copy_from_id = {copy_from_id}")
             
-            # ПРОВЕРЯЕМ: если это переопубликация уже оплаченного поста
             try:
                 original_post = AbsPost.objects.get(id=copy_from_id, user=self.request.user)
-                if original_post.package and original_post.package.is_paid():
-                    print(f"💰 Оригинальный пост уже был оплачен: {original_post.package.name}")
-                    print(f"   Аддоны: фото={original_post.has_photo_addon}, выделение={original_post.has_highlight_addon}")
-                    print(f"   Для переопубликации НЕ требуется повторная оплата аддонов")
             except AbsPost.DoesNotExist:
                 pass
                 
         else:
             copy_from_id = None
-            print(f"🆕 Новый пост: copy_from_id отсутствует")
         
         # Получаем аддоны из формы
         addon_photo = form.cleaned_data.get('addon_photo', False)
@@ -313,13 +306,10 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             self.object.status = 0  # На модерацию - это вызовет сигнал модерации
             self.object.save()
             
-            print(f"💸 Бесплатная публикация поста {self.object.id}")
-            
             # Сохраняем copy_from_id в сессии для обработки после публикации
             if copy_from_id:
                 session_key = f'copy_from_id_{self.object.id}'
                 self.request.session[session_key] = copy_from_id
-                print(f"💾 Сохранен copy_from_id в сессии: {session_key} = {copy_from_id}")
             
             # Отметить использование бесплатной публикации
             FreePostRecord.use_free_post(self.request.user, self.object)
@@ -358,16 +348,13 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         )
         
         post.save()
-        
-        print(f"💰 Платная публикация поста {post.id}")
-        
+                
         # Сохраняем ID старого поста для обработки после оплаты
         if copy_from_id:
             # Убеждаемся что addons_data инициализирован
             if not payment.addons_data:
                 payment.addons_data = {}
             payment.addons_data['copy_from_id'] = copy_from_id
-            print(f"💾 Сохранен copy_from_id в платеже: {copy_from_id}")
         
         # Связываем платеж с постом
         payment.post = post
@@ -404,22 +391,15 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         kwargs['is_create'] = False  # Явно указываем, что это НЕ создание
-        print(f"🔧 BasePostUpdateView.get_form_kwargs() - это редактирование")
         return kwargs
     
     def form_valid(self, form):
-        """Простое сохранение изменений БЕЗ обработки платежей"""
-        print(f"🔧 BasePostUpdateView.form_valid() - начало")
-        print(f"   Объект: {self.object}")
-        print(f"   Это редактирование, НЕ создание")
         
         # КРИТИЧЕСКАЯ ПРОВЕРКА: убеждаемся, что не обрабатываем аддоны
         if hasattr(form, 'cleaned_data'):
             addon_fields = ['addon_photo', 'addon_highlight', 'addon_auto_bump']
             for field in addon_fields:
                 if field in form.cleaned_data:
-                    print(f"⚠️ ВНИМАНИЕ: Поле {field} найдено в форме при редактировании!")
-                    print(f"   Это НЕ должно происходить. Значение: {form.cleaned_data[field]}")
                     # Удаляем поле из cleaned_data для безопасности
                     del form.cleaned_data[field]
                     
@@ -428,9 +408,7 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         self.object = form.save(commit=False)
         self.object.status = 0  # На модерацию
         self.object.save()
-        
-        print(f"✅ Пост обновлен без платежей")
-        
+                
         messages.success(self.request, self.success_message)
         
         if self.request.headers.get('HX-Request'):
@@ -448,9 +426,6 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return reverse_lazy('users:author_profile', kwargs={'author_id': self.request.user.id})
 
 
-
-
-
 class PricingCalculatorView(View):
     """HTMX view для динамического расчета стоимости"""
     
@@ -466,11 +441,10 @@ class PricingCalculatorView(View):
         )
         
         if is_edit_request:
-            print("💰 PricingCalculatorView: БЛОКИРОВАН запрос для редактирования поста")
             return JsonResponse({
                 'breakdown': {
                     'total': 0,
-                    'currency': {'symbol': 'руб', 'name': 'Рубль', 'code': 'RUB'}
+                    'currency': {'symbol': 'гривна', 'name': 'Гривна', 'code': 'UAH'}
                 },
                 'button': {
                     'text': 'Сохранить изменения',
@@ -479,7 +453,6 @@ class PricingCalculatorView(View):
                 'show_image_field': False
             })
         
-        print("💰 PricingCalculatorView: РАЗРЕШЕН запрос для создания поста")
         
         # Остальная логика остается без изменений...
         from ework_premium.utils import PricingCalculator
