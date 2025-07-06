@@ -1,7 +1,6 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
 from ework_post.models import AbsPost
@@ -58,39 +57,3 @@ def archive_expired_posts():
             'error': str(e),
             'message': 'Ошибка при архивации постов'
         }
-
-def cleanup_old_tasks():
-    """
-    Очистка старых задач Django-Q (дополнительная задача для поддержания чистоты)
-    """
-    try:
-        from django_q.models import Task
-        
-        # Удаляем задачи старше 7 дней
-        old_date = timezone.now() - timedelta(days=7)
-        deleted_count = Task.objects.filter(started__lt=old_date).count()
-        Task.objects.filter(started__lt=old_date).delete()
-        
-        logger.info(f"Удалено {deleted_count} старых задач Django-Q")
-        
-        return {
-            'success': True,
-            'deleted_count': deleted_count,
-            'message': f'Удалено {deleted_count} старых задач'
-        }
-        
-    except Exception as e:
-        logger.error(f"Ошибка при очистке старых задач: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e),
-            'message': 'Ошибка при очистке задач'
-        }
-
-def archive_posts_manual():
-    """
-    Ручная архивация постов (для тестирования)
-    """
-    result = archive_expired_posts()
-    logger.info(f"Ручная архивация завершена: {result}")
-    return result
