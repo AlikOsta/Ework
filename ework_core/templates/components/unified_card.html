@@ -86,20 +86,6 @@
                         class="btn btn-sm btn-outline-primary w-100">
                     {% trans "Опубликовать" %}
                 </button>
-                <div class="d-flex gap-1">
-                    <button type="button" 
-                            hx-get="{% url 'core:post_edit' post.pk %}" 
-                            hx-target="#dialog" 
-                            class="btn btn-sm btn-outline-primary flex-grow-1">
-                        {% trans "Изменить" %}
-                    </button>
-                    <button type="button" 
-                            hx-get="{% url 'core:post_delete_confirm' post.pk %}" 
-                            hx-target="#dialog" 
-                            class="btn btn-sm btn-outline-danger flex-grow-1">
-                        {% trans "Удалить" %}
-                    </button>
-                </div>
             </div>
 
         {% elif status == "rejected" %}
