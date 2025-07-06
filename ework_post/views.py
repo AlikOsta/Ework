@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 
@@ -278,10 +278,99 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return kwargs
     
     def form_valid(self, form):
-        """Обработка валидной формы"""
-        # При обновлении отправляем на модерацию
-        form.instance.status = 0  # Не проверено
+        """Обработка валидной формы при редактировании"""
+        # Получаем аддоны из формы
+        addon_photo = form.cleaned_data.get('addon_photo', False)
+        addon_highlight = form.cleaned_data.get('addon_highlight', False)
+        
+        # Проверяем, нужна ли оплата
+        need_payment = addon_photo or addon_highlight
+        
+        if need_payment:
+            return self._handle_paid_update(form, addon_photo, addon_highlight)
+        else:
+            return self._handle_free_update(form)
+    
+    def _handle_free_update(self, form):
+        """Обработка бесплатного обновления (без аддонов)"""
+        # Сохраняем пост без изменения статуса услуг
+        form.instance.status = 0  # На модерацию
         form.save()
+        
+        messages.success(self.request, self.success_message)
+        
+        if self.request.headers.get('HX-Request'):
+            return HttpResponse(
+                status=200,
+                headers={
+                    'HX-Trigger': 'closeModal',
+                    'HX-Redirect': reverse('users:author_profile', kwargs={'author_id': self.request.user.id})
+                }
+            )
+        
+        return redirect(self.get_success_url())
+    
+    def _handle_paid_update(self, form, addon_photo, addon_highlight):
+        """Обработка платного обновления (с аддонами)"""
+        from ework_premium.utils import create_payment_for_post
+        from ework_premium.models import Package
+        
+        # Получаем пакет по умолчанию
+        package = Package.objects.filter(is_active=True, package_type='PAID').first()
+        
+        # Создаем платеж только для новых аддонов
+        payment = create_payment_for_post(
+            user=self.request.user,
+            package=package,
+            photo=addon_photo,
+            highlight=addon_highlight,
+            existing_post=self.object  # Передаем существующий пост
+        )
+        
+        if payment is None:
+            # Если оплата не требуется (например, уже есть активные услуги)
+            return self._update_post_with_addons(form, addon_photo, addon_highlight)
+        
+        # Сохраняем пост
+        form.save()
+        
+        # Связываем платеж с постом
+        payment.post = self.object
+        payment.save(update_fields=['post'])
+        
+        # HTMX запрос
+        if self.request.headers.get('HX-Request'):
+            return JsonResponse({
+                'action': 'payment_required',
+                'payment_id': payment.id,
+                'amount': str(payment.amount),
+                'currency': payment.package.currency.symbol if payment.package.currency else '$',
+                'payload': payment.get_payload(),
+                'order_id': payment.order_id,
+                'is_update': True  # Флаг что это обновление
+            })
+        
+        return redirect('payments:payment_page', payment_id=payment.id)
+    
+    def _update_post_with_addons(self, form, addon_photo, addon_highlight):
+        """Обновление поста с применением аддонов без оплаты"""
+        # Сохраняем основные изменения
+        form.save()
+        
+        # Применяем аддоны
+        if addon_photo or addon_highlight:
+            self.object.set_addons(
+                photo=addon_photo,
+                highlight=addon_highlight
+            )
+            self.object.save(update_fields=[
+                'has_photo_addon', 'has_highlight_addon',
+                'photo_expires_at', 'highlight_expires_at', 'is_premium'
+            ])
+        
+        # Отправляем на модерацию
+        self.object.status = 0
+        self.object.save(update_fields=['status'])
         
         messages.success(self.request, self.success_message)
         
@@ -311,7 +400,15 @@ class PricingCalculatorView(View):
         # Получаем параметры аддонов
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
-        addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'
+        
+        # Получаем ID поста для редактирования (если есть)
+        post_id = request.GET.get('post_id')
+        existing_post = None
+        if post_id:
+            try:
+                existing_post = AbsPost.objects.get(id=post_id, user=request.user)
+            except AbsPost.DoesNotExist:
+                pass
         
         # Для неавторизованных пользователей создаем временного пользователя
         if request.user.is_authenticated:
@@ -327,14 +424,14 @@ class PricingCalculatorView(View):
         breakdown = calculator.get_pricing_breakdown(
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
+            existing_post=existing_post
         )
         
         # Получаем конфигурацию кнопки
         button_config = calculator.get_button_config(
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
+            existing_post=existing_post
         )
         
         # Сериализуем currency объект
@@ -348,7 +445,8 @@ class PricingCalculatorView(View):
         return JsonResponse({
             'breakdown': breakdown,
             'button': button_config,
-            'show_image_field': addon_photo
+            'show_image_field': addon_photo,
+            'is_update': existing_post is not None
         })
 
 
@@ -379,7 +477,9 @@ class PostPaymentSuccessView(LoginRequiredMixin, View):
             # Переводим пост из черновика на модерацию
             post = payment.post
             post.status = 0  # На модерацию
-            post.save(update_fields=['status'])
+            
+            # Применяем оплаченные аддоны
+            post.apply_addons_from_payment(payment)
             
             messages.success(request, _('Объявление успешно опубликовано!'))
             
@@ -393,3 +493,133 @@ class PostPaymentSuccessView(LoginRequiredMixin, View):
             return JsonResponse({
                 'error': f'Ошибка при создании объявления: {str(e)}'
             }, status=500)
+
+
+class PostRestoreFromArchiveView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """View для восстановления поста из архива"""
+    
+    def test_func(self):
+        """Проверка прав доступа - только автор может восстанавливать"""
+        post = self.get_object()
+        return self.request.user == post.user
+    
+    def get_object(self):
+        """Получить пост для восстановления"""
+        post_id = self.kwargs.get('post_id')
+        return get_object_or_404(AbsPost, id=post_id, status=4, is_deleted=False)  # Статус 4 = архив
+    
+    def post(self, request, post_id, *args, **kwargs):
+        """Восстановить пост из архива"""
+        from ework_premium.utils import can_user_restore_from_archive_free, create_payment_for_post
+        from ework_premium.models import Package, FreePostRecord
+        
+        post = self.get_object()
+        
+        # Проверяем, можно ли восстановить бесплатно
+        if can_user_restore_from_archive_free(request.user, post):
+            # Восстанавливаем бесплатно
+            post.status = 0  # На модерацию
+            post.save(update_fields=['status'])
+            
+            # Отмечаем использование бесплатной публикации
+            FreePostRecord.use_free_post(request.user, post)
+            
+            messages.success(request, _('Объявление восстановлено и отправлено на модерацию'))
+            
+            if request.headers.get('HX-Request'):
+                return HttpResponse(
+                    status=200,
+                    headers={
+                        'HX-Trigger': 'closeModal',
+                        'HX-Redirect': reverse('users:author_profile', kwargs={'author_id': request.user.id})
+                    }
+                )
+            
+            return redirect('users:author_profile', author_id=request.user.id)
+        
+        else:
+            # Нужна оплата - возвращаем форму с выбором аддонов
+            package = Package.objects.filter(is_active=True, package_type='PAID').first()
+            
+            # Если это HTMX запрос, возвращаем форму оплаты
+            if request.headers.get('HX-Request'):
+                from ework_premium.utils import PricingCalculator
+                
+                # Получаем базовые настройки (без аддонов)
+                calculator = PricingCalculator(request.user, package)
+                breakdown = calculator.get_pricing_breakdown(existing_post=post)
+                button_config = calculator.get_button_config(existing_post=post)
+                
+                return JsonResponse({
+                    'action': 'show_restore_form',
+                    'post_id': post.id,
+                    'post_title': post.title,
+                    'breakdown': breakdown,
+                    'button': button_config,
+                    'has_active_addons': post.has_photo_addon or post.has_highlight_addon
+                })
+            
+            # Обычный запрос - редирект на страницу редактирования
+            from django.urls import reverse
+            edit_url = reverse('jobs:edit_post', kwargs={'pk': post.id}) if hasattr(post, 'postjob') else reverse('services:edit_post', kwargs={'pk': post.id})
+            return redirect(edit_url)
+
+
+class PostRestoreWithAddonsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """View для восстановления поста из архива с доп. услугами"""
+    
+    def test_func(self):
+        """Проверка прав доступа - только автор может восстанавливать"""
+        post = self.get_object()
+        return self.request.user == post.user
+    
+    def get_object(self):
+        """Получить пост для восстановления"""
+        post_id = self.kwargs.get('post_id')
+        return get_object_or_404(AbsPost, id=post_id, status=4, is_deleted=False)  # Статус 4 = архив
+    
+    def post(self, request, post_id, *args, **kwargs):
+        """Восстановить пост с доп. услугами"""
+        from ework_premium.utils import create_payment_for_post
+        from ework_premium.models import Package
+        
+        post = self.get_object()
+        
+        # Получаем выбранные аддоны
+        addon_photo = request.POST.get('addon_photo') == 'on'
+        addon_highlight = request.POST.get('addon_highlight') == 'on'
+        
+        package = Package.objects.filter(is_active=True, package_type='PAID').first()
+        
+        # Создаем платеж
+        payment = create_payment_for_post(
+            user=request.user,
+            package=package,
+            photo=addon_photo,
+            highlight=addon_highlight,
+            existing_post=post
+        )
+        
+        if payment is None:
+            # Бесплатное восстановление
+            post.status = 0  # На модерацию
+            if addon_photo or addon_highlight:
+                post.set_addons(photo=addon_photo, highlight=addon_highlight)
+            post.save()
+            
+            messages.success(request, _('Объявление восстановлено и отправлено на модерацию'))
+            return redirect('users:author_profile', author_id=request.user.id)
+        
+        # Нужна оплата
+        if request.headers.get('HX-Request'):
+            return JsonResponse({
+                'action': 'payment_required',
+                'payment_id': payment.id,
+                'amount': str(payment.amount),
+                'currency': payment.package.currency.symbol if payment.package.currency else '$',
+                'payload': payment.get_payload(),
+                'order_id': payment.order_id,
+                'is_restore': True
+            })
+        
+        return redirect('payments:payment_page', payment_id=payment.id)

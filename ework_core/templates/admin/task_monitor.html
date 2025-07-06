@@ -1,0 +1,153 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {% trans 'Django site admin' %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h2>{% trans "Мониторинг задач архивирования" %}</h2>
+    
+    <!-- Статус планировщика -->
+    <div class="module">
+        <h3>{% trans "Статус планировщика" %}</h3>
+        <table class="table">
+            <tr>
+                <th>{% trans "Статус" %}</th>
+                <td>
+                    {% if scheduler_status.active %}
+                        <span style="color: green;">✅ {% trans "Активен" %}</span>
+                    {% else %}
+                        <span style="color: red;">❌ {% trans "Неактивен" %}</span>
+                        {% if scheduler_status.error %}
+                            <br><small>{{ scheduler_status.error }}</small>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>{% trans "Запланированных задач" %}</th>
+                <td>{{ scheduler_status.total_scheduled_jobs }}</td>
+            </tr>
+            {% if scheduler_status.archive_job %}
+            <tr>
+                <th>{% trans "Задача архивирования" %}</th>
+                <td>
+                    ID: {{ scheduler_status.archive_job.id|slice:":8" }}...<br>
+                    {% trans "Функция" %}: {{ scheduler_status.archive_job.func_name }}<br>
+                    {% trans "Создана" %}: {{ scheduler_status.archive_job.created_at }}
+                    {% if scheduler_status.archive_job.meta.cron_string %}
+                        <br>{% trans "Расписание" %}: {{ scheduler_status.archive_job.meta.cron_string }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+    
+    <!-- Статистика истекающих постов -->
+    <div class="module">
+        <h3>{% trans "Статистика истекающих постов" %}</h3>
+        {% if expiry_stats.error %}
+            <p style="color: red;">{% trans "Ошибка" %}: {{ expiry_stats.error }}</p>
+        {% else %}
+            <table class="table">
+                <tr>
+                    <th>{% trans "Истекшие посты" %}</th>
+                    <td style="color: {% if expiry_stats.expired_posts > 0 %}red{% else %}green{% endif %};">
+                        {{ expiry_stats.expired_posts }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>{% trans "Истекают в ближайшие 3 дня" %}</th>
+                    <td style="color: {% if expiry_stats.expiring_soon > 0 %}orange{% else %}green{% endif %};">
+                        {{ expiry_stats.expiring_soon }}
+                    </td>
+                </tr>
+                <tr>
+                    <th>{% trans "Срок хранения (дней)" %}</th>
+                    <td>{{ expiry_stats.expiry_days }}</td>
+                </tr>
+            </table>
+        {% endif %}
+    </div>
+    
+    <!-- Действия -->
+    <div class="module">
+        <h3>{% trans "Действия" %}</h3>
+        <form method="post" action="{% url 'admin:run_task_now' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="button" onclick="return confirm('{% trans "Запустить задачу архивирования сейчас?" %}')">
+                {% trans "Запустить архивирование сейчас" %}
+            </button>
+        </form>
+        
+        <a href="{% url 'admin:index' %}" class="button">
+            {% trans "Вернуться в админку" %}
+        </a>
+    </div>
+    
+    <!-- Последние задачи -->
+    {% if recent_jobs %}
+    <div class="module">
+        <h3>{% trans "Последние выполненные задачи" %}</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{% trans "ID" %}</th>
+                    <th>{% trans "Статус" %}</th>
+                    <th>{% trans "Время выполнения" %}</th>
+                    <th>{% trans "Результат" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in recent_jobs %}
+                <tr>
+                    <td>{{ job.id|slice:":8" }}...</td>
+                    <td>{{ job.status }}</td>
+                    <td>{{ job.ended_at|default:"—" }}</td>
+                    <td>{{ job.result|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+.table th, .table td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+.table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+.button {
+    background-color: #417690;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    margin: 5px;
+    display: inline-block;
+}
+.button:hover {
+    background-color: #205067;
+}
+</style>
+{% endblock %}

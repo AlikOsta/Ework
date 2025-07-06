@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q, Count
 import json
 from django.utils.decorators import method_decorator
@@ -19,7 +20,8 @@ from ework_post.models import AbsPost, Favorite, BannerPost, PostView
 from ework_post.views import BasePostListView
 from ework_locations.models import City
 from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHEDULE_CHOICES
-from ework_premium.models import Package
+from ework_premium.models import Package, FreePostRecord
+from ework_premium.utils import can_user_restore_from_archive_free, create_payment_for_post
 
 
 def home(request):
@@ -440,6 +442,147 @@ def post_edit(request, pk):
     
     messages.error(request, _('Неизвестный тип объявления'))
     return redirect('users:author_profile', author_id=request.user.id)
+
+class PostDeleteConfirmView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """Удаление поста"""
+    
+    def test_func(self):
+        """Проверка прав доступа - только автор может удалять"""
+        post = self.get_object()
+        return self.request.user == post.user
+    
+    def get_object(self):
+        """Получить пост для удаления"""
+        post_id = self.kwargs.get('post_id')
+        return get_object_or_404(AbsPost, id=post_id)
+    
+    def get(self, request, post_id, *args, **kwargs):
+        """Показать подтверждение удаления"""
+        post = self.get_object()
+        return render(request, 'includes/post_delete_confirm.html', {'post': post})
+
+
+class PostRestoreFromArchiveView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """View для восстановления поста из архива"""
+    
+    def test_func(self):
+        """Проверка прав доступа - только автор может восстанавливать"""
+        post = self.get_object()
+        return self.request.user == post.user
+    
+    def get_object(self):
+        """Получить пост для восстановления"""
+        post_id = self.kwargs.get('post_id')
+        return get_object_or_404(AbsPost, id=post_id, status=4, is_deleted=False)  # Статус 4 = архив
+    
+    def post(self, request, post_id, *args, **kwargs):
+        """Восстановить пост из архива"""
+        post = self.get_object()
+        
+        # Проверяем, можно ли восстановить бесплатно
+        if can_user_restore_from_archive_free(request.user, post):
+            # Восстанавливаем бесплатно
+            post.status = 0  # На модерацию
+            post.save(update_fields=['status'])
+            
+            # Отмечаем использование бесплатной публикации
+            FreePostRecord.use_free_post(request.user, post)
+            
+            messages.success(request, _('Объявление восстановлено и отправлено на модерацию'))
+            
+            if request.headers.get('HX-Request'):
+                return HttpResponse(
+                    status=200,
+                    headers={
+                        'HX-Trigger': 'closeModal',
+                        'HX-Redirect': reverse('users:author_profile', kwargs={'author_id': request.user.id})
+                    }
+                )
+            
+            return redirect('users:author_profile', author_id=request.user.id)
+        
+        else:
+            # Нужна оплата - возвращаем форму с выбором аддонов
+            package = Package.objects.filter(is_active=True, package_type='PAID').first()
+            
+            # Если это HTMX запрос, возвращаем форму оплаты
+            if request.headers.get('HX-Request'):
+                from ework_premium.utils import PricingCalculator
+                
+                # Получаем базовые настройки (без аддонов)
+                calculator = PricingCalculator(request.user, package)
+                breakdown = calculator.get_pricing_breakdown(existing_post=post)
+                button_config = calculator.get_button_config(existing_post=post)
+                
+                return JsonResponse({
+                    'action': 'show_restore_form',
+                    'post_id': post.id,
+                    'post_title': post.title,
+                    'breakdown': breakdown,
+                    'button': button_config,
+                    'has_active_addons': post.has_photo_addon or post.has_highlight_addon
+                })
+            
+            # Обычный запрос - редирект на страницу редактирования
+            edit_url = reverse('jobs:edit_post', kwargs={'pk': post.id}) if hasattr(post, 'postjob') else reverse('services:edit_post', kwargs={'pk': post.id})
+            return redirect(edit_url)
+
+
+class PostRestoreWithAddonsView(LoginRequiredMixin, UserPassesTestMixin, View):
+    """View для восстановления поста из архива с доп. услугами"""
+    
+    def test_func(self):
+        """Проверка прав доступа - только автор может восстанавливать"""
+        post = self.get_object()
+        return self.request.user == post.user
+    
+    def get_object(self):
+        """Получить пост для восстановления"""
+        post_id = self.kwargs.get('post_id')
+        return get_object_or_404(AbsPost, id=post_id, status=4, is_deleted=False)  # Статус 4 = архив
+    
+    def post(self, request, post_id, *args, **kwargs):
+        """Восстановить пост с доп. услугами"""
+        post = self.get_object()
+        
+        # Получаем выбранные аддоны
+        addon_photo = request.POST.get('addon_photo') == 'on'
+        addon_highlight = request.POST.get('addon_highlight') == 'on'
+        
+        package = Package.objects.filter(is_active=True, package_type='PAID').first()
+        
+        # Создаем платеж
+        payment = create_payment_for_post(
+            user=request.user,
+            package=package,
+            photo=addon_photo,
+            highlight=addon_highlight,
+            existing_post=post
+        )
+        
+        if payment is None:
+            # Бесплатное восстановление
+            post.status = 0  # На модерацию
+            if addon_photo or addon_highlight:
+                post.set_addons(photo=addon_photo, highlight=addon_highlight)
+            post.save()
+            
+            messages.success(request, _('Объявление восстановлено и отправлено на модерацию'))
+            return redirect('users:author_profile', author_id=request.user.id)
+        
+        # Нужна оплата
+        if request.headers.get('HX-Request'):
+            return JsonResponse({
+                'action': 'payment_required',
+                'payment_id': payment.id,
+                'amount': str(payment.amount),
+                'currency': payment.package.currency.symbol if payment.package.currency else '$',
+                'payload': payment.get_payload(),
+                'order_id': payment.order_id,
+                'is_restore': True
+            })
+        
+        return redirect('payments:payment_page', payment_id=payment.id)
 
 
 @login_required

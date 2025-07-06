@@ -85,6 +85,31 @@ class BasePostForm(forms.ModelForm):
         default_currency = Currency.objects.first()
         if default_currency:
             self.fields['currency'].initial = default_currency.pk
+        
+        # Обновляем help_text для аддонов с актуальными настройками
+        from ework_config.models import SiteConfig
+        config = SiteConfig.get_config()
+        
+        self.fields['addon_photo'].help_text = _(f'Возможность добавлять фото к объявлению ({config.photo_addon_duration_days} дней)')
+        self.fields['addon_highlight'].help_text = _(f'Объявление будет выделено цветом ({config.highlight_addon_duration_days} дня)')
+        
+        # Если это редактирование существующего поста
+        if self.instance and self.instance.pk:
+            # Получаем информацию об активных аддонах
+            addons_info = self.instance.get_addons_info()
+            
+            # Показываем информацию об активных услугах
+            if addons_info['photo']['active']:
+                self.fields['addon_photo'].help_text += f" (активна до {addons_info['photo']['expires_at'].strftime('%d.%m.%Y')}, осталось {addons_info['photo']['days_left']} дн.)"
+                
+            if addons_info['highlight']['active']:
+                self.fields['addon_highlight'].help_text += f" (активна до {addons_info['highlight']['expires_at'].strftime('%d.%m.%Y')}, осталось {addons_info['highlight']['days_left']} дн.)"
+
+    def get_active_addons_info(self):
+        """Получить информацию об активных аддонах для отображения в шаблоне"""
+        if self.instance and self.instance.pk:
+            return self.instance.get_addons_info()
+        return None
 
     def clean_price(self):
         price = self.cleaned_data.get('price')
