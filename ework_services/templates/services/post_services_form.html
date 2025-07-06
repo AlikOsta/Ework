@@ -8,7 +8,9 @@
 
     <div class="modal-header">
         <h5 class="modal-title">
-            {% if object %}
+            {% if modal_title %}
+                {{ modal_title }}
+            {% elif object %}
                 {% trans "Редактировать услугу" %}
             {% else %}
                 {% trans "Разместить услугу" %}
