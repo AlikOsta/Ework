@@ -228,7 +228,27 @@ def _handle_republish_on_publish(instance):
         
         if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
             copy_from_id = payment.addons_data['copy_from_id']
-            print(f"ТЕСТ: Найден copy_from_id = {copy_from_id}")
+            print(f"ТЕСТ: Найден copy_from_id в платеже = {copy_from_id}")
+        
+        # Если не нашли в платеже, проверяем сессию (для бесплатных постов)
+        if not copy_from_id:
+            from django.contrib.sessions.models import Session
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            # Ищем активные сессии пользователя
+            user_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+            for session in user_sessions:
+                session_data = session.get_decoded()
+                session_key = f'copy_from_id_{instance.id}'
+                if session_key in session_data:
+                    copy_from_id = session_data[session_key]
+                    print(f"ТЕСТ: Найден copy_from_id в сессии = {copy_from_id}")
+                    # Удаляем из сессии после использования
+                    del session_data[session_key]
+                    session.session_data = session.encode(session_data)
+                    session.save()
+                    break
         
         if copy_from_id:
             from ework_post.models import AbsPost
