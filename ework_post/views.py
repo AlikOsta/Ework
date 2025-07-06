@@ -266,6 +266,17 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         if copy_from_id and copy_from_id.isdigit():
             copy_from_id = int(copy_from_id)
             print(f"🔄 Переопубликация поста: copy_from_id = {copy_from_id}")
+            
+            # ПРОВЕРЯЕМ: если это переопубликация уже оплаченного поста
+            try:
+                original_post = AbsPost.objects.get(id=copy_from_id, user=self.request.user)
+                if original_post.package and original_post.package.is_paid():
+                    print(f"💰 Оригинальный пост уже был оплачен: {original_post.package.name}")
+                    print(f"   Аддоны: фото={original_post.has_photo_addon}, выделение={original_post.has_highlight_addon}")
+                    print(f"   Для переопубликации НЕ требуется повторная оплата аддонов")
+            except AbsPost.DoesNotExist:
+                pass
+                
         else:
             copy_from_id = None
             print(f"🆕 Новый пост: copy_from_id отсутствует")
@@ -392,6 +403,7 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        kwargs['is_create'] = False  # Явно указываем, что это НЕ создание
         print(f"🔧 BasePostUpdateView.get_form_kwargs() - это редактирование")
         return kwargs
     
@@ -401,6 +413,16 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         print(f"   Объект: {self.object}")
         print(f"   Это редактирование, НЕ создание")
         
+        # КРИТИЧЕСКАЯ ПРОВЕРКА: убеждаемся, что не обрабатываем аддоны
+        if hasattr(form, 'cleaned_data'):
+            addon_fields = ['addon_photo', 'addon_highlight', 'addon_auto_bump']
+            for field in addon_fields:
+                if field in form.cleaned_data:
+                    print(f"⚠️ ВНИМАНИЕ: Поле {field} найдено в форме при редактировании!")
+                    print(f"   Это НЕ должно происходить. Значение: {form.cleaned_data[field]}")
+                    # Удаляем поле из cleaned_data для безопасности
+                    del form.cleaned_data[field]
+                    
         # НЕ вызываем super().form_valid() чтобы избежать логики создания!
         
         self.object = form.save(commit=False)
