@@ -168,6 +168,12 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        
+        # Поддержка копирования из архивного поста
+        copy_from = self.request.GET.get('copy_from')
+        if copy_from and copy_from.isdigit():
+            kwargs['copy_from'] = int(copy_from)
+            
         return kwargs
     
     def form_valid(self, form):
