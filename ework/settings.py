@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django_htmx',  
     'widget_tweaks',  
     'polymorphic',  
+    'django_q',  # Django-Q для фоновых задач
     'ework_bot_tg', #бот ТГ и его фунционнал
     'ework_user_tg', # модель пользователя и авторизация
     'ework_job', # объявления о работе 
