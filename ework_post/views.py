@@ -190,7 +190,7 @@ class BasePostDetailView(DetailView):
         """Получить queryset с оптимизированными связями"""
         return AbsPost.objects.select_related(
             'user', 'city', 'currency', 'sub_rubric', 'sub_rubric__super_rubric'
-        ).filter(status=3, is_deleted=False).exclude(status=5)
+        ).filter(status=3, is_deleted=False)
 
     def get_object(self, queryset=None):
         """Получить объект и записать просмотр"""
