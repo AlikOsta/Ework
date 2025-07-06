@@ -351,32 +351,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         return redirect('payments:payment_page', payment_id=payment.id)
     
-    def _handle_republish(self, old_post_id, new_post):
-        """Обработка переопубликации: копирование статистики и удаление старого поста"""
-        print(f"🔄 DEBUG: _handle_republish вызван с old_post_id={old_post_id}, new_post_id={new_post.id}")
-        try:
-            old_post = AbsPost.objects.get(
-                id=old_post_id,
-                user=self.request.user,
-                status=4,  # Архивный
-                is_deleted=False
-            )
-            
-            print(f"🔄 DEBUG: Найден старый пост {old_post_id}, статус ДО: {old_post.status}")
-            
-            # Копируем статистику просмотров
-            copied_views = copy_post_views(old_post, new_post)
-            
-            # Помечаем старый пост как удаленный
-            old_post.soft_delete()
-            
-            print(f"🔄 DEBUG: Переопубликация завершена: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный, новый статус: {old_post.status}")
-            
-        except AbsPost.DoesNotExist:
-            print(f"❌ DEBUG: Старый пост {old_post_id} не найден при переопубликации")
-        except Exception as e:
-            print(f"❌ DEBUG: Ошибка при обработке переопубликации: {e}")
-    
     def get_success_url(self):
         return reverse_lazy('core:home')
 
