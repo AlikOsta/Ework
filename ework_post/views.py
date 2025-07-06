@@ -292,6 +292,10 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             self.object.status = 0  # На модерацию - это вызовет сигнал модерации
             self.object.save()
             
+            # Сохраняем copy_from_id в сессии для обработки после публикации
+            if copy_from_id:
+                self.request.session[f'copy_from_id_{self.object.id}'] = copy_from_id
+            
             # Отметить использование бесплатной публикации
             FreePostRecord.use_free_post(self.request.user, self.object)
             
