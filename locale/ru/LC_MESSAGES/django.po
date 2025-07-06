@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-04 12:16-0300\n"
+"POT-Creation-Date: 2025-07-06 15:05-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,6 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
+
 #: .\ework_bot_tg\bot\bot.py:246
 msgid ""
 "✅ Оплата прошла успешно! Ваше объявление опубликовано и отправлено на "
@@ -75,16 +76,27 @@ msgstr ""
 msgid "Конфигурация сайта"
 msgstr ""
 
-#: .\ework_core\templates\components\banner.html:30
-#: .\ework_core\templates\components\banner.html:46
+#: .\ework_core\templates\components\banner.html:31
 msgid "Добавить"
 msgstr ""
 
-#: .\ework_core\templates\components\card.html:23
+#: .\ework_core\templates\components\card.html:16
+msgid "Все объявления"
+msgstr ""
+
+#: .\ework_core\templates\components\card.html:81
+msgid "Загрузка..."
+msgstr ""
+
+#: .\ework_core\templates\components\card.html:84
+msgid "Загружаем больше объявлений..."
+msgstr ""
+
+#: .\ework_core\templates\components\card.html:95
 msgid "Объявления не найдены"
 msgstr ""
 
-#: .\ework_core\templates\components\card.html:26
+#: .\ework_core\templates\components\card.html:98
 msgid "По вашему запросу ничего не найдено."
 msgstr ""
 
@@ -93,85 +105,86 @@ msgid "Фильтры и сортировка"
 msgstr ""
 
 #: .\ework_core\templates\components\filter.html:18
-msgid "Сортировка"
-msgstr ""
-
-#: .\ework_core\templates\components\filter.html:20
-msgid "Сначала новые"
-msgstr ""
-
-#: .\ework_core\templates\components\filter.html:21
-msgid "Сначала старые"
-msgstr ""
-
-#: .\ework_core\templates\components\filter.html:22
-msgid "Цена: по возрастанию"
-msgstr ""
-
-#: .\ework_core\templates\components\filter.html:23
-msgid "Цена: по убыванию"
-msgstr ""
-
-#: .\ework_core\templates\components\filter.html:28
-msgid "Цена"
-msgstr ""
-
-#: .\ework_core\templates\components\filter.html:38
-#: .\ework_job\templates\job\post_job_form.html:57
+#: .\ework_job\templates\job\post_job_form.html:73
 #: .\ework_locations\models.py:11
-#: .\ework_services\templates\services\post_services_form.html:44
+#: .\ework_services\templates\services\post_services_form.html:67
 #: .\ework_user_tg\forms.py:23 .\ework_user_tg\models.py:22
 msgid "Город"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:40
+#: .\ework_core\templates\components\filter.html:20
 msgid "Все города"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:50 .\ework_rubric\models.py:15
-msgid "Категории"
+#: .\ework_core\templates\components\filter.html:32
+#: .\ework_job\templates\job\post_job_form.html:60
+msgid "Зарплата"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:52
-msgid "Все категории"
+#: .\ework_core\templates\components\filter.html:34
+#: .\ework_services\templates\services\post_services_form.html:54
+msgid "Стоимость"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:63
+#: .\ework_core\templates\components\filter.html:47
 #: .\ework_core\templates\includes\post_detail.html:67 .\ework_job\models.py:8
-#: .\ework_job\templates\job\post_job_form.html:71
+#: .\ework_job\templates\job\post_job_form.html:93
 msgid "Опыт работы"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:65 .\ework_job\choices.py:22
+#: .\ework_core\templates\components\filter.html:49 .\ework_job\choices.py:22
 msgid "Не имеет значения"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:75
+#: .\ework_core\templates\components\filter.html:59
 #: .\ework_core\templates\includes\post_detail.html:81 .\ework_job\models.py:10
-#: .\ework_job\templates\job\post_job_form.html:83
+#: .\ework_job\templates\job\post_job_form.html:105
 msgid "Формат работы"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:77
+#: .\ework_core\templates\components\filter.html:61
 msgid "Любой формат"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:87
+#: .\ework_core\templates\components\filter.html:71
 #: .\ework_core\templates\includes\post_detail.html:74 .\ework_job\models.py:9
-#: .\ework_job\templates\job\post_job_form.html:77
+#: .\ework_job\templates\job\post_job_form.html:99
 msgid "График работы"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:89
+#: .\ework_core\templates\components\filter.html:73
 msgid "Любой график"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:103
+#: .\ework_core\templates\components\filter.html:87
 msgid "Сбросить"
 msgstr ""
 
-#: .\ework_core\templates\components\filter.html:107
+#: .\ework_core\templates\components\filter.html:91
 msgid "Применить"
+msgstr ""
+
+#: .\ework_core\templates\components\footer.html:15
+msgid "Домой"
+msgstr ""
+
+#: .\ework_core\templates\components\footer.html:32
+#: .\ework_core\templates\components\unified_card.html:45
+#: .\ework_core\templates\pages\favorites.html:4 .\ework_post\models.py:194
+msgid "Избранное"
+msgstr ""
+
+#: .\ework_core\templates\components\footer.html:63
+#: .\ework_core\templates\pages\premium.html:4
+msgid "Тарифы"
+msgstr ""
+
+#: .\ework_core\templates\components\footer.html:81
+msgid "Профиль"
+msgstr ""
+
+#: .\ework_core\templates\components\footer.html:95
+msgid "Войти"
 msgstr ""
 
 #: .\ework_core\templates\components\search.html:13
@@ -182,42 +195,35 @@ msgstr ""
 msgid "Просмотр объявления"
 msgstr ""
 
-#: .\ework_core\templates\components\unified_card.html:47
-#: .\ework_core\templates\pages\favorites.html:4 .\ework_post\models.py:192
-msgid "Избранное"
-msgstr ""
-
-#: .\ework_core\templates\components\unified_card.html:61
+#: .\ework_core\templates\components\unified_card.html:59
 msgid "В архив"
 msgstr ""
 
-#: .\ework_core\templates\components\unified_card.html:69
-#: .\ework_core\templates\components\unified_card.html:94
+#: .\ework_core\templates\components\unified_card.html:67
 msgid "Изменить"
 msgstr ""
 
-#: .\ework_core\templates\components\unified_card.html:75
-#: .\ework_core\templates\components\unified_card.html:100
-#: .\ework_core\templates\components\unified_card.html:115
+#: .\ework_core\templates\components\unified_card.html:73
+#: .\ework_core\templates\components\unified_card.html:99
 #: .\ework_core\templates\includes\post_delete_confirm.html:37
 msgid "Удалить"
 msgstr ""
 
-#: .\ework_core\templates\components\unified_card.html:86
-#: .\ework_job\templates\job\post_job_form.html:155
-#: .\ework_services\templates\services\post_services_form.html:116
+#: .\ework_core\templates\components\unified_card.html:85
+#: .\ework_job\templates\job\post_job_form.html:168
+#: .\ework_services\templates\services\post_services_form.html:143
 msgid "Опубликовать"
 msgstr ""
 
-#: .\ework_core\templates\components\unified_card.html:109
+#: .\ework_core\templates\components\unified_card.html:93
 msgid "Объявление заблокировано модератором"
 msgstr ""
 
-#: .\ework_core\templates\components\unified_card.html:125
+#: .\ework_core\templates\components\unified_card.html:109
 msgid "Ожидает проверки"
 msgstr ""
 
-#: .\ework_core\templates\components\unified_card.html:129
+#: .\ework_core\templates\components\unified_card.html:113
 msgid "Одобрено, ожидает публикации"
 msgstr ""
 
@@ -251,7 +257,7 @@ msgid "Разместить вакансию"
 msgstr ""
 
 #: .\ework_core\templates\includes\modal_select_post.html:25
-#: .\ework_services\templates\services\post_services_form.html:14
+#: .\ework_services\templates\services\post_services_form.html:16
 msgid "Разместить услугу"
 msgstr ""
 
@@ -268,15 +274,15 @@ msgid "Это действие нельзя отменить. Объявлени
 msgstr ""
 
 #: .\ework_core\templates\includes\post_delete_confirm.html:30
-#: .\ework_job\templates\job\post_job_form.html:150
-#: .\ework_services\templates\services\post_services_form.html:111
+#: .\ework_job\templates\job\post_job_form.html:163
+#: .\ework_services\templates\services\post_services_form.html:138
 #: .\ework_user_tg\templates\user_ework\profile_edit.html:99
 #: .\ework_user_tg\templates\user_ework\rating_form.html:52
 msgid "Отмена"
 msgstr ""
 
 #: .\ework_core\templates\includes\post_detail.html:51
-#: .\ework_post\models.py:33 .\ework_post\models.py:213
+#: .\ework_post\models.py:33 .\ework_post\models.py:215
 msgid "Описание"
 msgstr ""
 
@@ -304,8 +310,12 @@ msgstr ""
 msgid "Показать номер телефона"
 msgstr ""
 
-#: .\ework_core\templates\includes\post_detail.html:204
-msgid "Связаться с продавцом"
+#: .\ework_core\templates\includes\post_detail.html:206
+msgid "Связаться с работодателем"
+msgstr ""
+
+#: .\ework_core\templates\includes\post_detail.html:208
+msgid "Связаться с автором"
 msgstr ""
 
 #: .\ework_core\templates\pages\base.html:12
@@ -330,27 +340,35 @@ msgstr ""
 msgid "Главная"
 msgstr ""
 
-#: .\ework_core\templates\pages\premium.html:4
-msgid "Тарифы"
+#: .\ework_core\templates\pages\premium.html:28
+msgid "Дополнительные возможности"
 msgstr ""
 
-#: .\ework_core\views.py:350
+#: .\ework_core\templates\pages\premium.html:30
+msgid "Добавить фото: "
+msgstr ""
+
+#: .\ework_core\templates\pages\premium.html:31
+msgid "Выделить цветом: "
+msgstr ""
+
+#: .\ework_core\views.py:411
 msgid "Объявление отправлено на модерацию"
 msgstr ""
 
-#: .\ework_core\views.py:351
+#: .\ework_core\views.py:412
 msgid "Объявление перемещено в архив"
 msgstr ""
 
-#: .\ework_core\views.py:357
+#: .\ework_core\views.py:418
 msgid "Недопустимое изменение статуса"
 msgstr ""
 
-#: .\ework_core\views.py:380
+#: .\ework_core\views.py:441 .\ework_post\views.py:85
 msgid "Неизвестный тип объявления"
 msgstr ""
 
-#: .\ework_core\views.py:391
+#: .\ework_core\views.py:452
 msgid "Объявление успешно удалено"
 msgstr ""
 
@@ -381,7 +399,7 @@ msgstr ""
 
 #: .\ework_currency\models.py:8 .\ework_locations\models.py:7
 #: .\ework_premium\models.py:37 .\ework_rubric\models.py:10
-#: .\ework_rubric\models.py:33
+#: .\ework_rubric\models.py:34
 msgid "Порядок"
 msgstr ""
 
@@ -390,9 +408,9 @@ msgid "Порядок валюты"
 msgstr ""
 
 #: .\ework_currency\models.py:12
-#: .\ework_job\templates\job\post_job_form.html:49 .\ework_post\models.py:36
+#: .\ework_job\templates\job\post_job_form.html:65 .\ework_post\models.py:36
 #: .\ework_premium\models.py:25
-#: .\ework_services\templates\services\post_services_form.html:38
+#: .\ework_services\templates\services\post_services_form.html:59
 msgid "Валюта"
 msgstr ""
 
@@ -484,65 +502,74 @@ msgstr ""
 msgid "Вакансии"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:12
+#: .\ework_job\templates\job\post_job_form.html:20
 msgid "Редактировать вакансию"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:14
+#: .\ework_job\templates\job\post_job_form.html:22
 msgid "Новая вакансия"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:30
+#: .\ework_job\templates\job\post_job_form.html:33
+#: .\ework_services\templates\services\post_services_form.html:27
+#, python-format
+msgid ""
+"Данные скопированы из архивного объявления \"%(title)s\". Вы можете изменить "
+"любые данные перед публикацией."
+msgstr ""
+
+#: .\ework_job\templates\job\post_job_form.html:46
 msgid "Название вакансии"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:36
+#: .\ework_job\templates\job\post_job_form.html:52
 msgid "Описание вакансии"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:44
-#: .\ework_services\templates\services\post_services_form.html:34
-msgid "Оплата"
+#: .\ework_job\templates\job\post_job_form.html:79 .\ework_post\models.py:39
+#: .\ework_services\templates\services\post_services_form.html:74
+msgid "Адрес"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:64 .\ework_rubric\models.py:14
-#: .\ework_rubric\models.py:34
-#: .\ework_services\templates\services\post_services_form.html:49
+#: .\ework_job\templates\job\post_job_form.html:86 .\ework_rubric\models.py:14
+#: .\ework_rubric\models.py:35
+#: .\ework_services\templates\services\post_services_form.html:81
 msgid "Категория"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:90
-#: .\ework_services\templates\services\post_services_form.html:54
+#: .\ework_job\templates\job\post_job_form.html:112
+#: .\ework_services\templates\services\post_services_form.html:88
 msgid "Телефон для связи"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:93
+#: .\ework_job\templates\job\post_job_form.html:115
+#: .\ework_services\templates\services\post_services_form.html:91
 msgid "Укажите номер телефона для связи с вами"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:100
-#: .\ework_services\templates\services\post_services_form.html:62
+#: .\ework_job\templates\job\post_job_form.html:122
+#: .\ework_services\templates\services\post_services_form.html:98
 msgid "Дополнительные опции продвижения"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:131 .\ework_post\models.py:34
-#: .\ework_post\models.py:215
-#: .\ework_services\templates\services\post_services_form.html:93
+#: .\ework_job\templates\job\post_job_form.html:144 .\ework_post\models.py:34
+#: .\ework_post\models.py:217
+#: .\ework_services\templates\services\post_services_form.html:120
 msgid "Изображение"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:134
-#: .\ework_services\templates\services\post_services_form.html:96
+#: .\ework_job\templates\job\post_job_form.html:147
+#: .\ework_services\templates\services\post_services_form.html:123
 msgid "Добавьте изображение к объявлению"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:140
-#: .\ework_services\templates\services\post_services_form.html:102
+#: .\ework_job\templates\job\post_job_form.html:153
+#: .\ework_services\templates\services\post_services_form.html:129
 msgid "Стоимость публикации"
 msgstr ""
 
-#: .\ework_job\templates\job\post_job_form.html:153
-#: .\ework_services\templates\services\post_services_form.html:113
+#: .\ework_job\templates\job\post_job_form.html:166
+#: .\ework_services\templates\services\post_services_form.html:140
 msgid "Сохранить изменения"
 msgstr ""
 
@@ -588,60 +615,60 @@ msgstr ""
 msgid "Архив"
 msgstr ""
 
-#: .\ework_post\forms.py:17
+#: .\ework_post\choices.py:11
+msgid "Удален"
+msgstr ""
+
+#: .\ework_post\forms.py:16 .\ework_post\forms.py:89
 msgid "Добавить фото"
 msgstr ""
 
-#: .\ework_post\forms.py:18
-msgid "Возможность добавлять фото к объявлению (30 дней)"
+#: .\ework_post\forms.py:17 .\ework_post\forms.py:90
+msgid "Возможность добавлять фото к объявлению"
 msgstr ""
 
-#: .\ework_post\forms.py:22
+#: .\ework_post\forms.py:21 .\ework_post\forms.py:94
 msgid "Выделить цветом"
 msgstr ""
 
-#: .\ework_post\forms.py:23
-msgid "Объявление будет выделено цветом (3 дня)"
+#: .\ework_post\forms.py:22 .\ework_post\forms.py:95
+msgid "Объявление будет выделено цветом для привлечения внимания"
 msgstr ""
 
-#: .\ework_post\forms.py:27
-msgid "Автоподнятие"
-msgstr ""
-
-#: .\ework_post\forms.py:28
-msgid "Автоматическое поднятие в топ каждые 12 часов (7 дней)"
-msgstr ""
-
-#: .\ework_post\forms.py:40
+#: .\ework_post\forms.py:34
 msgid "Введите название объявления"
 msgstr ""
 
-#: .\ework_post\forms.py:46
+#: .\ework_post\forms.py:40
 msgid "Опишите ваше объявление"
 msgstr ""
 
-#: .\ework_post\forms.py:55
+#: .\ework_post\forms.py:49
 msgid "Укажите цену"
 msgstr ""
 
-#: .\ework_post\forms.py:62
+#: .\ework_post\forms.py:56
 msgid "Ваш номер телефона"
 msgstr ""
 
-#: .\ework_post\forms.py:87
+#: .\ework_post\forms.py:60
+msgid "Введите адресс"
+msgstr ""
+
+#: .\ework_post\forms.py:113
 msgid "Цена не может быть отрицательной"
 msgstr ""
 
-#: .\ework_post\forms.py:93
+#: .\ework_post\forms.py:119
 msgid "Название должно содержать минимум 5 символов"
 msgstr ""
 
-#: .\ework_post\forms.py:99
+#: .\ework_post\forms.py:125
 msgid "Описание должно содержать минимум 10 символов"
 msgstr ""
 
 #: .\ework_post\models.py:24
-msgid "Номер телефона должен быть в формате: '+7(xxx)xxx-xx-xx'"
+msgid "Номер телефона должен быть в формате: '+3(xxx)xxx-xx-xx'"
 msgstr ""
 
 #: .\ework_post\models.py:35 .\ework_premium\models.py:66
@@ -656,147 +683,155 @@ msgstr ""
 msgid "Город работы"
 msgstr ""
 
-#: .\ework_post\models.py:39
+#: .\ework_post\models.py:40
 msgid "Автор"
 msgstr ""
 
-#: .\ework_post\models.py:40 .\ework_user_tg\forms.py:24
+#: .\ework_post\models.py:41 .\ework_user_tg\forms.py:24
 msgid "Телефон"
 msgstr ""
 
-#: .\ework_post\models.py:41 .\ework_premium\models.py:68
+#: .\ework_post\models.py:42 .\ework_premium\models.py:68
 msgid "Статус"
 msgstr ""
 
-#: .\ework_post\models.py:42
+#: .\ework_post\models.py:43
 msgid "Цветной фон карточки"
 msgstr ""
 
-#: .\ework_post\models.py:43 .\ework_post\models.py:216
+#: .\ework_post\models.py:44 .\ework_post\models.py:218
 #: .\ework_premium\models.py:69 .\ework_premium\models.py:145
 #: .\ework_user_tg\models.py:25 .\ework_user_tg\models.py:76
 msgid "Дата создания"
 msgstr ""
 
-#: .\ework_post\models.py:44 .\ework_user_tg\models.py:26
+#: .\ework_post\models.py:45 .\ework_user_tg\models.py:26
 #: .\ework_user_tg\models.py:77
 msgid "Дата обновления"
 msgstr ""
 
-#: .\ework_post\models.py:45
+#: .\ework_post\models.py:46
 msgid "Удалено"
 msgstr ""
 
-#: .\ework_post\models.py:46
+#: .\ework_post\models.py:47
 msgid "Дата удаления"
 msgstr ""
 
-#: .\ework_post\models.py:47 .\ework_premium\models.py:65
+#: .\ework_post\models.py:48 .\ework_premium\models.py:65
 msgid "Тариф"
 msgstr ""
 
-#: .\ework_post\models.py:50
+#: .\ework_post\models.py:51
 msgid "Аддон фото"
 msgstr ""
 
-#: .\ework_post\models.py:51
+#: .\ework_post\models.py:52
 msgid "Аддон выделения"
 msgstr ""
 
-#: .\ework_post\models.py:52
+#: .\ework_post\models.py:53
 msgid "Аддон автоподнятия"
 msgstr ""
 
-#: .\ework_post\models.py:55
+#: .\ework_post\models.py:56
 msgid "Выделение до"
 msgstr ""
 
-#: .\ework_post\models.py:56
+#: .\ework_post\models.py:57
 msgid "Автоподнятие до"
 msgstr ""
 
-#: .\ework_post\models.py:57
+#: .\ework_post\models.py:58
 msgid "Последнее поднятие"
 msgstr ""
 
-#: .\ework_post\models.py:60
+#: .\ework_post\models.py:61
 msgid "Объявление"
 msgstr ""
 
-#: .\ework_post\models.py:61
+#: .\ework_post\models.py:62
 msgid "Объявления"
 msgstr ""
 
-#: .\ework_post\models.py:160 .\ework_post\models.py:187
+#: .\ework_post\models.py:162 .\ework_post\models.py:189
 #: .\ework_premium\models.py:64 .\ework_user_tg\models.py:33
 msgid "Пользователь"
 msgstr ""
 
-#: .\ework_post\models.py:161
+#: .\ework_post\models.py:163
 msgid "Тип контента"
 msgstr ""
 
-#: .\ework_post\models.py:162
+#: .\ework_post\models.py:164
 msgid "ID объекта"
 msgstr ""
 
-#: .\ework_post\models.py:164
+#: .\ework_post\models.py:166
 msgid "Дата просмотра"
 msgstr ""
 
-#: .\ework_post\models.py:167
+#: .\ework_post\models.py:169
 msgid "Просмотр"
 msgstr ""
 
-#: .\ework_post\models.py:168
+#: .\ework_post\models.py:170
 msgid "Просмотры"
 msgstr ""
 
-#: .\ework_post\models.py:188 .\ework_premium\models.py:80
+#: .\ework_post\models.py:190 .\ework_premium\models.py:80
 msgid "Пост"
 msgstr ""
 
-#: .\ework_post\models.py:189
+#: .\ework_post\models.py:191
 msgid "Дата добавления"
 msgstr ""
 
-#: .\ework_post\models.py:193
+#: .\ework_post\models.py:195
 msgid "Избранные"
 msgstr ""
 
-#: .\ework_post\models.py:212
+#: .\ework_post\models.py:214
 msgid "Заголовок"
 msgstr ""
 
-#: .\ework_post\models.py:214
+#: .\ework_post\models.py:216
 msgid "Ссылка"
 msgstr ""
 
-#: .\ework_post\models.py:217
+#: .\ework_post\models.py:219
 msgid "Активно"
 msgstr ""
 
-#: .\ework_post\models.py:218
+#: .\ework_post\models.py:220
 msgid "Порядок отображения"
 msgstr ""
 
-#: .\ework_post\models.py:222
+#: .\ework_post\models.py:224
 msgid "Баннер"
 msgstr ""
 
-#: .\ework_post\models.py:223
+#: .\ework_post\models.py:225
 msgid "Баннеры"
 msgstr ""
 
-#: .\ework_post\views.py:166
+#: .\ework_post\views.py:67
+msgid "Архивный пост не найден"
+msgstr ""
+
+#: .\ework_post\views.py:93
+msgid "Переопубликовать объявление"
+msgstr ""
+
+#: .\ework_post\views.py:246
 msgid "Объявление успешно создано и отправлено на модерацию"
 msgstr ""
 
-#: .\ework_post\views.py:268
+#: .\ework_post\views.py:383
 msgid "Объявление успешно обновлено и отправлено на модерацию"
 msgstr ""
 
-#: .\ework_post\views.py:384
+#: .\ework_post\views.py:537
 msgid "Объявление успешно опубликовано!"
 msgstr ""
 
@@ -829,7 +864,7 @@ msgid "Цена за фото"
 msgstr ""
 
 #: .\ework_premium\models.py:28
-msgid "Цена аддона 'Фото' (30 дней)"
+msgid "Цена аддона 'Фото'"
 msgstr ""
 
 #: .\ework_premium\models.py:29
@@ -837,7 +872,7 @@ msgid "Цена за выделение"
 msgstr ""
 
 #: .\ework_premium\models.py:29
-msgid "Цена аддона 'Цветное выделение' (3 дня)"
+msgid "Цена аддона 'Цветное выделение'"
 msgstr ""
 
 #: .\ework_premium\models.py:30
@@ -953,7 +988,7 @@ msgstr ""
 msgid "Название рубрики"
 msgstr ""
 
-#: .\ework_rubric\models.py:9 .\ework_rubric\models.py:32
+#: .\ework_rubric\models.py:9 .\ework_rubric\models.py:33
 msgid "Слаг"
 msgstr ""
 
@@ -965,27 +1000,39 @@ msgstr ""
 msgid "Порядок рубрики"
 msgstr ""
 
+#: .\ework_rubric\models.py:15
+msgid "Категории"
+msgstr ""
+
 #: .\ework_rubric\models.py:31
 msgid "Название подрубрики"
 msgstr ""
 
 #: .\ework_rubric\models.py:32
-msgid "Слаг подрубрики"
+msgid "Иконка"
+msgstr ""
+
+#: .\ework_rubric\models.py:32
+msgid "Иконка подрубрики"
 msgstr ""
 
 #: .\ework_rubric\models.py:33
-msgid "Порядок подрубрики"
+msgid "Слаг подрубрики"
 msgstr ""
 
 #: .\ework_rubric\models.py:34
+msgid "Порядок подрубрики"
+msgstr ""
+
+#: .\ework_rubric\models.py:35
 msgid "Категория подрубрики"
 msgstr ""
 
-#: .\ework_rubric\models.py:49
+#: .\ework_rubric\models.py:50
 msgid "Подрубрика"
 msgstr ""
 
-#: .\ework_rubric\models.py:50
+#: .\ework_rubric\models.py:51
 msgid "Подрубрики"
 msgstr ""
 
@@ -997,15 +1044,15 @@ msgstr ""
 msgid "Услуги"
 msgstr ""
 
-#: .\ework_services\templates\services\post_services_form.html:12
+#: .\ework_services\templates\services\post_services_form.html:14
 msgid "Редактировать услугу"
 msgstr ""
 
-#: .\ework_services\templates\services\post_services_form.html:23
+#: .\ework_services\templates\services\post_services_form.html:40
 msgid "Название услуги"
 msgstr ""
 
-#: .\ework_services\templates\services\post_services_form.html:28
+#: .\ework_services\templates\services\post_services_form.html:46
 msgid "Описание услуги"
 msgstr ""
 

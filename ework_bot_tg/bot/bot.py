@@ -57,8 +57,23 @@ logger.addHandler(console_handler)
 # Инициализация бота и диспетчера
 default_props = DefaultBotProperties(parse_mode="HTML")
 bot = Bot(token=cfg['bot_token'], default=default_props)
-welcome_text = _(cfg['welcome_text'])
-text_button = _(cfg['text_button'])
+welcome_text = """
+Вас вітає Help Work🔎!
+
+Кілька слів про наш проект👇
+•  Зручність: Подавайте оголошення чи знаходьте роботу мрії в кілька кліків.
+•  Безкоштовно: Розміщуйте оголошення або шукайте роботу без жодних витрат.
+•  Великі охвати: Багато актуальних вакансій і широка аудиторія для ваших оголошень.
+•  Без реєстрацій: Ніяких складних форм — усе просто і швидко.
+💪 Для шукачів роботи: Легко переглядайте вакансії, відгукуйтесь і знаходьте ідеальну роботу!
+📢 Для роботодавців: Розміщуйте вакансії та швидко знаходьте найкращих кандидатів!
+Починайте вже зараз — це просто, зручно та ефективно!
+
+📨 @HelpWorkUa
+"""
+text_button = "Открыть"
+
+start_img = ""
 
 dp = Dispatcher()
 
@@ -131,12 +146,14 @@ async def create_invoice_link(
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
     webapp_button = InlineKeyboardButton(
-        text=text_button, 
+        text=text_button,
         web_app=WebAppInfo(url=cfg['miniapp_url'])
     )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[webapp_button]])
-    await message.answer(
-        text=f"Привет!\n{welcome_text}", 
+
+    await message.answer_photo(
+        photo='https://ibb.co/3ms35B22',  
+        caption=f"{welcome_text}",
         reply_markup=keyboard
     )
 
