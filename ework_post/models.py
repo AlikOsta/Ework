@@ -90,9 +90,10 @@ class AbsPost(PolymorphicModel):
     
     def soft_delete(self):
         """Мягкое удаление поста"""
-        self.is_deleted = True
+        self.status = 5  # Удален
+        self.is_deleted = True  # Оставляем для совместимости
         self.deleted_at = timezone.now()
-        self.save(update_fields=['is_deleted', 'deleted_at'])
+        self.save(update_fields=['status', 'is_deleted', 'deleted_at'])
     
     def set_addons(self, photo=False, highlight=False, auto_bump=False):
         """Установить аддоны для поста"""

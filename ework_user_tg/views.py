@@ -71,6 +71,8 @@ class AuthorProfileView(ListView):
         base_queryset = AbsPost.objects.filter(
             user=author,
             is_deleted=False
+        ).exclude(
+            status=5  # Исключаем удаленные посты
         ).select_related(
             'user', 'city', 'currency', 'sub_rubric', 'sub_rubric__super_rubric'
         ).prefetch_related('favorited_by').order_by('-created_at')
