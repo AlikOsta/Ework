@@ -18,4 +18,6 @@ class Command(BaseCommand):
                 self.style.ERROR(f'Ошибка архивации: {result["message"]}')
             )
         
-        return result
+        self.stdout.write(f"Архивировано постов: {result.get('archived_count', 0)}")
+        
+        return "Команда завершена"
