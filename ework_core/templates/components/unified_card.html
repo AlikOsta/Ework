@@ -80,12 +80,9 @@
         {% elif status == "archived" %}
             <!-- Кнопки для архивных объявлений -->
             <div class="d-grid gap-2">
-                <form method="post" action="{% url 'core:change_post_status' post.pk 0 %}" class="mb-0">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">
-                        {% trans "Опубликовать" %}
-                    </button>
-                </form>
+                <a href="{% url 'core:republish_post' post.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                    {% trans "Опубликовать" %}
+                </a>
                 <div class="d-flex gap-1">
                     <button type="button" 
                             hx-get="{% url 'core:post_edit' post.pk %}" 
