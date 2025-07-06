@@ -108,3 +108,36 @@ class BasePostForm(forms.ModelForm):
         if len(description) < 10:
             raise forms.ValidationError(_('Описание должно содержать минимум 10 символов'))
         return description
+
+    def _copy_from_post(self, post_id):
+        """Копирование данных из существующего поста"""
+        try:
+            from ework_post.models import AbsPost
+            
+            # Получаем пост для копирования (только архивные или пользователя)
+            source_post = AbsPost.objects.get(
+                id=post_id,
+                user=self.user,
+                status__in=[4]  # Только архивные
+            )
+            
+            # Копируем основные поля
+            self.fields['title'].initial = source_post.title
+            self.fields['description'].initial = source_post.description
+            self.fields['price'].initial = source_post.price
+            self.fields['currency'].initial = source_post.currency_id
+            self.fields['sub_rubric'].initial = source_post.sub_rubric_id
+            self.fields['city'].initial = source_post.city_id
+            self.fields['user_phone'].initial = source_post.user_phone
+            self.fields['address'].initial = source_post.address
+            
+            # Отмечаем, что данные были скопированы (для отображения уведомления)
+            self._copied_from_title = source_post.title
+            
+        except AbsPost.DoesNotExist:
+            # Если пост не найден или не принадлежит пользователю - игнорируем
+            pass
+    
+    def get_copied_from_title(self):
+        """Получить название скопированного поста для отображения"""
+        return getattr(self, '_copied_from_title', None)
