@@ -11,7 +11,7 @@ from ework_currency.models import Currency
 class BasePostForm(forms.ModelForm):
     """Оптимизированная базовая форма для создания постов"""
     
-    # Аддоны для премиум функций
+    # Аддоны для премиум функций (только для создания новых постов)
     addon_photo = forms.BooleanField(
         required=False,
         label=_('Добавить фото'),
@@ -22,11 +22,6 @@ class BasePostForm(forms.ModelForm):
         label=_('Выделить цветом'),
         help_text=_('Объявление будет выделено цветом для привлечения внимания')
     )
-    # addon_auto_bump = forms.BooleanField(
-    #     required=False,
-    #     label=_('Автоподнятие'),
-    #     help_text=_('Автоматическое поднятие в топ каждые 12 часов (7 дней)')
-    # )
 
     class Meta:
         model = AbsPost
@@ -71,6 +66,8 @@ class BasePostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         self.copy_from_id = kwargs.pop('copy_from', None)
+        self.is_create = kwargs.pop('is_create', True) 
+        
         super().__init__(*args, **kwargs)
         
         # Оптимизированные querysets
@@ -90,6 +87,19 @@ class BasePostForm(forms.ModelForm):
         # Копирование данных из другого поста
         if self.copy_from_id:
             self._copy_from_post(self.copy_from_id)
+            
+        # Добавляем поля аддонов ТОЛЬКО при создании
+        if self.is_create:
+            self.fields['addon_photo'] = forms.BooleanField(
+                required=False,
+                label=_('Добавить фото'),
+                help_text=_('Возможность добавлять фото к объявлению')
+            )
+            self.fields['addon_highlight'] = forms.BooleanField(
+                required=False,
+                label=_('Выделить цветом'),
+                help_text=_('Объявление будет выделено цветом для привлечения внимания')
+            )
 
     def clean_price(self):
         price = self.cleaned_data.get('price')
@@ -141,3 +151,7 @@ class BasePostForm(forms.ModelForm):
     def get_copied_from_title(self):
         """Получить название скопированного поста для отображения"""
         return getattr(self, '_copied_from_title', None)
+    
+    def is_edit_mode(self):
+        """Проверяет, находится ли форма в режиме редактирования"""
+        return self.instance and self.instance.pk is not None

@@ -102,7 +102,6 @@
                     {% render_field form.addon_photo class="form-check-input pricing-addon" data-toggle="image-field" %}
                     <label class="form-check-label" for="{{ form.addon_photo.id_for_label }}">
                         {{ form.addon_photo.label }} 
-                        {% comment %} <small class="text-muted">({{ form.addon_photo.help_text }})</small> {% endcomment %}
                     </label>
                 </div>
                 
@@ -110,17 +109,9 @@
                     {% render_field form.addon_highlight class="form-check-input pricing-addon" %}
                     <label class="form-check-label" for="{{ form.addon_highlight.id_for_label }}">
                         {{ form.addon_highlight.label }}
-                        {% comment %} <small class="text-muted">({{ form.addon_highlight.help_text }})</small> {% endcomment %}
                     </label>
                 </div>
                 
-                {% comment %} <div class="mb-3 form-check">
-                    {% render_field form.addon_auto_bump class="form-check-input pricing-addon" %}
-                    <label class="form-check-label" for="{{ form.addon_auto_bump.id_for_label }}">
-                        {{ form.addon_auto_bump.label }}
-                        <small class="text-muted">({{ form.addon_auto_bump.help_text }})</small>
-                    </label>
-                </div> {% endcomment %}
             </div>
         </div>
 

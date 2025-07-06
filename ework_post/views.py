@@ -248,6 +248,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        kwargs['is_create'] = True
         
         # Поддержка копирования из архивного поста
         copy_from = self.request.GET.get('copy_from')
@@ -379,7 +380,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
 
 
 class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Оптимизированное базовое представление для редактирования объявления"""
+    """Простое редактирование существующего поста БЕЗ платежей"""
     template_name = 'post/post_form.html'
     success_message = _('Объявление успешно обновлено и отправлено на модерацию')
     
@@ -391,13 +392,22 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        print(f"🔧 BasePostUpdateView.get_form_kwargs() - это редактирование")
         return kwargs
     
     def form_valid(self, form):
-        """Обработка валидной формы"""
-        # При обновлении отправляем на модерацию
-        form.instance.status = 0  # Не проверено
-        form.save()
+        """Простое сохранение изменений БЕЗ обработки платежей"""
+        print(f"🔧 BasePostUpdateView.form_valid() - начало")
+        print(f"   Объект: {self.object}")
+        print(f"   Это редактирование, НЕ создание")
+        
+        # НЕ вызываем super().form_valid() чтобы избежать логики создания!
+        
+        self.object = form.save(commit=False)
+        self.object.status = 0  # На модерацию
+        self.object.save()
+        
+        print(f"✅ Пост обновлен без платежей")
         
         messages.success(self.request, self.success_message)
         
@@ -414,6 +424,9 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     
     def get_success_url(self):
         return reverse_lazy('users:author_profile', kwargs={'author_id': self.request.user.id})
+
+
+
 
 
 class PricingCalculatorView(View):
