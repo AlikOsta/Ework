@@ -80,9 +80,12 @@
         {% elif status == "archived" %}
             <!-- Кнопки для архивных объявлений -->
             <div class="d-grid gap-2">
-                <a href="{% url 'core:republish_post' post.pk %}" class="btn btn-sm btn-outline-primary w-100">
+                <button type="button" 
+                        hx-get="{% url 'core:republish_post' post.pk %}" 
+                        hx-target="#dialog" 
+                        class="btn btn-sm btn-outline-primary w-100">
                     {% trans "Опубликовать" %}
-                </a>
+                </button>
                 <div class="d-flex gap-1">
                     <button type="button" 
                             hx-get="{% url 'core:post_edit' post.pk %}" 
