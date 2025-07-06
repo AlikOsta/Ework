@@ -347,10 +347,15 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         post.save()
         
+        print(f"💰 Платная публикация поста {post.id}")
+        
         # Сохраняем ID старого поста для обработки после оплаты
         if copy_from_id:
-            payment.addons_data = payment.addons_data or {}
+            # Убеждаемся что addons_data инициализирован
+            if not payment.addons_data:
+                payment.addons_data = {}
             payment.addons_data['copy_from_id'] = copy_from_id
+            print(f"💾 Сохранен copy_from_id в платеже: {copy_from_id}")
         
         # Связываем платеж с постом
         payment.post = post
