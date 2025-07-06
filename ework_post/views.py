@@ -261,6 +261,14 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         # Проверяем, это переопубликация архивного поста или новый пост
         copy_from_id = self.request.GET.get('copy_from')
         
+        # Приводим copy_from_id к int если он есть
+        if copy_from_id and copy_from_id.isdigit():
+            copy_from_id = int(copy_from_id)
+            print(f"🔄 Переопубликация поста: copy_from_id = {copy_from_id}")
+        else:
+            copy_from_id = None
+            print(f"🆕 Новый пост: copy_from_id отсутствует")
+        
         # Получаем аддоны из формы
         addon_photo = form.cleaned_data.get('addon_photo', False)
         addon_highlight = form.cleaned_data.get('addon_highlight', False)
