@@ -21,7 +21,7 @@ urlpatterns = [
 
     path('post/<int:pk>/status/<int:status>/', views.change_post_status, name='change_post_status'),
     path('post/<int:pk>/edit/', views.post_edit, name='post_edit'),
-    path('post/<int:pk>/delete/', views.post_delete_confirm, name='post_delete_confirm'),
+    path('post/<int:post_id>/republish/', views.RepublishPostView.as_view(), name='republish_post'),
 
     # API для динамического расчета стоимости
     path('api/pricing-calculator/', PricingCalculatorView.as_view(), name='pricing_calculator'),
