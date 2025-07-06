@@ -70,6 +70,7 @@ class BasePostForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
+        copy_from_id = kwargs.pop('copy_from', None)
         super().__init__(*args, **kwargs)
         
         # Оптимизированные querysets
@@ -85,6 +86,10 @@ class BasePostForm(forms.ModelForm):
         default_currency = Currency.objects.first()
         if default_currency:
             self.fields['currency'].initial = default_currency.pk
+
+        # Копирование данных из другого поста
+        if copy_from_id:
+            self._copy_from_post(copy_from_id)
 
     def clean_price(self):
         price = self.cleaned_data.get('price')
