@@ -3,12 +3,14 @@
 {% load static %}
 
 {% with WIDGET_ERROR_CLASS="is-invalid" %}
-<form hx-post="{{ request.path }}" hx-target="this" hx-swap="outerHTML" hx-encoding="multipart/form-data" class="modal-content" enctype="multipart/form-data">
+<form hx-post="{% if form_action %}{{ form_action }}{% else %}{{ request.path }}{% endif %}" hx-target="this" hx-swap="outerHTML" hx-encoding="multipart/form-data" class="modal-content" enctype="multipart/form-data">
     {% csrf_token %}
 
     <div class="modal-header">
         <h5 class="modal-title" id="createPostModalLabel">
-            {% if object %}
+            {% if modal_title %}
+                {{ modal_title }}
+            {% elif object %}
                 {% trans "Редактировать вакансию" %}
             {% else %}
                 {% trans "Новая вакансия" %}
@@ -18,6 +20,14 @@
     </div>
 
     <div class="modal-body">
+        <!-- Уведомление о копировании из архивного поста -->
+        {% if is_republish and original_post %}
+        <div class="alert alert-info">
+            <i class="material-icons me-2">info</i>
+            {% blocktrans with title=original_post.title %}Данные скопированы из архивного объявления "{{ title }}". Вы можете изменить любые данные перед публикацией.{% endblocktrans %}
+        </div>
+        {% endif %}
+        
         <!-- Отображение общих ошибок формы -->
         {% if form.non_field_errors %}
         <div class="alert alert-danger">

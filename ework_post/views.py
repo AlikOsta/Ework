@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 
@@ -53,7 +53,7 @@ class RepublishPostView(LoginRequiredMixin, View):
     """View для переопубликования архивного поста"""
     
     def get(self, request, post_id, *args, **kwargs):
-        """Перенаправить на форму создания с параметром copy_from"""
+        """Отобразить форму для переопубликации в модальном окне"""
         # Проверяем, что пост архивный и принадлежит пользователю
         try:
             post = AbsPost.objects.get(
@@ -66,21 +66,33 @@ class RepublishPostView(LoginRequiredMixin, View):
             messages.error(request, _('Архивный пост не найден'))
             return redirect('users:author_profile', author_id=request.user.id)
         
-        # Определяем тип поста и перенаправляем на соответствующую форму
+        # Определяем тип поста и отображаем соответствующую форму
         try:
             job_post = post.postjob
-            return redirect(f"{reverse('jobs:job_create')}?copy_from={post_id}")
+            from ework_job.forms import JobPostForm
+            form = JobPostForm(user=request.user, copy_from=post_id)
+            form_action = reverse('jobs:job_create') + f'?copy_from={post_id}'
+            template_name = 'job/post_job_form.html'
         except:
-            pass
+            try:
+                services_post = post.postservices
+                from ework_services.forms import ServicesPostForm
+                form = ServicesPostForm(user=request.user, copy_from=post_id)
+                form_action = reverse('services:services_create') + f'?copy_from={post_id}'
+                template_name = 'services/post_services_form.html'
+            except:
+                messages.error(request, _('Неизвестный тип объявления'))
+                return redirect('users:author_profile', author_id=request.user.id)
         
-        try:
-            services_post = post.postservices
-            return redirect(f"{reverse('services:services_create')}?copy_from={post_id}")
-        except:
-            pass
+        context = {
+            'form': form,
+            'form_action': form_action,
+            'is_republish': True,
+            'original_post': post,
+            'modal_title': _('Переопубликовать объявление'),
+        }
         
-        messages.error(request, _('Неизвестный тип объявления'))
-        return redirect('users:author_profile', author_id=request.user.id)
+        return render(request, template_name, context)
 
 
 class BasePostListView(ListView):
