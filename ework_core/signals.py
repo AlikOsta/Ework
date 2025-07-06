@@ -199,6 +199,7 @@ def handle_post_save(sender, instance, created, **kwargs):
     
     # Если пост стал опубликованным, проверяем есть ли переопубликация
     if instance.status == 3:  # Опубликовано
+        print(f"ТЕСТ: Пост {instance.id} стал опубликованным, проверяем переопубликацию")
         _handle_republish_on_publish(instance)
     
     # Запускаем модерацию только если статус = 0 (На модерации)
