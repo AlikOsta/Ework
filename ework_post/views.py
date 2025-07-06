@@ -245,6 +245,9 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def form_valid(self, form):
         """Обработка валидной формы"""
+        # Проверяем, это переопубликация архивного поста или новый пост
+        copy_from_id = self.request.GET.get('copy_from')
+        
         # Получаем аддоны из формы
         addon_photo = form.cleaned_data.get('addon_photo', False)
         addon_highlight = form.cleaned_data.get('addon_highlight', False)
@@ -264,9 +267,9 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         # Если платеж не требуется (бесплатная публикация)
         if payment is None:
-            return self._publish_free_post(form)
+            return self._publish_free_post(form, copy_from_id)
         else:
-            return self._handle_paid_post(form, payment)
+            return self._handle_paid_post(form, payment, copy_from_id)
     
     def _publish_free_post(self, form):
         """Опубликовать бесплатный пост"""
