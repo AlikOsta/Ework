@@ -3,6 +3,7 @@ import threading
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
+from django.utils import timezone
 from ework_services.models import PostServices
 from .telegram_bot import send_telegram_message, send_telegram_message_with_keyboard
 from ework_job.models import PostJob
@@ -219,6 +220,35 @@ def _handle_republish_on_publish(instance):
         # Проверяем есть ли связанный платеж с copy_from_id
         copy_from_id = None
         
+        # Ищем платеж, связанный с этим постом
+        from ework_premium.models import Payment
+        payment = Payment.objects.filter(post=instance, status='paid').first()
+        
+        print(f"ТЕСТ: Поиск платежа для поста {instance.id}: {payment}")
+        
+        if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
+            copy_from_id = payment.addons_data['copy_from_id']
+            print(f"ТЕСТ: Найден copy_from_id в платеже = {copy_from_id}")
+        
+        # Если не нашли в платеже, проверяем сессию (для бесплатных постов)
+        if not copy_from_id:
+            from django.contrib.sessions.models import Session
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            # Ищем активные сессии пользователя
+            user_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+            for session in user_sessions:
+                session_data = session.get_decoded()
+                session_key = f'copy_from_id_{instance.id}'
+                if session_key in session_data:
+                    copy_from_id = session_data[session_key]
+                    print(f"ТЕСТ: Найден copy_from_id в сессии = {copy_from_id}")
+                    # Удаляем из сессии после использования
+                    del session_data[session_key]
+                    session.session_data = session.encode(session_data)
+                    session.save()
+                    break
         # Ищем в платеже
         if hasattr(instance, 'payment_set'):
             payment = instance.payment_set.filter(status='paid').first()

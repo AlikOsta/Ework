@@ -268,13 +268,14 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         # Получаем пакет по умолчанию
         package = Package.objects.filter(is_active=True, package_type='PAID').first()
         
-        # Создаем платеж
+        # Создаем платеж с copy_from_id
         payment = create_payment_for_post(
             user=self.request.user,
             package=package,
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
+            auto_bump=addon_auto_bump,
+            copy_from_id=copy_from_id
         )
         
         # Если платеж не требуется (бесплатная публикация)
@@ -290,6 +291,10 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             self.object.user = self.request.user
             self.object.status = 0  # На модерацию - это вызовет сигнал модерации
             self.object.save()
+            
+            # Сохраняем copy_from_id в сессии для обработки после публикации
+            if copy_from_id:
+                self.request.session[f'copy_from_id_{self.object.id}'] = copy_from_id
             
             # Отметить использование бесплатной публикации
             FreePostRecord.use_free_post(self.request.user, self.object)

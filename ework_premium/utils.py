@@ -103,7 +103,7 @@ class PricingCalculator:
             }
 
 
-def create_payment_for_post(user, package, photo=False, highlight=False, auto_bump=False):
+def create_payment_for_post(user, package, photo=False, highlight=False, auto_bump=False, copy_from_id=None):
     """Создать платеж для публикации поста с аддонами"""
     from .models import Payment
     
@@ -120,8 +120,13 @@ def create_payment_for_post(user, package, photo=False, highlight=False, auto_bu
         order_id=Payment.generate_order_id(user.id)
     )
     
-    # Сохранить информацию об аддонах
+    # Сохранить информацию об аддонах и copy_from_id
     payment.set_addons(photo=photo, highlight=highlight, auto_bump=auto_bump)
+    
+    if copy_from_id:
+        payment.addons_data = payment.addons_data or {}
+        payment.addons_data['copy_from_id'] = copy_from_id
+    
     payment.save()
     
     return payment
