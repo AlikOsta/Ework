@@ -402,6 +402,16 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         print(f"   Объект: {self.object}")
         print(f"   Это редактирование, НЕ создание")
         
+        # КРИТИЧЕСКАЯ ПРОВЕРКА: убеждаемся, что не обрабатываем аддоны
+        if hasattr(form, 'cleaned_data'):
+            addon_fields = ['addon_photo', 'addon_highlight', 'addon_auto_bump']
+            for field in addon_fields:
+                if field in form.cleaned_data:
+                    print(f"⚠️ ВНИМАНИЕ: Поле {field} найдено в форме при редактировании!")
+                    print(f"   Это НЕ должно происходить. Значение: {form.cleaned_data[field]}")
+                    # Удаляем поле из cleaned_data для безопасности
+                    del form.cleaned_data[field]
+                    
         # НЕ вызываем super().form_valid() чтобы избежать логики создания!
         
         self.object = form.save(commit=False)
