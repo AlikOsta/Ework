@@ -104,7 +104,22 @@ class BasePostForm(forms.ModelForm):
         else:
             print(f"🔧 BasePostForm: Режим редактирования - аддоны НЕ добавляются")
 
-    def clean_price(self):
+    def clean(self):
+        """Дополнительная валидация формы"""
+        cleaned_data = super().clean()
+        
+        # КРИТИЧЕСКАЯ ПРОВЕРКА: если это редактирование, НЕ должно быть полей аддонов
+        if not self.is_create:
+            addon_fields = ['addon_photo', 'addon_highlight', 'addon_auto_bump']
+            for field in addon_fields:
+                if field in cleaned_data:
+                    print(f"🚨 БЕЗОПАСНОСТЬ: Поле {field} найдено при редактировании!")
+                    print(f"   Пользователь: {self.user}")
+                    print(f"   Значение: {cleaned_data[field]}")
+                    # Удаляем поле
+                    del cleaned_data[field]
+                    
+        return cleaned_data
         price = self.cleaned_data.get('price')
         if price is not None and price < 0:
             raise forms.ValidationError(_('Цена не может быть отрицательной'))
