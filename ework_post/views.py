@@ -271,13 +271,17 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         else:
             return self._handle_paid_post(form, payment, copy_from_id)
     
-    def _publish_free_post(self, form):
+    def _publish_free_post(self, form, copy_from_id=None):
         """Опубликовать бесплатный пост"""
         try:
             self.object = form.save(commit=False)
             self.object.user = self.request.user
             self.object.status = 0  # На модерацию - это вызовет сигнал модерации
             self.object.save()
+            
+            # Если это переопубликация, обрабатываем старый пост
+            if copy_from_id:
+                self._handle_republish(copy_from_id, self.object)
             
             # Отметить использование бесплатной публикации
             FreePostRecord.use_free_post(self.request.user, self.object)
@@ -300,7 +304,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
     
-    def _handle_paid_post(self, form, payment):
+    def _handle_paid_post(self, form, payment, copy_from_id=None):
         """Обработать платную публикацию"""
         # Создаем пост-черновик
         post = form.save(commit=False)
@@ -317,9 +321,14 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         post.save()
         
+        # Сохраняем ID старого поста для обработки после оплаты
+        if copy_from_id:
+            payment.addons_data = payment.addons_data or {}
+            payment.addons_data['copy_from_id'] = copy_from_id
+        
         # Связываем платеж с постом
         payment.post = post
-        payment.save(update_fields=['post'])
+        payment.save(update_fields=['post', 'addons_data'])
         
         # HTMX запрос
         if self.request.headers.get('HX-Request'):
@@ -333,6 +342,29 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             })
         
         return redirect('payments:payment_page', payment_id=payment.id)
+    
+    def _handle_republish(self, old_post_id, new_post):
+        """Обработка переопубликации: копирование статистики и удаление старого поста"""
+        try:
+            old_post = AbsPost.objects.get(
+                id=old_post_id,
+                user=self.request.user,
+                status=4,  # Архивный
+                is_deleted=False
+            )
+            
+            # Копируем статистику просмотров
+            copied_views = copy_post_views(old_post, new_post)
+            
+            # Помечаем старый пост как удаленный
+            old_post.soft_delete()
+            
+            print(f"Переопубликация: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный")
+            
+        except AbsPost.DoesNotExist:
+            print(f"Старый пост {old_post_id} не найден при переопубликации")
+        except Exception as e:
+            print(f"Ошибка при обработке переопубликации: {e}")
     
     def get_success_url(self):
         return reverse_lazy('core:home')
