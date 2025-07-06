@@ -231,7 +231,9 @@ def handle_payment_save(sender, instance, created, **kwargs):
         copy_from_id = None
         if instance.addons_data and 'copy_from_id' in instance.addons_data:
             copy_from_id = instance.addons_data['copy_from_id']
-            print(f"🔄 Это переопубликация поста {copy_from_id}")
+            print(f"🔄 DEBUG: Это переопубликация поста {copy_from_id}")
+        else:
+            print(f"🔄 DEBUG: Это обычный пост, не переопубликация")
         
         # Применяем аддоны к посту
         instance.post.apply_addons_from_payment(instance)
