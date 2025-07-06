@@ -107,14 +107,41 @@ def create_payment_for_post(user, package, photo=False, highlight=False, auto_bu
     """Создать платеж для публикации поста с аддонами"""
     from .models import Payment
     
+    print(f"💰 Расчет стоимости публикации:")
+    print(f"   Пользователь: {user.username}")
+    print(f"   Аддоны: фото={photo}, выделение={highlight}, автоподнятие={auto_bump}")
+    print(f"   copy_from_id: {copy_from_id} (тип: {type(copy_from_id)})")
+    
+    # ПРОВЕРКА: если это переопубликация уже оплаченного поста
+    if copy_from_id is not None:
+        try:
+            from ework_post.models import AbsPost
+            original_post = AbsPost.objects.get(id=copy_from_id, user=user)
+            
+            # Если у оригинального поста были аддоны и он уже был оплачен
+            if (original_post.package and original_post.package.is_paid() and 
+                (original_post.has_photo_addon or original_post.has_highlight_addon or original_post.has_auto_bump_addon)):
+                
+                print(f"🔄 Переопубликация оплаченного поста:")
+                print(f"   Оригинальный пакет: {original_post.package.name}")
+                print(f"   Оригинальные аддоны: фото={original_post.has_photo_addon}, выделение={original_post.has_highlight_addon}, автоподнятие={original_post.has_auto_bump_addon}")
+                print(f"   ПРАВИЛО: При переопубликации НЕ берем повторную оплату за уже оплаченные аддоны")
+                
+                # При переопубликации используем аддоны оригинального поста
+                photo = original_post.has_photo_addon
+                highlight = original_post.has_highlight_addon  
+                auto_bump = original_post.has_auto_bump_addon
+                
+                print(f"   Применяем аддоны из оригинального поста: фото={photo}, выделение={highlight}, автоподнятие={auto_bump}")
+                
+        except AbsPost.DoesNotExist:
+            print(f"⚠️ Оригинальный пост {copy_from_id} не найден")
+    
     calculator = PricingCalculator(user, package)
     total_price = calculator.calculate_total_price(photo, highlight, auto_bump)
     
-    print(f"💰 Расчет стоимости публикации:")
-    print(f"   Пользователь: {user.username}")
     print(f"   Может публиковать бесплатно: {calculator.can_post_free()}")
-    print(f"   Общая стоимость: {total_price}")
-    print(f"   copy_from_id: {copy_from_id} (тип: {type(copy_from_id)})")
+    print(f"   Итоговая стоимость: {total_price}")
     
     if total_price == 0:
         print(f"💸 Бесплатная публикация - платеж не создается")
