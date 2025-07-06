@@ -8,7 +8,9 @@
 
     <div class="modal-header">
         <h5 class="modal-title" id="createPostModalLabel">
-            {% if object %}
+            {% if modal_title %}
+                {{ modal_title }}
+            {% elif object %}
                 {% trans "Редактировать вакансию" %}
             {% else %}
                 {% trans "Новая вакансия" %}
