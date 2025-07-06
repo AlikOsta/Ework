@@ -216,14 +216,14 @@ def handle_post_save(sender, instance, created, **kwargs):
 def _handle_republish_on_publish(instance):
     """Обработка переопубликации при публикации поста"""
     try:
-        # Проверяем есть ли связанный платеж с copy_from_id
         copy_from_id = None
         
-        # Ищем в платеже
-        if hasattr(instance, 'payment_set'):
-            payment = instance.payment_set.filter(status='paid').first()
-            if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
-                copy_from_id = payment.addons_data['copy_from_id']
+        # Ищем платеж, связанный с этим постом
+        from ework_premium.models import Payment
+        payment = Payment.objects.filter(post=instance, status='paid').first()
+        
+        if payment and payment.addons_data and 'copy_from_id' in payment.addons_data:
+            copy_from_id = payment.addons_data['copy_from_id']
         
         if copy_from_id:
             from ework_post.models import AbsPost
