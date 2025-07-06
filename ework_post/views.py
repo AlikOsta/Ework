@@ -107,6 +107,8 @@ class BasePostListView(ListView):
         queryset = self.model.objects.filter(
             status=3,  # Опубликовано
             is_deleted=False
+        ).exclude(
+            status=5  # Исключаем удаленные посты
         ).select_related(
             'user', 'city', 'currency', 'sub_rubric', 'sub_rubric__super_rubric'
         ).prefetch_related('favorited_by')
