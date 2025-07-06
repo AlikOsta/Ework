@@ -17,7 +17,6 @@
         {% endif %}
     </div>
 
-    <!-- Содержимое карточки -->
     <div class="card-body p-2">
         <h5 class="card-title mb-1 text-truncate" 
             style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -31,7 +30,6 @@
             {{ post.city }}
         </p>
         
-        <!-- Показываем дату если не показываем продавца -->
         <p class="card-date mb-0 text-muted small">
             <i class="material-icons" style="font-size: 1em; vertical-align: text-bottom;">schedule</i>
             {{ post.created_at|date:"d.m.y" }}

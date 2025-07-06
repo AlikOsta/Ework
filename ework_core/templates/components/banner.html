@@ -16,6 +16,7 @@
                                         {{ banner.title }}
                                         </small>
                                 </div>
+                        {% endfor %}
                                 {% if banners.count < 5 %}
                                 <div class="d-flex flex-column align-items-center text-center flex-shrink-0" style="width: 20%;">
                                         <a href="#"
@@ -31,22 +32,7 @@
                                         </small>
                                 </div>
                                 {%  endif %}
-                        {% endfor %}
-                        {% else %}
-                        <div class="d-flex flex-column align-items-center text-center flex-shrink-0" style="width: 20%;">
-                                <a href="#"
-                                hx-get="{% url  'core:banner_ad_info' %}"
-                                hx-target="#dialog"
-                                hx-trigger="click">
-                                <div class="border border-3 border-info rounded-circle d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                                        <i class="material-icons">add</i>
-                                </div>
-                                </a>
-                                <small class="mt-1 text-primary text-truncate" style="max-width: 60px;">
-                                {% trans "Добавить" %}
-                                </small>
-                        </div>
-                        {% endif %}                      
+                        {% endif %}                       
                 </div>
         </div>
 </div>
