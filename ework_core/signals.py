@@ -227,8 +227,18 @@ def handle_payment_save(sender, instance, created, **kwargs):
         print(f"💰 Платеж оплачен! Отправляем пост {instance.post.title} на модерацию")
         print(f"📊 Текущий статус поста ДО изменения: {instance.post.status} ({instance.post.get_status_display()})")
         
+        # Проверяем, это переопубликация или обычный пост
+        copy_from_id = None
+        if instance.addons_data and 'copy_from_id' in instance.addons_data:
+            copy_from_id = instance.addons_data['copy_from_id']
+            print(f"🔄 Это переопубликация поста {copy_from_id}")
+        
         # Применяем аддоны к посту
         instance.post.apply_addons_from_payment(instance)
+        
+        # Если это переопубликация, обрабатываем старый пост
+        if copy_from_id:
+            _handle_republish_after_payment(copy_from_id, instance.post, instance.user)
         
         # Переводим пост из черновика на модерацию
         old_status = instance.post.status
@@ -249,3 +259,30 @@ def handle_payment_save(sender, instance, created, **kwargs):
         
     else:
         print(f"⏸️ Условие не выполнено: status={instance.status}, post={instance.post}")
+
+
+def _handle_republish_after_payment(old_post_id, new_post, user):
+    """Обработка переопубликации после оплаты"""
+    try:
+        from ework_post.models import AbsPost
+        from ework_post.views import copy_post_views
+        
+        old_post = AbsPost.objects.get(
+            id=old_post_id,
+            user=user,
+            status=4,  # Архивный
+            is_deleted=False
+        )
+        
+        # Копируем статистику просмотров
+        copied_views = copy_post_views(old_post, new_post)
+        
+        # Помечаем старый пост как удаленный
+        old_post.soft_delete()
+        
+        print(f"🔄 Переопубликация после оплаты: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный")
+        
+    except AbsPost.DoesNotExist:
+        print(f"❌ Старый пост {old_post_id} не найден при переопубликации после оплаты")
+    except Exception as e:
+        print(f"❌ Ошибка при обработке переопубликации после оплаты: {e}")

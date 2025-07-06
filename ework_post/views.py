@@ -16,6 +16,73 @@ from ework_premium.models import Package, FreePostRecord
 from ework_premium.utils import create_payment_for_post
 
 
+def copy_post_views(from_post, to_post):
+    """Копирование статистики просмотров с одного поста на другой"""
+    try:
+        from_content_type = ContentType.objects.get_for_model(from_post)
+        to_content_type = ContentType.objects.get_for_model(to_post)
+        
+        # Получаем все просмотры старого поста
+        old_views = PostView.objects.filter(
+            content_type=from_content_type,
+            object_id=from_post.pk
+        )
+        
+        # Создаем новые просмотры для нового поста
+        new_views = []
+        for view in old_views:
+            new_views.append(PostView(
+                user=view.user,
+                content_type=to_content_type,
+                object_id=to_post.pk,
+                created_at=view.created_at
+            ))
+        
+        # Массовое создание
+        if new_views:
+            PostView.objects.bulk_create(new_views, ignore_conflicts=True)
+            
+        return len(new_views)
+        
+    except Exception as e:
+        print(f"Ошибка при копировании просмотров: {e}")
+        return 0
+
+
+class RepublishPostView(LoginRequiredMixin, View):
+    """View для переопубликования архивного поста"""
+    
+    def get(self, request, post_id, *args, **kwargs):
+        """Перенаправить на форму создания с параметром copy_from"""
+        # Проверяем, что пост архивный и принадлежит пользователю
+        try:
+            post = AbsPost.objects.get(
+                id=post_id,
+                user=request.user,
+                status=4,  # Архивный
+                is_deleted=False
+            )
+        except AbsPost.DoesNotExist:
+            messages.error(request, _('Архивный пост не найден'))
+            return redirect('users:author_profile', author_id=request.user.id)
+        
+        # Определяем тип поста и перенаправляем на соответствующую форму
+        try:
+            job_post = post.postjob
+            return redirect(f"{reverse('jobs:job_create')}?copy_from={post_id}")
+        except:
+            pass
+        
+        try:
+            services_post = post.postservices
+            return redirect(f"{reverse('services:services_create')}?copy_from={post_id}")
+        except:
+            pass
+        
+        messages.error(request, _('Неизвестный тип объявления'))
+        return redirect('users:author_profile', author_id=request.user.id)
+
+
 class BasePostListView(ListView):
     """Оптимизированное базовое представление для списка объявлений"""
     model = AbsPost
@@ -168,10 +235,19 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        
+        # Поддержка копирования из архивного поста
+        copy_from = self.request.GET.get('copy_from')
+        if copy_from and copy_from.isdigit():
+            kwargs['copy_from'] = int(copy_from)
+            
         return kwargs
     
     def form_valid(self, form):
         """Обработка валидной формы"""
+        # Проверяем, это переопубликация архивного поста или новый пост
+        copy_from_id = self.request.GET.get('copy_from')
+        
         # Получаем аддоны из формы
         addon_photo = form.cleaned_data.get('addon_photo', False)
         addon_highlight = form.cleaned_data.get('addon_highlight', False)
@@ -191,17 +267,21 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         # Если платеж не требуется (бесплатная публикация)
         if payment is None:
-            return self._publish_free_post(form)
+            return self._publish_free_post(form, copy_from_id)
         else:
-            return self._handle_paid_post(form, payment)
+            return self._handle_paid_post(form, payment, copy_from_id)
     
-    def _publish_free_post(self, form):
+    def _publish_free_post(self, form, copy_from_id=None):
         """Опубликовать бесплатный пост"""
         try:
             self.object = form.save(commit=False)
             self.object.user = self.request.user
             self.object.status = 0  # На модерацию - это вызовет сигнал модерации
             self.object.save()
+            
+            # Если это переопубликация, обрабатываем старый пост
+            if copy_from_id:
+                self._handle_republish(copy_from_id, self.object)
             
             # Отметить использование бесплатной публикации
             FreePostRecord.use_free_post(self.request.user, self.object)
@@ -224,7 +304,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
     
-    def _handle_paid_post(self, form, payment):
+    def _handle_paid_post(self, form, payment, copy_from_id=None):
         """Обработать платную публикацию"""
         # Создаем пост-черновик
         post = form.save(commit=False)
@@ -241,9 +321,14 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         
         post.save()
         
+        # Сохраняем ID старого поста для обработки после оплаты
+        if copy_from_id:
+            payment.addons_data = payment.addons_data or {}
+            payment.addons_data['copy_from_id'] = copy_from_id
+        
         # Связываем платеж с постом
         payment.post = post
-        payment.save(update_fields=['post'])
+        payment.save(update_fields=['post', 'addons_data'])
         
         # HTMX запрос
         if self.request.headers.get('HX-Request'):
@@ -257,6 +342,29 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             })
         
         return redirect('payments:payment_page', payment_id=payment.id)
+    
+    def _handle_republish(self, old_post_id, new_post):
+        """Обработка переопубликации: копирование статистики и удаление старого поста"""
+        try:
+            old_post = AbsPost.objects.get(
+                id=old_post_id,
+                user=self.request.user,
+                status=4,  # Архивный
+                is_deleted=False
+            )
+            
+            # Копируем статистику просмотров
+            copied_views = copy_post_views(old_post, new_post)
+            
+            # Помечаем старый пост как удаленный
+            old_post.soft_delete()
+            
+            print(f"Переопубликация: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный")
+            
+        except AbsPost.DoesNotExist:
+            print(f"Старый пост {old_post_id} не найден при переопубликации")
+        except Exception as e:
+            print(f"Ошибка при обработке переопубликации: {e}")
     
     def get_success_url(self):
         return reverse_lazy('core:home')

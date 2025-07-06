@@ -22,6 +22,27 @@ class ServicesPostForm(BasePostForm):
         first = qs.first()
         if first:
             self.fields['sub_rubric'].initial = first.pk
+
+    def _copy_from_post(self, post_id):
+        """Копирование данных из существующего поста услуги"""
+        try:
+            from ework_services.models import PostServices
+            
+            # Получаем пост-услугу для копирования
+            source_post = PostServices.objects.get(
+                id=post_id,
+                user=self.user,
+                status__in=[4]  # Только архивные
+            )
+            
+            # Вызываем базовое копирование
+            super()._copy_from_post(post_id)
+            
+            # Для услуг нет дополнительных полей, но метод готов для расширения
+            
+        except PostServices.DoesNotExist:
+            # Если это не пост-услуга, пробуем базовое копирование
+            super()._copy_from_post(post_id)
         
         
         

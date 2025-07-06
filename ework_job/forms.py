@@ -23,3 +23,27 @@ class JobPostForm(BasePostForm):
         first = qs.first()
         if first:
             self.fields['sub_rubric'].initial = first.pk
+
+    def _copy_from_post(self, post_id):
+        """Копирование данных из существующего поста вакансии"""
+        try:
+            from ework_job.models import PostJob
+            
+            # Получаем пост-вакансию для копирования
+            source_post = PostJob.objects.get(
+                id=post_id,
+                user=self.user,
+                status__in=[4]  # Только архивные
+            )
+            
+            # Вызываем базовое копирование
+            super()._copy_from_post(post_id)
+            
+            # Копируем специфичные для вакансии поля
+            self.fields['experience'].initial = source_post.experience
+            self.fields['work_schedule'].initial = source_post.work_schedule
+            self.fields['work_format'].initial = source_post.work_format
+            
+        except PostJob.DoesNotExist:
+            # Если это не пост-вакансия, пробуем базовое копирование
+            super()._copy_from_post(post_id)
