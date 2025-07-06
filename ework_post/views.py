@@ -61,7 +61,7 @@ class RepublishPostView(LoginRequiredMixin, View):
                 user=request.user,
                 status=4,  # Архивный
                 is_deleted=False
-            )
+            ).exclude(status=5)  # Исключаем удаленные
         except AbsPost.DoesNotExist:
             messages.error(request, _('Архивный пост не найден'))
             return redirect('users:author_profile', author_id=request.user.id)
