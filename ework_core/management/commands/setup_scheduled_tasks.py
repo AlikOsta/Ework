@@ -50,9 +50,10 @@ class Command(BaseCommand):
         """Удалить все задачи"""
         try:
             scheduler = get_scheduler('default')
-            count = len(scheduler.get_jobs())
+            jobs = list(scheduler.get_jobs())  # Преобразуем в список
+            count = len(jobs)
             
-            for job in scheduler.get_jobs():
+            for job in jobs:
                 job.delete()
             
             self.stdout.write(self.style.SUCCESS(f'🗑️ Удалено {count} задач'))
