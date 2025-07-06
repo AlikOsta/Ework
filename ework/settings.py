@@ -156,3 +156,70 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'ework_core', 'static'),
 ]
+
+# Настройки Django-Q
+Q_CLUSTER = {
+    'name': 'ework_cluster',
+    'workers': 2,
+    'timeout': 30,
+    'retry': 60,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',  # Используем основную базу данных
+    'catch_up': True,
+    'save_limit': 250,
+    'ack_failures': True,
+    'max_attempts': 1,
+    'attempt_count': 1,
+    'cached': 60,
+    'sync': False,
+    'compress': True,
+    'cpu_affinity': 1,
+    'daemonize_workers': False,
+    'log_level': 'INFO',
+    'label': 'Django-Q',
+    'redis': None,  # Не используем Redis
+}
+
+# Настройки логирования для Django-Q
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django_q.log'),
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'django_q': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'ework_core.tasks': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
