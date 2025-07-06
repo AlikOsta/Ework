@@ -2,13 +2,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from ework_core.admin_views import get_task_admin_urls
 
 
 urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
     path('rosetta/', include('rosetta.urls')),
-    path('admin/task-management/', include((get_task_admin_urls(), 'admin'), namespace='admin')),
+    path('django-rq/', include('django_rq.urls')),  # Стандартная панель Django RQ
     path('admin/', admin.site.urls),
     path('users/', include('ework_user_tg.urls', namespace='users')),
     path('jobs/', include('ework_job.urls', namespace='jobs')),
