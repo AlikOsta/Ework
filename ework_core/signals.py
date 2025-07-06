@@ -263,6 +263,7 @@ def handle_payment_save(sender, instance, created, **kwargs):
 
 def _handle_republish_after_payment(old_post_id, new_post, user):
     """Обработка переопубликации после оплаты"""
+    print(f"🔄 DEBUG: _handle_republish_after_payment вызван с old_post_id={old_post_id}, new_post_id={new_post.id}, user={user.username}")
     try:
         from ework_post.models import AbsPost
         from ework_post.views import copy_post_views
@@ -274,15 +275,19 @@ def _handle_republish_after_payment(old_post_id, new_post, user):
             is_deleted=False
         )
         
+        print(f"🔄 DEBUG: Найден старый пост {old_post_id}, статус ДО: {old_post.status}")
+        
         # Копируем статистику просмотров
         copied_views = copy_post_views(old_post, new_post)
         
         # Помечаем старый пост как удаленный
         old_post.soft_delete()
         
-        print(f"🔄 Переопубликация после оплаты: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный")
+        print(f"🔄 DEBUG: Переопубликация после оплаты завершена: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный, новый статус: {old_post.status}")
         
     except AbsPost.DoesNotExist:
-        print(f"❌ Старый пост {old_post_id} не найден при переопубликации после оплаты")
+        print(f"❌ DEBUG: Старый пост {old_post_id} не найден при переопубликации после оплаты")
     except Exception as e:
-        print(f"❌ Ошибка при обработке переопубликации после оплаты: {e}")
+        print(f"❌ DEBUG: Ошибка при обработке переопубликации после оплаты: {e}")
+        import traceback
+        print(f"❌ DEBUG: Traceback: {traceback.format_exc()}")
