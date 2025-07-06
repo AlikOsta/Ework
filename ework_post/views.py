@@ -285,6 +285,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     
     def _publish_free_post(self, form, copy_from_id=None):
         """Опубликовать бесплатный пост"""
+        print(f"🔄 DEBUG: _publish_free_post вызван с copy_from_id={copy_from_id}")
         try:
             self.object = form.save(commit=False)
             self.object.user = self.request.user
@@ -293,6 +294,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             
             # Если это переопубликация, обрабатываем старый пост
             if copy_from_id:
+                print(f"🔄 DEBUG: Это переопубликация, вызываем _handle_republish с copy_from_id={copy_from_id}")
                 self._handle_republish(copy_from_id, self.object)
             
             # Отметить использование бесплатной публикации
