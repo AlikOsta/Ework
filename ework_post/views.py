@@ -266,6 +266,17 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         if copy_from_id and copy_from_id.isdigit():
             copy_from_id = int(copy_from_id)
             print(f"🔄 Переопубликация поста: copy_from_id = {copy_from_id}")
+            
+            # ПРОВЕРЯЕМ: если это переопубликация уже оплаченного поста
+            try:
+                original_post = AbsPost.objects.get(id=copy_from_id, user=self.request.user)
+                if original_post.package and original_post.package.is_paid():
+                    print(f"💰 Оригинальный пост уже был оплачен: {original_post.package.name}")
+                    print(f"   Аддоны: фото={original_post.has_photo_addon}, выделение={original_post.has_highlight_addon}")
+                    print(f"   Для переопубликации НЕ требуется повторная оплата аддонов")
+            except AbsPost.DoesNotExist:
+                pass
+                
         else:
             copy_from_id = None
             print(f"🆕 Новый пост: copy_from_id отсутствует")
