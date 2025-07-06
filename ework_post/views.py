@@ -392,6 +392,7 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
+        kwargs['is_create'] = False  # Явно указываем, что это НЕ создание
         print(f"🔧 BasePostUpdateView.get_form_kwargs() - это редактирование")
         return kwargs
     
