@@ -90,6 +90,7 @@ class BasePostForm(forms.ModelForm):
             
         # Добавляем поля аддонов ТОЛЬКО при создании
         if self.is_create:
+            print(f"📝 BasePostForm: Добавляем поля аддонов для создания поста")
             self.fields['addon_photo'] = forms.BooleanField(
                 required=False,
                 label=_('Добавить фото'),
@@ -100,6 +101,8 @@ class BasePostForm(forms.ModelForm):
                 label=_('Выделить цветом'),
                 help_text=_('Объявление будет выделено цветом для привлечения внимания')
             )
+        else:
+            print(f"🔧 BasePostForm: Режим редактирования - аддоны НЕ добавляются")
 
     def clean_price(self):
         price = self.cleaned_data.get('price')
