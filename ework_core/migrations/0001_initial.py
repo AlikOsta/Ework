@@ -31,7 +31,6 @@ def remove_scheduled_tasks(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ework_core', []),
     ]
 
     operations = [
