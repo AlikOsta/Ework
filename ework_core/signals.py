@@ -257,75 +257,20 @@ def handle_payment_save(sender, instance, created, **kwargs):
     Обработка изменения статуса платежа
     Когда платеж становится оплаченным - отправляем пост на модерацию
     """
-    print(f"🔔 Сигнал handle_payment_save: payment_id={instance.id}, status={instance.status}, created={created}")
     
     if instance.status == 'paid' and instance.post:
-        print(f"💰 Платеж оплачен! Отправляем пост {instance.post.title} на модерацию")
-        print(f"📊 Текущий статус поста ДО изменения: {instance.post.status} ({instance.post.get_status_display()})")
-        
-        # Проверяем, это переопубликация или обычный пост
-        copy_from_id = None
-        if instance.addons_data and 'copy_from_id' in instance.addons_data:
-            copy_from_id = instance.addons_data['copy_from_id']
-            print(f"🔄 DEBUG: Это переопубликация поста {copy_from_id}")
-        else:
-            print(f"🔄 DEBUG: Это обычный пост, не переопубликация")
         
         # Применяем аддоны к посту
         instance.post.apply_addons_from_payment(instance)
-        
-        # Если это переопубликация, обрабатываем старый пост
-        if copy_from_id:
-            _handle_republish_after_payment(copy_from_id, instance.post, instance.user)
         
         # Переводим пост из черновика на модерацию
         old_status = instance.post.status
         instance.post.status = 0  # Это должно вызвать handle_post_save
         instance.post.save(update_fields=['status'])
         
-        # Проверяем что статус действительно изменился
-        instance.post.refresh_from_db()
-        print(f"✅ Статус поста изменен с {old_status} на {instance.post.status} ({instance.post.get_status_display()})")
-        
         # Если статус не изменился, принудительно вызываем модерацию
         if instance.post.status == 0:
-            print("🔄 Принудительно запускаем модерацию...")
             from threading import Thread
             thread = Thread(target=moderate_post_async, args=(instance.post,))
             thread.daemon = True
             thread.start()
-        
-    else:
-        print(f"⏸️ Условие не выполнено: status={instance.status}, post={instance.post}")
-
-
-def _handle_republish_after_payment(old_post_id, new_post, user):
-    """Обработка переопубликации после оплаты"""
-    print(f"🔄 DEBUG: _handle_republish_after_payment вызван с old_post_id={old_post_id}, new_post_id={new_post.id}, user={user.username}")
-    try:
-        from ework_post.models import AbsPost
-        from ework_post.views import copy_post_views
-        
-        old_post = AbsPost.objects.get(
-            id=old_post_id,
-            user=user,
-            status=4,  # Архивный
-            is_deleted=False
-        )
-        
-        print(f"🔄 DEBUG: Найден старый пост {old_post_id}, статус ДО: {old_post.status}")
-        
-        # Копируем статистику просмотров
-        copied_views = copy_post_views(old_post, new_post)
-        
-        # Помечаем старый пост как удаленный
-        old_post.soft_delete()
-        
-        print(f"🔄 DEBUG: Переопубликация после оплаты завершена: скопировано {copied_views} просмотров, старый пост {old_post_id} помечен как удаленный, новый статус: {old_post.status}")
-        
-    except AbsPost.DoesNotExist:
-        print(f"❌ DEBUG: Старый пост {old_post_id} не найден при переопубликации после оплаты")
-    except Exception as e:
-        print(f"❌ DEBUG: Ошибка при обработке переопубликации после оплаты: {e}")
-        import traceback
-        print(f"❌ DEBUG: Traceback: {traceback.format_exc()}")
