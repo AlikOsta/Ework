@@ -20,6 +20,14 @@
     </div>
 
     <div class="modal-body">
+        <!-- Уведомление о копировании из архивного поста -->
+        {% if is_republish and original_post %}
+        <div class="alert alert-info">
+            <i class="material-icons me-2">info</i>
+            {% blocktrans with title=original_post.title %}Данные скопированы из архивного объявления "{{ title }}". Вы можете изменить любые данные перед публикацией.{% endblocktrans %}
+        </div>
+        {% endif %}
+        
         <!-- Отображение общих ошибок формы -->
         {% if form.non_field_errors %}
         <div class="alert alert-danger">
