@@ -404,17 +404,26 @@ def api_views_stats(request):
     
     # Получаем топ просматриваемых объявлений
     from django.contrib.contenttypes.models import ContentType
-    top_posts = AbsPost.objects.annotate(
-        views_count=Count('postview')
+    abs_post_ct = ContentType.objects.get_for_model(AbsPost)
+    
+    # Подсчитываем просмотры для каждого поста
+    post_views_counts = PostView.objects.filter(
+        content_type=abs_post_ct
+    ).values('object_id').annotate(
+        views_count=Count('id')
     ).order_by('-views_count')[:10]
     
     top_posts_data = []
-    for post in top_posts:
-        top_posts_data.append({
-            'title': post.title[:50] + '...' if len(post.title) > 50 else post.title,
-            'views': post.views_count,
-            'favorites': Favorite.objects.filter(post=post).count()
-        })
+    for item in post_views_counts:
+        try:
+            post = AbsPost.objects.get(id=item['object_id'])
+            top_posts_data.append({
+                'title': post.title[:50] + '...' if len(post.title) > 50 else post.title,
+                'views': item['views_count'],
+                'favorites': Favorite.objects.filter(post=post).count()
+            })
+        except AbsPost.DoesNotExist:
+            continue
     
     # Средние показатели
     avg_views_per_post = total_views / total_posts if total_posts > 0 else 0
