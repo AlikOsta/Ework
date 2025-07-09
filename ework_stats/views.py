@@ -377,7 +377,7 @@ def api_views_stats(request):
     
     # Создаем словари с данными просмотров и избранного
     views_dict = {view['date'].date(): view['count'] for view in views_stats}
-    favorites_dict = {fav['date'].date(): fav['count']                       for fav in favorites_stats}
+    favorites_dict = {fav['date'].date(): fav['count'] for fav in favorites_stats}
     
     # Заполняем данные для всех дат в периоде
     while current <= end_date:
