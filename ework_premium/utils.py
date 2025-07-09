@@ -59,17 +59,17 @@ class PricingCalculator:
                 'photo': {
                     'selected': photo,
                     'price': self.package.photo_addon_price if photo and self.package else Decimal('0.00'),
-                    'description': _('Добавить фото (30 дней)')
+                    'description': _('Добавить фото')
                 },
                 'highlight': {
                     'selected': highlight,
                     'price': self.package.highlight_addon_price if highlight and self.package else Decimal('0.00'),
-                    'description': _('Выделить цветом (3 дня)')
+                    'description': _('Выделить цветом')
                 },
                 'auto_bump': {
                     'selected': auto_bump,
                     'price': self.package.auto_bump_addon_price if auto_bump and self.package else Decimal('0.00'),
-                    'description': _('Автоподнятие (7 дней)')
+                    'description': _('Автоподнятие')
                 }
             },
             'addons_total': addons_price,
@@ -106,66 +106,32 @@ class PricingCalculator:
 def create_payment_for_post(user, package, photo=False, highlight=False, auto_bump=False, copy_from_id=None):
     """Создать платеж для публикации поста с аддонами"""
     from .models import Payment
-    
-    print(f"💰 Расчет стоимости публикации:")
-    print(f"   Пользователь: {user.username}")
-    print(f"   Аддоны: фото={photo}, выделение={highlight}, автоподнятие={auto_bump}")
-    print(f"   copy_from_id: {copy_from_id} (тип: {type(copy_from_id)})")
-    
-    # ПРОВЕРКА: если это переопубликация уже оплаченного поста
     if copy_from_id is not None:
         try:
             from ework_post.models import AbsPost
             original_post = AbsPost.objects.get(id=copy_from_id, user=user)
-            
-            # Если у оригинального поста были аддоны и он уже был оплачен
             if (original_post.package and original_post.package.is_paid() and 
                 (original_post.has_photo_addon or original_post.has_highlight_addon or original_post.has_auto_bump_addon)):
-                
-                print(f"🔄 Переопубликация оплаченного поста:")
-                print(f"   Оригинальный пакет: {original_post.package.name}")
-                print(f"   Оригинальные аддоны: фото={original_post.has_photo_addon}, выделение={original_post.has_highlight_addon}, автоподнятие={original_post.has_auto_bump_addon}")
-                print(f"   ПРАВИЛО: При переопубликации НЕ берем повторную оплату за уже оплаченные аддоны")
-                
-                # При переопубликации используем аддоны оригинального поста
                 photo = original_post.has_photo_addon
                 highlight = original_post.has_highlight_addon  
                 auto_bump = original_post.has_auto_bump_addon
-                
-                print(f"   Применяем аддоны из оригинального поста: фото={photo}, выделение={highlight}, автоподнятие={auto_bump}")
-                
         except AbsPost.DoesNotExist:
             print(f"⚠️ Оригинальный пост {copy_from_id} не найден")
-    
     calculator = PricingCalculator(user, package)
     total_price = calculator.calculate_total_price(photo, highlight, auto_bump)
-    
-    print(f"   Может публиковать бесплатно: {calculator.can_post_free()}")
-    print(f"   Итоговая стоимость: {total_price}")
-    
     if total_price == 0:
-        print(f"💸 Бесплатная публикация - платеж не создается")
-        return None  # Бесплатная публикация
-    
+        return None 
     payment = Payment.objects.create(
         user=user,
         package=package,
         amount=total_price,
         order_id=Payment.generate_order_id(user.id)
     )
-    
-    print(f"💳 Создан платеж {payment.id} на сумму {total_price}")
-    
-    # Сохранить информацию об аддонах
     payment.set_addons(photo=photo, highlight=highlight, auto_bump=auto_bump)
-    
-    # Сохранить copy_from_id если передан
     if copy_from_id is not None:
         if not payment.addons_data:
             payment.addons_data = {}
         payment.addons_data['copy_from_id'] = copy_from_id
-        print(f"💾 Добавлен copy_from_id в платеж: {copy_from_id}")
-    
     payment.save()
     
     return payment
