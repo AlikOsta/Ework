@@ -1,0 +1,295 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}Статистика - Панель управления{% endblock %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stats-container {
+        padding: 20px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stats-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .stats-number {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #2196F3;
+        margin-bottom: 10px;
+    }
+    .stats-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .chart-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .period-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        justify-content: center;
+    }
+    .period-btn {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .period-btn.active {
+        background: #2196F3;
+        color: white;
+        border-color: #2196F3;
+    }
+    .period-btn:hover {
+        background: #f5f5f5;
+    }
+    .period-btn.active:hover {
+        background: #1976D2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+    <h1>Общая статистика</h1>
+    
+    <!-- Карточки с основными показателями -->
+    <div class="stats-grid">
+        <div class="stats-card">
+            <div class="stats-number" id="total-users">-</div>
+            <div class="stats-label">Всего пользователей</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-number" id="total-posts">-</div>
+            <div class="stats-label">Всего объявлений</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-number" id="total-views">-</div>
+            <div class="stats-label">Всего просмотров</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-number" id="total-revenue">-</div>
+            <div class="stats-label">Общий доход (₽)</div>
+        </div>
+    </div>
+    
+    <!-- Селектор периода -->
+    <div class="period-selector">
+        <button class="period-btn" data-period="day">День</button>
+        <button class="period-btn" data-period="week">Неделя</button>
+        <button class="period-btn active" data-period="month">Месяц</button>
+        <button class="period-btn" data-period="year">Год</button>
+    </div>
+    
+    <!-- График новых пользователей -->
+    <div class="chart-container">
+        <div class="chart-title">Новые пользователи</div>
+        <canvas id="usersChart" width="400" height="200"></canvas>
+    </div>
+    
+    <!-- График новых объявлений -->
+    <div class="chart-container">
+        <div class="chart-title">Новые объявления</div>
+        <canvas id="postsChart" width="400" height="200"></canvas>
+    </div>
+    
+    <!-- График просмотров и избранного -->
+    <div class="chart-container">
+        <div class="chart-title">Просмотры и избранное</div>
+        <canvas id="viewsChart" width="400" height="200"></canvas>
+    </div>
+    
+    <!-- График доходов -->
+    <div class="chart-container">
+        <div class="chart-title">Доходы</div>
+        <canvas id="revenueChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+<script>
+let usersChart, postsChart, viewsChart, revenueChart;
+let currentPeriod = 'month';
+
+// Инициализация графиков
+function initCharts() {
+    const commonOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+                        y: {
+                beginAtZero: true
+            }
+        }
+    };
+
+    // График пользователей
+    const usersCtx = document.getElementById('usersChart').getContext('2d');
+    usersChart = new Chart(usersCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Новые пользователи',
+                data: [],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: commonOptions
+    });
+
+    // График объявлений
+    const postsCtx = document.getElementById('postsChart').getContext('2d');
+    postsChart = new Chart(postsCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Новые объявления',
+                data: [],
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: commonOptions
+    });
+
+    // График просмотров и избранного
+    const viewsCtx = document.getElementById('viewsChart').getContext('2d');
+    viewsChart = new Chart(viewsCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Просмотры',
+                    data: [],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Избранное',
+                    data: [],
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: commonOptions
+    });
+
+    // График доходов
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Доход (₽)',
+                data: [],
+                borderColor: 'rgba(153, 102, 255, 1)',
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: commonOptions
+    });
+}
+
+// Загрузка данных
+function loadData(period = 'month') {
+    currentPeriod = period;
+    
+    // Загрузка данных пользователей
+    fetch(`/admin/stats/api/users/?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-users').textContent = data.total_users;
+            usersChart.data.labels = data.labels;
+            usersChart.data.datasets[0].data = data.datasets[0].data;
+            usersChart.update();
+        });
+
+    // Загрузка данных объявлений
+    fetch(`/admin/stats/api/posts/?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-posts').textContent = data.total_posts;
+            postsChart.data.labels = data.labels;
+            postsChart.data.datasets[0].data = data.datasets[0].data;
+            postsChart.update();
+        });
+
+    // Загрузка данных просмотров
+    fetch(`/admin/stats/api/views/?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-views').textContent = data.total_views;
+            viewsChart.data.labels = data.labels;
+            viewsChart.data.datasets[0].data = data.datasets[0].data;
+            viewsChart.data.datasets[1].data = data.datasets[1].data;
+            viewsChart.update();
+        });
+
+    // Загрузка данных доходов
+    fetch(`/admin/stats/api/revenue/?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-revenue').textContent = data.total_revenue;
+            revenueChart.data.labels = data.labels;
+            revenueChart.data.datasets[0].data = data.datasets[0].data;
+            revenueChart.update();
+        });
+}
+
+// Обработчики событий
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    loadData();
+
+    // Обработчик кнопок периода
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            loadData(this.dataset.period);
+        });
+    });
+});
+</script>
+{% endblock %}

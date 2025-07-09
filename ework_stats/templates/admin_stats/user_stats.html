@@ -1,0 +1,259 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}Статистика пользователей{% endblock %}
+
+{% block extrahead %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stats-container {
+        padding: 20px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stats-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .stats-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #2196F3;
+        margin-bottom: 10px;
+    }
+    .stats-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .chart-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #333;
+    }
+    .period-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        justify-content: center;
+    }
+    .period-btn {
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        background: white;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .period-btn.active {
+        background: #2196F3;
+        color: white;
+        border-color: #2196F3;
+    }
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 768px) {
+        .charts-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+    <h1>Статистика пользователей</h1>
+    
+    <!-- Карточки с показателями пользователей -->
+    <div class="stats-grid">
+        <div class="stats-card">
+            <div class="stats-number" id="total-users">-</div>
+            <div class="stats-label">Всего пользователей</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-number" id="active-users">-</div>
+            <div class="stats-label">Активных пользователей</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-number" id="daily-active">-</div>
+            <div class="stats-label">Активных за день</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-number" id="weekly-active">-</div>
+            <div class="stats-label">Активных за неделю</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-number" id="monthly-active">-</div>
+            <div class="stats-label">Активных за месяц</div>
+        </div>
+    </div>
+    
+    <!-- Селектор периода -->
+    <div class="period-selector">
+        <button class="period-btn" data-period="day">День</button>
+        <button class="period-btn" data-period="week">Неделя</button>
+        <button class="period-btn active" data-period="month">Месяц</button>
+        <button class="period-btn" data-period="year">Год</button>
+    </div>
+    
+    <!-- График регистраций -->
+    <div class="chart-container">
+        <div class="chart-title">Регистрации пользователей</div>
+        <canvas id="registrationsChart" width="400" height="200"></canvas>
+    </div>
+    
+    <!-- Графики источников и активности -->
+    <div class="charts-row">
+        <div class="chart-container">
+            <div class="chart-title">Источники регистрации</div>
+            <canvas id="sourcesChart" width="400" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+            <div class="chart-title">Активность по дням недели</div>
+            <canvas id="activityChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+let registrationsChart, sourcesChart, activityChart;
+let currentPeriod = 'month';
+
+// Инициализация графиков
+function initCharts() {
+    // График регистраций
+    const regCtx = document.getElementById('registrationsChart').getContext('2d');
+    registrationsChart = new Chart(regCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Новые регистрации',
+                data: [],
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // График источников
+    const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
+    sourcesChart = new Chart(sourcesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 205, 86, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // График активности
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    activityChart = new Chart(activityCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Активные пользователи',
+                data: [],
+                backgroundColor: 'rgba(75, 192, 192, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Загрузка данных
+function loadData(period = 'month') {
+    currentPeriod = period;
+    
+    fetch(`/admin/stats/api/users/?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            // Обновляем карточки
+            document.getElementById('total-users').textContent = data.total_users;
+            document.getElementById('active-users').textContent = data.active_users;
+            document.getElementById('daily-active').textContent = data.daily_active_users;
+            document.getElementById('weekly-active').textContent = data.weekly_active_users;
+            document.getElementById('monthly-active').textContent = data.monthly_active_users;
+            
+            // Обновляем график регистраций
+            registrationsChart.data.labels = data.labels;
+            registrationsChart.data.datasets[0].data = data.datasets[0].data;
+            registrationsChart.update();
+            
+            // Обновляем график источников
+            sourcesChart.data.labels = data.sources.labels;
+            sourcesChart.data.datasets[0].data = data.sources.data;
+            sourcesChart.update();
+            
+            // Обновляем график активности
+            activityChart.data.labels = data.activity.labels;
+            activityChart.data.datasets[0].data = data.activity.data;
+            activityChart.update();
+        });
+}
+
+// Обработчики событий
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    loadData();
+
+    // Обработчик кнопок периода
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            loadData(this.dataset.period);
+        });
+    });
+});
+</script>
+{% endblock %}

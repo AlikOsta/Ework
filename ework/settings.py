@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'ework_currency', # валюты
     'ework_core', # ядро
     'ework_config', # конфигурация
+    'ework_stats', # статистика
 ]
 
 MIDDLEWARE = [
@@ -179,8 +180,16 @@ Q_CLUSTER = {
     'daemonize_workers': False,
     'log_level': 'INFO',
     'label': 'Django-Q',
-    'redis': None,  # Не используем Redis
-}
+    'redis': None,
+    'schedule': {
+        'collect_daily_stats': {
+            'func': 'ework_stats.tasks.collect_daily_stats',
+            'schedule_type': 'D',  
+            'hour': 1,  
+            'minute': 0
+        },
+    }
+}  
 
 # Настройки логирования для Django-Q
 LOGGING = {
