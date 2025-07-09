@@ -534,11 +534,11 @@ async function loadData(period = 'month') {
         // Обновляем дополнительные показатели
         document.getElementById('new-users').textContent = usersData.active_users.toLocaleString();
         document.getElementById('active-users').textContent = usersData.daily_active_users.toLocaleString();
-        document.getElementById('users-growth').textContent = '+' + Math.round(Math.random() * 15) + '%';
+        document.getElementById('users-growth').textContent = usersData.weekly_active_users.toLocaleString();
         
         document.getElementById('new-posts').textContent = postsData.datasets[0].data.reduce((a, b) => a + b, 0);
         document.getElementById('posts-moderation').textContent = postsData.status_data[0] || 0;
-        document.getElementById('posts-growth').textContent = '+' + Math.round(Math.random() * 25) + '%';
+        document.getElementById('posts-growth').textContent = postsData.active_posts.toLocaleString();
         
         document.getElementById('period-revenue').textContent = revenueData.datasets[0].data.reduce((a, b) => a + b, 0).toLocaleString();
         document.getElementById('total-payments').textContent = revenueData.total_payments.toLocaleString();
