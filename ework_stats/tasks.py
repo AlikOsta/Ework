@@ -6,32 +6,46 @@ from ework_user_tg.models import TelegramUser
 from ework_post.models import AbsPost, PostView, Favorite
 
 def collect_daily_stats():
-    """Собирает статистику за вчерашний день."""
-    yesterday = timezone.now().date() - timedelta(days=1)
+    """Собирает статистику за вчерашний день и сегодня."""
+    today = timezone.now().date()
+    yesterday = today - timedelta(days=1)
     
-    # Считаем новых пользователей за вчера
+    # Собираем статистику за вчера
+    yesterday_stats = collect_stats_for_date(yesterday)
+    
+    # Собираем статистику за сегодня
+    today_stats = collect_stats_for_date(today)
+    
+    return {
+        'yesterday': yesterday_stats,
+        'today': today_stats
+    }
+
+def collect_stats_for_date(date):
+    """Собирает статистику за указанную дату."""
+    # Считаем новых пользователей за указанную дату
     new_users = TelegramUser.objects.filter(
-        date_joined__date=yesterday
+        date_joined__date=date
     ).count()
     
-    # Считаем новые объявления за вчера
+    # Считаем новые объявления за указанную дату
     new_posts = AbsPost.objects.filter(
-        created_at__date=yesterday
+        created_at__date=date
     ).count()
     
-    # Считаем просмотры за вчера
+    # Считаем просмотры за указанную дату
     post_views = PostView.objects.filter(
-        created_at__date=yesterday
+        created_at__date=date
     ).count()
     
-    # Считаем добавления в избранное за вчера
+    # Считаем добавления в избранное за указанную дату
     favorites_added = Favorite.objects.filter(
-        created_at__date=yesterday
+        created_at__date=date
     ).count()
     
     # Сохраняем или обновляем статистику
     stats, created = DailyStats.objects.update_or_create(
-        date=yesterday,
+        date=date,
         defaults={
             'new_users': new_users,
             'new_posts': new_posts,
@@ -41,7 +55,7 @@ def collect_daily_stats():
     )
     
     return {
-        'date': yesterday,
+        'date': date,
         'new_users': new_users,
         'new_posts': new_posts,
         'post_views': post_views,

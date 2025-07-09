@@ -1,4 +1,3 @@
-import datetime
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
@@ -8,10 +7,16 @@ from django.utils import timezone
 from ework_post.models import AbsPost, PostView, Favorite
 from ework_user_tg.models import TelegramUser
 from ework_premium.models import Payment
+from .tasks import collect_daily_stats
+from .models import DailyStats
+import datetime
+
 
 @staff_member_required
 def dashboard_stats(request):
     """Отображает общую панель статистики."""
+    # Собираем статистику перед отображением страницы
+    collect_stats_if_needed()
     return render(request, 'admin_stats/dashboard_stats.html')
 
 @staff_member_required
@@ -33,6 +38,66 @@ def views_stats(request):
 def finance_stats(request):
     """Отображает финансовую статистику."""
     return render(request, 'admin_stats/finance_stats.html')
+
+def collect_stats_if_needed():
+    """Проверяет, нужно ли собирать статистику, и собирает её при необходимости."""
+    today = timezone.now().date()
+    yesterday = today - datetime.timedelta(days=1)
+    
+    # Проверяем, есть ли статистика за вчерашний день
+    if not DailyStats.objects.filter(date=yesterday).exists():
+        # Если нет, собираем статистику
+        collect_daily_stats()
+    
+    # Также можно проверить наличие статистики за предыдущие дни
+    # и собрать её, если она отсутствует
+    for days_ago in range(2, 31):  # Проверяем последние 30 дней
+        check_date = today - datetime.timedelta(days=days_ago)
+        if not DailyStats.objects.filter(date=check_date).exists():
+            # Собираем статистику за этот день
+            collect_stats_for_date(check_date)
+
+def collect_stats_for_date(date):
+    """Собирает статистику за указанную дату."""
+    # Считаем новых пользователей за указанную дату
+    new_users = TelegramUser.objects.filter(
+        date_joined__date=date
+    ).count()
+    
+    # Считаем новые объявления за указанную дату
+    new_posts = AbsPost.objects.filter(
+        created_at__date=date
+    ).count()
+    
+    # Считаем просмотры за указанную дату
+    post_views = PostView.objects.filter(
+        created_at__date=date
+    ).count()
+    
+    # Считаем добавления в избранное за указанную дату
+    favorites_added = Favorite.objects.filter(
+        created_at__date=date
+    ).count()
+    
+    # Сохраняем статистику
+    stats, created = DailyStats.objects.update_or_create(
+        date=date,
+        defaults={
+            'new_users': new_users,
+            'new_posts': new_posts,
+            'post_views': post_views,
+            'favorites_added': favorites_added,
+        }
+    )
+    
+    return {
+        'date': date,
+        'new_users': new_users,
+        'new_posts': new_posts,
+        'post_views': post_views,
+        'favorites_added': favorites_added,
+        'created': created
+    }
 
 @staff_member_required
 def api_users_stats(request):
