@@ -246,7 +246,7 @@ JAZZMIN_SETTINGS = {
     "site_brand": "Help Work",
     
     # Логотип для сайта
-    "site_logo": "path/to/your/logo.png",  # Замените на путь к вашему логотипу
+    # "site_logo": "path/to/your/logo.png",  # Замените на путь к вашему логотипу
     
     # Ссылка на главную страницу сайта
     "site_url": "/",
