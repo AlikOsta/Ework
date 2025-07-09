@@ -238,7 +238,7 @@ def api_posts_stats(request):
     
     # Получаем статистику по категориям
     from ework_rubric.models import SubRubric
-    categories = SubRubric.objects.annotate(post_count=Count('abspost')).order_by('-post_count')[:6]
+    categories = SubRubric.objects.annotate(post_count=Count('ework_post_abspost_posts')).order_by('-post_count')[:6]
     category_labels = [cat.name for cat in categories]
     category_data = [cat.post_count for cat in categories]
     
