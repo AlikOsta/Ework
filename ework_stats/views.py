@@ -30,6 +30,11 @@ def views_stats(request):
     return render(request, 'admin_stats/views_stats.html')
 
 @staff_member_required
+def finance_stats(request):
+    """Отображает финансовую статистику."""
+    return render(request, 'admin_stats/finance_stats.html')
+
+@staff_member_required
 def api_users_stats(request):
     """API для получения статистики пользователей."""
     period = request.GET.get('period', 'month')
