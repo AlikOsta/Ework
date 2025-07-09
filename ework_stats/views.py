@@ -70,9 +70,9 @@ def api_users_stats(request):
     start_date = timezone.now() - datetime.timedelta(days=days_ago)
     
     registrations = TelegramUser.objects.filter(
-        date_joined__gte=start_date
+        created_at__gte=start_date
     ).annotate(
-        date=trunc_func('date_joined')
+        date=trunc_func('created_at')
     ).values('date').annotate(
         count=Count('id')
     ).order_by('date')
