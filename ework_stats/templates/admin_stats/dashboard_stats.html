@@ -539,6 +539,17 @@ async function loadData(period = 'month') {
         
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
+        
+        // Устанавливаем значения по умолчанию при ошибке
+        document.getElementById('total-users').textContent = '0';
+        document.getElementById('total-posts').textContent = '0';
+        document.getElementById('active-posts').textContent = '0';
+        document.getElementById('total-views').textContent = '0';
+        document.getElementById('total-favorites').textContent = '0';
+        document.getElementById('total-revenue').textContent = '0';
+        
+        // Показываем уведомление об ошибке
+        alert('Ошибка загрузки данных статистики. Проверьте консоль для деталей.');
     }
 }
 
