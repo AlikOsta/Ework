@@ -9,7 +9,8 @@ from .models import SiteConfig
 class SiteConfigAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Основные настройки сайта', {
-            'fields': ('site_name', 'site_description', 'site_url')
+            'fields': ('site_name', 'site_url'),
+            'classes': ('collapse',)
         }),
         ('Telegram Bot', {
             'fields': ('bot_token', 'bot_username'),
@@ -29,21 +30,19 @@ class SiteConfigAdmin(admin.ModelAdmin):
         }),
         ('Настройки постов', {
             'fields': ('max_free_posts_per_user', 'post_expiry_days'),
+            'classes': ('collapse',)
         }),
     )
     
     readonly_fields = ('created_at', 'updated_at')
     
     def has_add_permission(self, request):
-        # Разрешаем создание только если нет конфигурации
         return not SiteConfig.objects.exists()
     
     def has_delete_permission(self, request, obj=None):
-        # Запрещаем удаление конфигурации
         return False
     
     def changelist_view(self, request, extra_context=None):
-        # Если конфигурация существует, перенаправляем на её редактирование
         try:
             config = SiteConfig.objects.get(pk=1)
             return HttpResponseRedirect(reverse('admin:ework_config_siteconfig_change', args=[config.pk]))

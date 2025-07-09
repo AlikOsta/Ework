@@ -10,7 +10,7 @@ class SiteConfig(models.Model):
     """
     
     # Основные настройки сайта
-    site_name = models.CharField(max_length=200, default='eWork', verbose_name=_('Текст для кнопки'))
+    site_name = models.CharField(max_length=200, default='eWork', verbose_name=_('Название'))
     site_description = models.TextField(default='Платформа для поиска работы и услуг', verbose_name=_('Приветственное  сообщение для бота'))
     site_url = models.URLField(default='https://localhost:8000', verbose_name=_('URL сайта для Мини Апп'))
     

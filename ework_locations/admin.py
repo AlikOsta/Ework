@@ -1,18 +1,18 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import City
+from django.utils.translation import gettext_lazy as _
 
 
 @admin.register(City)
 class CityAdmin(admin.ModelAdmin):
     list_display = ('name', 'users_count', 'posts_count', 'order')
-    search_fields = ('name',)
     ordering = ('order', 'name')
     
     def users_count(self, obj):
         count = obj.telegramuser_set.filter(is_active=True).count()
         return format_html('<strong>{}</strong>', count)
-    users_count.short_description = 'Пользователей'
+    users_count.short_description = _('Пользователей')
     
     def posts_count(self, obj):
         from ework_job.models import PostJob
@@ -23,4 +23,4 @@ class CityAdmin(admin.ModelAdmin):
         total = jobs_count + services_count
         
         return format_html('<strong>{}</strong> (работа: {}, услуги: {})', total, jobs_count, services_count)
-    posts_count.short_description = 'Объявлений'
+    posts_count.short_description = _('Объявлений')

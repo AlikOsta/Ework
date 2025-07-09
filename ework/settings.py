@@ -33,6 +33,7 @@ SESSION_COOKIE_SAMESITE = None
 SESSION_SAVE_EVERY_REQUEST = True
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -222,4 +223,118 @@ LOGGING = {
             'propagate': True,
         },
     },
+}
+
+# Настройки Jazzmin
+JAZZMIN_SETTINGS = {
+    # Заголовок в браузере
+    "site_title": "Help Work Admin",
+    
+    # Заголовок на странице входа
+    "site_header": "Help Work",
+    
+    # Заголовок на главной странице
+    "site_brand": "Help Work",
+    
+    # Логотип для сайта
+    "site_logo": "path/to/your/logo.png",  # Замените на путь к вашему логотипу
+    
+    # Ссылка на главную страницу сайта
+    "site_url": "/",
+    
+    # Авторские права
+    "copyright": "Help Work © 2025",
+    
+    # Модель пользователя
+    "user_avatar": None,
+    
+    ############
+    # Верхнее меню
+    ############
+    "topmenu_links": [
+        # Ссылка на главную страницу админки
+        {"name": "Главная", "url": "admin:index", "permissions": ["auth.view_user"]},
+        
+        # Ссылка на сайт
+        {"name": "Перейти на сайт", "url": "/", "new_window": True},
+        
+        # Выпадающее меню с моделями приложения
+        {"app": "ework_post"},
+    ],
+    
+    #############
+    # Боковое меню
+    #############
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "ework_post.abspost": "fas fa-newspaper",
+        "ework_post.postjob": "fas fa-briefcase",
+        "ework_post.postservices": "fas fa-tools",
+        "ework_config.siteconfig": "fas fa-cogs",
+        "ework_config.subrubric": "fas fa-list",
+        "ework_config.superrubric": "fas fa-folder",
+        "ework_config.city": "fas fa-city",
+        "ework_config.currency": "fas fa-money-bill",
+        "ework_premium.package": "fas fa-box",
+        "ework_premium.payment": "fas fa-credit-card",
+        "ework_user_tg.telegramuser": "fab fa-telegram",
+    },
+    
+    # Группировка моделей в меню
+    "order_with_respect_to": [
+        "auth",
+        "ework_user_tg",
+        "ework_post",
+        "ework_job",
+        "ework_services",
+        "ework_premium",
+        "ework_config",
+    ],
+    
+
+    
+    # Стили
+    "related_modal_active": True,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": True,
+}
+
+# Настройки темы Jazzmin
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-primary",
+    "accent": "accent-primary",
+    "navbar": "navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "default",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
 }

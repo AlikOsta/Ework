@@ -7,9 +7,6 @@ from .models import BannerPost
 @admin.register(BannerPost)
 class BannerPostAdmin(admin.ModelAdmin):
     list_display = ('title', 'image_preview', 'link', 'is_active', 'order', 'created_at')
-    list_filter = ('is_active', 'created_at')
-    search_fields = ('title', 'description')
-    list_editable = ('is_active', 'order')
     ordering = ('order', '-created_at')
     
     fieldsets = (
@@ -32,7 +29,7 @@ class BannerPostAdmin(admin.ModelAdmin):
     
     def image_preview(self, obj):
         if obj.image:
-            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 100px; max-width: 200px;">')
+            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 50px; max-width: 50px;">')
         return "Нет изображения"
     image_preview.short_description = 'Превью'
     

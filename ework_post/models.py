@@ -35,7 +35,7 @@ class AbsPost(PolymorphicModel):
     price = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(99999999)], db_index=True, verbose_name=_('Сумма'))
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'))
     sub_rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, db_index=True, related_name='%(app_label)s_%(class)s_posts', verbose_name=_('Рубрика'))
-    city = models.ForeignKey(City, verbose_name=_('Город работы'), db_index=True, on_delete=models.PROTECT)
+    city = models.ForeignKey(City, verbose_name=_('Город'), db_index=True, on_delete=models.PROTECT)
     address = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Адрес'))
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, db_index=True, verbose_name=_('Автор'))
     user_phone = models.CharField(max_length=20, validators=[phone_regex], verbose_name=_('Телефон'), null=True, blank=True)
