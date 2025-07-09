@@ -174,24 +174,16 @@ def api_users_stats(request):
         dates.append(date_str)
         counts.append(reg_dict.get(date_key, 0) if isinstance(date_key, datetime.date) else 0)
     
-    # Получаем данные по источникам регистрации
-    sources_data = {
-        'direct': int(total_users * 0.4),  # Прямой переход
-        'bot': int(total_users * 0.5),     # Бот
-        'referral': int(total_users * 0.1)  # Реферальная ссылка
-    }
+    # Вычисляем активность пользователей
+    daily_active_users = TelegramUser.objects.filter(
+        created_at__gte=timezone.now() - datetime.timedelta(days=1)
+    ).count()
     
-    # Получаем данные по активности пользователей по дням недели
-    days_of_week = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-    activity_by_day = [
-        int(active_users * 0.4),  # Понедельник
-        int(active_users * 0.5),  # Вторник
-        int(active_users * 0.6),  # Среда
-        int(active_users * 0.7),  # Четверг
-        int(active_users * 0.8),  # Пятница
-        int(active_users * 0.9),  # Суббота
-        int(active_users * 0.7)   # Воскресенье
-    ]
+    weekly_active_users = TelegramUser.objects.filter(
+        created_at__gte=timezone.now() - datetime.timedelta(days=7)
+    ).count()
+    
+    monthly_active_users = active_users
     
     # Формируем данные для ответа
     response_data = {
@@ -206,17 +198,9 @@ def api_users_stats(request):
                 'backgroundColor': 'rgba(54, 162, 235, 0.2)'
             }
         ],
-        'sources': {
-            'labels': ['Прямой переход', 'Бот', 'Реферальная ссылка'],
-            'data': [sources_data['direct'], sources_data['bot'], sources_data['referral']]
-        },
-        'activity': {
-            'labels': days_of_week,
-            'data': activity_by_day
-        },
-        'daily_active_users': int(active_users * 0.3),
-        'weekly_active_users': int(active_users * 0.6),
-        'monthly_active_users': active_users
+        'daily_active_users': daily_active_users,
+        'weekly_active_users': weekly_active_users,
+        'monthly_active_users': monthly_active_users
     }
     
     return JsonResponse(response_data)
