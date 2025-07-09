@@ -43,8 +43,9 @@ def api_users_stats(request):
     total_users = TelegramUser.objects.count()
     
     # Получаем количество активных пользователей (активность за последние 30 дней)
+    # Используем created_at вместо last_login, так как last_login может не быть
     active_users = TelegramUser.objects.filter(
-        last_login__gte=timezone.now() - datetime.timedelta(days=30)
+        created_at__gte=timezone.now() - datetime.timedelta(days=30)
     ).count()
     
     # Определяем функцию усечения даты в зависимости от периода
@@ -69,9 +70,9 @@ def api_users_stats(request):
     start_date = timezone.now() - datetime.timedelta(days=days_ago)
     
     registrations = TelegramUser.objects.filter(
-        date_joined__gte=start_date
+        created_at__gte=start_date
     ).annotate(
-        date=trunc_func('date_joined')
+        date=trunc_func('created_at')
     ).values('date').annotate(
         count=Count('id')
     ).order_by('date')
@@ -237,7 +238,7 @@ def api_posts_stats(request):
     
     # Получаем статистику по категориям
     from ework_rubric.models import SubRubric
-    categories = SubRubric.objects.annotate(post_count=Count('abspost')).order_by('-post_count')[:6]
+    categories = SubRubric.objects.annotate(post_count=Count('ework_post_abspost_posts')).order_by('-post_count')[:6]
     category_labels = [cat.name for cat in categories]
     category_data = [cat.post_count for cat in categories]
     
