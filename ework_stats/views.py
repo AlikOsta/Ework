@@ -43,8 +43,9 @@ def api_users_stats(request):
     total_users = TelegramUser.objects.count()
     
     # Получаем количество активных пользователей (активность за последние 30 дней)
+    # Используем created_at вместо last_login, так как last_login может не быть
     active_users = TelegramUser.objects.filter(
-        last_login__gte=timezone.now() - datetime.timedelta(days=30)
+        created_at__gte=timezone.now() - datetime.timedelta(days=30)
     ).count()
     
     # Определяем функцию усечения даты в зависимости от периода
