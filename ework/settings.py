@@ -11,29 +11,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
-    'localhost',
+    # 'localhost',
     '46.254.107.43',
     'helpwork.com.ua',
-    '127.0.0.1',
-    '*',  # Для разработки - в продакшене нужно указать конкретные домены
+    # '127.0.0.1',
 ]
 
-CSRF_COOKIE_DOMAIN = None  # Убираем ограничение домена
-CSRF_COOKIE_SECURE = True  # Для HTTPS
-CSRF_COOKIE_HTTPONLY = False  # Важно! Позволяет JS доступ к cookie
-CSRF_COOKIE_SAMESITE = None  # Убираем SameSite ограничения
-CSRF_USE_SESSIONS = True  # Используем сессии вместо cookie
+CSRF_COOKIE_DOMAIN = None  
+CSRF_COOKIE_SECURE = True  
+CSRF_COOKIE_HTTPONLY = False  
+CSRF_COOKIE_SAMESITE = None  
+CSRF_USE_SESSIONS = True  
 CSRF_COOKIE_AGE = None
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://helpwork.com.ua',  
-    'https://*.ngrok-free.app',  # Для ngrok в разработке
+    'https://helpwork.com.ua',
 ]
 
-# Настройки сессий для Telegram Mini App
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = None
@@ -169,7 +166,6 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/home/HelpWork/Ework/media'
 
-# Настройки Django-Q
 Q_CLUSTER = {
     'name': 'ework_cluster',
     'workers': 2,
@@ -177,7 +173,7 @@ Q_CLUSTER = {
     'retry': 60,
     'queue_limit': 50,
     'bulk': 10,
-    'orm': 'default',  # Используем основную базу данных
+    'orm': 'default',
     'catch_up': True,
     'save_limit': 250,
     'ack_failures': True,
@@ -201,7 +197,6 @@ Q_CLUSTER = {
     }
 }  
 
-# Настройки логирования для Django-Q
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -244,46 +239,42 @@ LOGGING = {
     },
 }
 
-# Настройки Jazzmin
+
 JAZZMIN_SETTINGS = {
-    # Заголовок в браузере
+    
     "site_title": "Help Work Admin",
     
-    # Заголовок на странице входа
+    
     "site_header": "Help Work",
     
-    # Заголовок на главной странице
+    
     "site_brand": "Help Work",
     
-    # Логотип для сайта
-    # "site_logo": "path/to/your/logo.png",  # Замените на путь к вашему логотипу
     
-    # Ссылка на главную страницу сайта
+    
+    
+    
     "site_url": "/",
     
-    # Авторские права
+    
     "copyright": "Help Work © 2025",
     
-    # Модель пользователя
+    
     "user_avatar": None,
     
-    ############
-    # Верхнее меню
-    ############
+
     "topmenu_links": [
-        # Ссылка на главную страницу админки
+        
         {"name": "Главная", "url": "admin:index", "permissions": ["auth.view_user"]},
         
-        # Ссылка на сайт
+        
         {"name": "Перейти на сайт", "url": "/", "new_window": True},
         
-        # Выпадающее меню с моделями приложения
+        
         {"app": "ework_post"},
     ],
     
-    #############
-    # Боковое меню
-    #############
+
     "show_sidebar": True,
     "navigation_expanded": True,
     
@@ -304,7 +295,7 @@ JAZZMIN_SETTINGS = {
         "ework_user_tg.telegramuser": "fab fa-telegram",
     },
     
-    # Группировка моделей в меню
+    
     "order_with_respect_to": [
         "auth",
         "ework_user_tg",
@@ -316,8 +307,6 @@ JAZZMIN_SETTINGS = {
     ],
     
 
-    
-    # Стили
     "related_modal_active": True,
     "custom_css": None,
     "custom_js": None,
@@ -325,7 +314,7 @@ JAZZMIN_SETTINGS = {
     "show_ui_builder": True,
 }
 
-# Настройки темы Jazzmin
+
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
     "footer_small_text": False,
