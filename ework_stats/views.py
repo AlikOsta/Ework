@@ -17,7 +17,59 @@ def dashboard_stats(request):
     """Отображает общую панель статистики."""
     # Собираем статистику перед отображением страницы
     collect_stats_if_needed()
-    return render(request, 'admin_stats/dashboard_stats.html')
+    
+    # Подготовка данных для шаблона
+    context = {
+        'period_choices': [
+            {'value': 'day', 'label': 'День'},
+            {'value': 'week', 'label': 'Неделя'},
+            {'value': 'month', 'label': 'Месяц'},
+            {'value': 'year', 'label': 'Год'}
+        ],
+        'metrics': [
+            {'icon': 'groups', 'id': 'total-users', 'label': 'Всего пользователей'},
+            {'icon': 'description', 'id': 'total-posts', 'label': 'Всего объявлений'},
+            {'icon': 'task_alt', 'id': 'active-posts', 'label': 'Активных объявлений'},
+            {'icon': 'favorite', 'id': 'total-favorites', 'label': 'Добавлено в избранное'},
+            {'icon': 'paid', 'id': 'total-revenue', 'label': 'Общий доход (₴)'}
+        ],
+        'sections': [
+            {
+                'section': 'users',
+                'title': 'Пользователи',
+                'chart_id': 'usersChart',
+                'metrics': [
+                    {'id': 'new-users', 'label': 'Новых пользователей'},
+                    {'id': 'active-users', 'label': 'Активных пользователей'},
+                    {'id': 'users-growth', 'label': 'Активных за неделю'}
+                ]
+            },
+            {
+                'section': 'posts',
+                'title': 'Объявления',
+                'chart_id': 'postsChart',
+                'metrics': [
+                    {'id': 'new-posts', 'label': 'Новых объявлений'},
+                    {'id': 'posts-moderation', 'label': 'На модерации'},
+                    {'id': 'posts-growth', 'label': 'Активных объявлений'}
+                ]
+            },
+            {
+                'section': 'finance',
+                'title': 'Финансы',
+                'chart_id': 'financeChart',
+                'metrics': [
+                    {'id': 'period-revenue', 'label': 'Доход за период'},
+                    {'id': 'total-payments', 'label': 'Всего платежей'},
+                    {'id': 'avg-payment', 'label': 'Средний чек'}
+                ]
+            }
+        ]
+    }
+    
+    return render(request, 'admin_stats/dashboard_stats.html', context)
+
+
 
 @staff_member_required
 def user_stats(request):

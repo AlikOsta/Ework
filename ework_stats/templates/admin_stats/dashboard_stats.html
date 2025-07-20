@@ -2,500 +2,279 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}Статистика Сарубага{% endblock %}
+{% block title %}{% trans "Статистика" %}{% endblock %}
 
 {% block extrahead %}
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    .stats-container {
-        padding: 20px;
-        background: #f8f9fa;
-        min-height: 100vh;
+  /* Стили для мобильных устройств */
+  @media (max-width: 767.98px) {
+    .mobile-compact .card {
+      margin-bottom: 0.5rem !important;
     }
-    
-    .header-section {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        margin-bottom: 30px;
+    .mobile-compact .card-body {
+      padding: 0.75rem !important;
     }
-    
-    .main-stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: transform 0.3s, box-shadow 0.3s;
-        height: 100%;
+    .mobile-compact h5 {
+      font-size: 1rem !important;
     }
-    
-    .main-stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    .mobile-compact .material-icons {
+      font-size: 1.5rem !important;
     }
-    
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        margin: 0 auto 16px;
-        padding: 12px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        color: white;
+    .mobile-compact .small {
+      font-size: 0.7rem !important;
     }
-    
-    .stat-icon.users { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .stat-icon.posts { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-    .stat-icon.active { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
-    .stat-icon.favorites { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-    .stat-icon.revenue { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-    
-    .stat-number {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 8px;
-        line-height: 1;
+    .mobile-compact .chart-container {
+      height: 120px !important;
     }
-    
-    .stat-label {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        font-weight: 500;
+    .mobile-compact .metric-value {
+      font-size: 0.9rem !important;
     }
-    
-    .section-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        cursor: pointer;
-        transition: all 0.3s;
-        height: 100%;
+    .mobile-compact .section-title {
+      font-size: 1.1rem !important;
     }
-    
-    .section-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    .mobile-compact .btn {
+      padding: 0.25rem 0.5rem !important;
+      font-size: 0.75rem !important;
     }
-    
-    .chart-container {
-        position: relative;
-        height: 150px;
-        margin-bottom: 15px;
+    .mobile-compact .row.g-3 {
+      --bs-gutter-y: 0.5rem !important;
+      --bs-gutter-x: 0.5rem !important;
     }
-    
-    .stats-summary {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 12px;
-        border-top: 1px solid #e9ecef;
-    }
-    
-    .summary-item {
-        text-align: center;
-        font-size: 0.8rem;
-    }
-    
-    .summary-value {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 2px;
-    }
-    
-    .summary-label {
-        font-size: 0.7rem;
-        color: #7f8c8d;
-    }
-    
-    .loading {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 150px;
-        color: #7f8c8d;
-    }
-    
-    .loading::after {
-        content: '';
-        width: 20px;
-        height: 20px;
-        border: 2px solid #e9ecef;
-        border-top: 2px solid #4285f4;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-left: 10px;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="stats-container">
-    <!-- Заголовок и селектор периода -->
-    <div class="header-section">
-        <div class="d-flex justify-content-between align-items-center flex-wrap">
-            <h1 class="h2 mb-0">Статистика Сарубага</h1>
-            <div class="btn-group mt-2 mt-lg-0" role="group">
-                <input type="radio" class="btn-check" name="period" id="day" value="day">
-                <label class="btn btn-outline-primary" for="day">День</label>
-                
-                <input type="radio" class="btn-check" name="period" id="week" value="week">
-                <label class="btn btn-outline-primary" for="week">Неделя</label>
-                
-                <input type="radio" class="btn-check" name="period" id="month" value="month" checked>
-                <label class="btn btn-outline-primary" for="month">Месяц</label>
-                
-                <input type="radio" class="btn-check" name="period" id="year" value="year">
-                <label class="btn btn-outline-primary" for="year">Год</label>
-            </div>
-        </div>
+<div class="container-fluid py-2 py-md-4 mobile-compact">
+  <!-- Заголовок -->
+  <div class="card mb-2 mb-md-4 shadow-sm">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+      <h2 class="h4 mb-0 section-title">{% trans "Статистика" %}</h2>
+      <div class="btn-group mt-2 mt-md-0" role="group">
+        {% for period in period_choices %}
+        <input type="radio" class="btn-check" name="period" id="{{ period.value }}" value="{{ period.value }}"{% if period.value == 'month' %} checked{% endif %}>
+        <label class="btn btn-outline-primary btn-sm" for="{{ period.value }}">{% trans period.label %}</label>
+        {% endfor %}
+      </div>
     </div>
+  </div>
 
-    <!-- Основные показатели -->
-    <div class="row g-3 mb-4">
-        <div class="col-lg-2 col-md-4 col-sm-6">
-            <div class="main-stat-card">
-                <div class="stat-icon users">
-                    <i class="fas fa-users"></i>
-                </div>
-                <div class="stat-number" id="total-users">-</div>
-                <div class="stat-label">Всего пользователей</div>
-            </div>
+  <!-- Основные метрики -->
+  <div class="row g-2 g-md-3 mb-2 mb-md-4">
+    {% for metric in metrics %}
+    <div class="col-4 col-md-4 col-lg-2">
+      <div class="card text-center h-100 shadow-sm">
+        <div class="card-body">
+          <div class="mb-1 mb-md-2">
+            <span class="material-icons text-primary">{{ metric.icon }}</span>
+          </div>
+          <h5 class="fw-bold mb-0 mb-md-1 metric-value" id="{{ metric.id }}">-</h5>
+          <p class="text-muted small mb-0">{% trans metric.label %}</p>
         </div>
-        
-        <div class="col-lg-2 col-md-4 col-sm-6">
-            <div class="main-stat-card">
-                <div class="stat-icon posts">
-                    <i class="fas fa-newspaper"></i>
-                </div>
-                <div class="stat-number" id="total-posts">-</div>
-                <div class="stat-label">Всего объявлений</div>
-            </div>
-        </div>
-        
-        <div class="col-lg-2 col-md-4 col-sm-6">
-            <div class="main-stat-card">
-                <div class="stat-icon active">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <div class="stat-number" id="active-posts">-</div>
-                <div class="stat-label">Активных объявлений</div>
-            </div>
-        </div>
-        
-        <div class="col-lg-2 col-md-4 col-sm-6">
-            <div class="main-stat-card">
-                <div class="stat-icon favorites">
-                    <i class="fas fa-heart"></i>
-                </div>
-                <div class="stat-number" id="total-favorites">-</div>
-                <div class="stat-label">Добавлено в избранное</div>
-            </div>
-        </div>
-        
-        <div class="col-lg-2 col-md-4 col-sm-6">
-            <div class="main-stat-card">
-                <div class="stat-icon revenue">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <div class="stat-number" id="total-revenue">-</div>
-                <div class="stat-label">Общий доход (₽)</div>
-            </div>
-        </div>
+      </div>
     </div>
+    {% endfor %}
+  </div>
 
-    <!-- Секции с подробной статистикой -->
-    <div class="row g-3">
-        <!-- Пользователи -->
-        <div class="col-lg-4 col-md-6">
-            <div class="section-card" onclick="location.href='/admin/stats/users/'">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Пользователи</h5>
-                    <a href="/admin/stats/users/" class="btn btn-sm btn-outline-primary">Подробнее</a>
-                </div>
-                <div class="chart-container">
-                    <canvas id="usersChart"></canvas>
-                </div>
-                <div class="stats-summary">
-                    <div class="summary-item">
-                        <div class="summary-value" id="new-users">-</div>
-                        <div class="summary-label">Новых пользователей</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value" id="active-users">-</div>
-                        <div class="summary-label">Активных пользователей</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value" id="users-growth">-</div>
-                        <div class="summary-label">Активных за неделю</div>
-                    </div>
-                </div>
+  <!-- Детальная статистика -->
+  <div class="row g-2 g-md-3">
+    {% for section_data in sections %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm" onclick="location.href='/admin/stats/{{ section_data.section }}/'" role="button">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+            <h5 class="card-title mb-0 section-title">{% trans section_data.title %}</h5>
+          </div>
+          <div class="chart-container" style="height: 120px; height: 150px;">
+            <canvas id="{{ section_data.chart_id }}"></canvas>
+          </div>
+          <div class="mt-2 mt-md-3 border-top pt-2 pt-md-3 row row-cols-3 text-center">
+            {% for metric in section_data.metrics %}
+            <div>
+              <div class="fw-semibold metric-value" id="{{ metric.id }}">-</div>
+              <div class="text-muted small">{% trans metric.label %}</div>
             </div>
+            {% endfor %}
+          </div>
         </div>
-        
-        <!-- Объявления -->
-        <div class="col-lg-4 col-md-6">
-            <div class="section-card" onclick="location.href='/admin/stats/posts/'">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Объявления</h5>
-                    <a href="/admin/stats/posts/" class="btn btn-sm btn-outline-primary">Подробнее</a>
-                </div>
-                <div class="chart-container">
-                    <canvas id="postsChart"></canvas>
-                </div>
-                <div class="stats-summary">
-                    <div class="summary-item">
-                        <div class="summary-value" id="new-posts">-</div>
-                        <div class="summary-label">Новых объявлений</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value" id="posts-moderation">-</div>
-                        <div class="summary-label">На модерации</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value" id="posts-growth">-</div>
-                        <div class="summary-label">Активных объявлений</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Финансы -->
-        <div class="col-lg-4 col-md-6">
-            <div class="section-card" onclick="location.href='/admin/stats/finance/'">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Финансы</h5>
-                    <a href="/admin/stats/finance/" class="btn btn-sm btn-outline-primary">Подробнее</a>
-                </div>
-                <div class="chart-container">
-                    <canvas id="financeChart"></canvas>
-                </div>
-                <div class="stats-summary">
-                    <div class="summary-item">
-                        <div class="summary-value" id="period-revenue">-</div>
-                        <div class="summary-label">Доход за период</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value" id="total-payments">-</div>
-                        <div class="summary-label">Всего платежей</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value" id="avg-payment">-</div>
-                        <div class="summary-label">Средний чек</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+    {% endfor %}
+  </div>
 </div>
 
 <script>
-let usersChart, postsChart, financeChart;
-let currentPeriod = 'month';
+  let usersChart, postsChart, financeChart;
 
-// Конфигурация графиков
-const chartConfig = {
+  const chartConfig = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {
-        legend: {
-            display: false
-        }
+    plugins: { 
+      legend: { display: false },
+      tooltip: {
+        // Более компактные тултипы для мобильных
+        titleFont: { size: window.innerWidth < 768 ? 10 : 12 },
+        bodyFont: { size: window.innerWidth < 768 ? 10 : 12 },
+        padding: window.innerWidth < 768 ? 6 : 10
+      }
     },
     scales: {
-        x: {
-            display: true,
-            grid: {
-                display: false
-            }
-        },
-        y: {
-            display: true,
-            beginAtZero: true,
-            grid: {
-                color: '#f0f0f0'
-            }
+      x: { 
+        grid: { display: false },
+        ticks: {
+          // Меньший размер шрифта на мобильных
+          font: { size: window.innerWidth < 768 ? 8 : 11 },
+          maxRotation: 45,
+          minRotation: 45
         }
+      },
+      y: { 
+        beginAtZero: true, 
+        grid: { color: '#f0f0f0' },
+        ticks: {
+          // Меньший размер шрифта на мобильных
+          font: { size: window.innerWidth < 768 ? 8 : 11 }
+        }
+      }
     },
-    elements: {
-        point: {
-            radius: 2,
-            hoverRadius: 4
-        }
+    elements: { 
+      point: { radius: window.innerWidth < 768 ? 1 : 2, hoverRadius: window.innerWidth < 768 ? 3 : 4 },
+      line: { borderWidth: window.innerWidth < 768 ? 1.5 : 2 }
     }
-};
+  };
 
-// Инициализация графиков
-function initCharts() {
-    // График пользователей
-    const usersCtx = document.getElementById('usersChart').getContext('2d');
-    usersChart = new Chart(usersCtx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Новые пользователи',
-                data: [],
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: chartConfig
-    });
+  function initCharts() {
+    usersChart = new Chart(document.getElementById('usersChart'), getChartConfig('#0d6efd'));
+    postsChart = new Chart(document.getElementById('postsChart'), getChartConfig('#dc3545'));
+    financeChart = new Chart(document.getElementById('financeChart'), getChartConfig('#198754'));
+  }
 
-    // График объявлений
-    const postsCtx = document.getElementById('postsChart').getContext('2d');
-    postsChart = new Chart(postsCtx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Новые объявления',
-                data: [],
-                borderColor: '#f5576c',
-                backgroundColor: 'rgba(245, 87, 108, 0.1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: chartConfig
-    });
+  function getChartConfig(color) {
+    return {
+      type: 'line',
+      data: { 
+        labels: [], 
+        datasets: [{ 
+          label: '', 
+          data: [], 
+          borderColor: color, 
+          backgroundColor: color + '20', 
+          borderWidth: window.innerWidth < 768 ? 1.5 : 2, 
+          tension: 0.4, 
+          fill: true 
+        }] 
+      },
+      options: chartConfig
+    };
+  }
 
-    // График финансов
-    const financeCtx = document.getElementById('financeChart').getContext('2d');
-    financeChart = new Chart(financeCtx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Доход',
-                data: [],
-                borderColor: '#43e97b',
-                backgroundColor: 'rgba(67, 233, 123, 0.1)',
-                borderWidth: 2,
-                tension: 0.4,
-                fill: true
-            }]
-        },
-        options: chartConfig
-    });
-}
-
-// Загрузка данных
-async function loadData(period = 'month') {
-    currentPeriod = period;
+  function updateChart(chart, labels, data) {
+    // Для мобильных устройств показываем меньше точек на графике
+    if (window.innerWidth < 768 && labels.length > 10) {
+      const step = Math.ceil(labels.length / 10);
+      const filteredLabels = [];
+      const filteredData = [];
+      
+      for (let i = 0; i < labels.length; i += step) {
+        filteredLabels.push(labels[i]);
+        filteredData.push(data[i]);
+      }
+      
+      chart.data.labels = filteredLabels;
+      chart.data.datasets[0].data = filteredData;
+    } else {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = data;
+    }
     
-    console.log('Загружаем данные для периода:', period);
-    
+    chart.update();
+  }
+
+  async function loadData(period = 'month') {
     try {
-        // Загружаем данные параллельно
-        const [usersData, postsData, viewsData, revenueData] = await Promise.all([
-            fetch(`/admin/stats/api/users/?period=${period}`).then(r => {
-                console.log('Users API response status:', r.status);
-                if (!r.ok) throw new Error('Users API failed');
-                return r.json();
-            }),
-            fetch(`/admin/stats/api/posts/?period=${period}`).then(r => {
-                console.log('Posts API response status:', r.status);
-                if (!r.ok) throw new Error('Posts API failed');
-                return r.json();
-            }),
-            fetch(`/admin/stats/api/views/?period=${period}`).then(r => {
-                console.log('Views API response status:', r.status);
-                if (!r.ok) throw new Error('Views API failed');
-                return r.json();
-            }),
-            fetch(`/admin/stats/api/revenue/?period=${period}`).then(r => {
-                console.log('Revenue API response status:', r.status);
-                if (!r.ok) throw new Error('Revenue API failed');
-                return r.json();
-            })
-        ]);
-        
-        console.log('Данные успешно загружены:', {
-            users: usersData.total_users,
-            posts: postsData.total_posts,
-            views: viewsData.total_views
-        });
-        
-        // Обновляем основные показатели
-        document.getElementById('total-users').textContent = usersData.total_users.toLocaleString();
-        document.getElementById('total-posts').textContent = postsData.total_posts.toLocaleString();
-        document.getElementById('active-posts').textContent = postsData.active_posts.toLocaleString();
-        document.getElementById('total-favorites').textContent = viewsData.total_favorites.toLocaleString();
-        document.getElementById('total-revenue').textContent = revenueData.total_revenue.toLocaleString();
-        
-        // Обновляем дополнительные показатели
-        document.getElementById('new-users').textContent = usersData.active_users.toLocaleString();
-        document.getElementById('active-users').textContent = usersData.daily_active_users.toLocaleString();
-        document.getElementById('users-growth').textContent = usersData.weekly_active_users.toLocaleString();
-        
-        document.getElementById('new-posts').textContent = postsData.datasets[0].data.reduce((a, b) => a + b, 0);
-        document.getElementById('posts-moderation').textContent = postsData.status_data[0] || 0;
-        document.getElementById('posts-growth').textContent = postsData.active_posts.toLocaleString();
-        
-        document.getElementById('period-revenue').textContent = revenueData.datasets[0].data.reduce((a, b) => a + b, 0).toLocaleString();
-        document.getElementById('total-payments').textContent = revenueData.total_payments.toLocaleString();
-        document.getElementById('avg-payment').textContent = revenueData.avg_payment.toLocaleString();
-        
-        // Обновляем графики
-        updateChart(usersChart, usersData.labels, usersData.datasets[0].data);
-        updateChart(postsChart, postsData.labels, postsData.datasets[0].data);
-        updateChart(financeChart, revenueData.labels, revenueData.datasets[0].data);
-        
-    } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
-        
-        // Устанавливаем значения по умолчанию при ошибке
-        document.getElementById('total-users').textContent = '0';
-        document.getElementById('total-posts').textContent = '0';
-        document.getElementById('active-posts').textContent = '0';
-        document.getElementById('total-favorites').textContent = '0';
-        document.getElementById('total-revenue').textContent = '0';
-        
-        // Показываем уведомление об ошибке
-        alert('Ошибка загрузки данных статистики. Проверьте консоль для деталей.');
+      const [users, posts, views, revenue] = await Promise.all([
+        fetchData('users', period),
+        fetchData('posts', period),
+        fetchData('views', period),
+        fetchData('revenue', period)
+      ]);
+
+      // Основные показатели
+      setText('total-users', users.total_users);
+      setText('total-posts', posts.total_posts);
+      setText('active-posts', posts.active_posts);
+      setText('total-favorites', views.total_favorites);
+      setText('total-revenue', revenue.total_revenue);
+
+      // Доп. метрики
+      setText('new-users', users.active_users);
+      setText('active-users', users.daily_active_users);
+      setText('users-growth', users.weekly_active_users);
+      setText('new-posts', sum(posts.datasets[0].data));
+      setText('posts-moderation', posts.status_data?.[0] || 0);
+      setText('posts-growth', posts.active_posts);
+      setText('period-revenue', sum(revenue.datasets[0].data));
+      setText('total-payments', revenue.total_payments);
+      setText('avg-payment', revenue.avg_payment);
+
+      // Графики
+      updateChart(usersChart, users.labels, users.datasets[0].data);
+      updateChart(postsChart, posts.labels, posts.datasets[0].data);
+      updateChart(financeChart, revenue.labels, revenue.datasets[0].data);
+    } catch (e) {
+      alert('Ошибка загрузки данных');
+      console.error(e);
     }
-}
+  }
 
-// Обновление графика
-function updateChart(chart, labels, data) {
-    chart.data.labels = labels;
-    chart.data.datasets[0].data = data;
-    chart.update('none');
-}
+  const fetchData = (endpoint, period) =>
+    fetch(`/admin/stats/api/${endpoint}/?period=${period}`).then(r => {
+      if (!r.ok) throw new Error(`${endpoint} fetch error`);
+      return r.json();
+    });
 
-// Обработчики событий
-document.addEventListener('DOMContentLoaded', function() {
+  // Форматирование чисел с учетом размера экрана
+  const setText = (id, val) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    
+    const num = +val;
+    // На мобильных устройствах сокращаем большие числа
+    if (window.innerWidth < 768 && num > 1000) {
+      if (num > 1000000) {
+        element.textContent = (num / 1000000).toFixed(1) + 'M';
+      } else if (num > 1000) {
+        element.textContent = (num / 1000).toFixed(1) + 'K';
+      }
+    } else {
+      element.textContent = num.toLocaleString();
+    }
+  };
+  
+  const sum = arr => arr.reduce((a, b) => a + b, 0);
+
+  // Обработка изменения размера окна
+  window.addEventListener('resize', () => {
+    // Перезагрузка графиков при изменении размера окна
+    if (usersChart && postsChart && financeChart) {
+      usersChart.destroy();
+      postsChart.destroy();
+      financeChart.destroy();
+      initCharts();
+      loadData(document.querySelector('input[name="period"]:checked').value);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     loadData();
-
-    // Обработчик кнопок периода
-    document.querySelectorAll('input[name="period"]').forEach(btn => {
-        btn.addEventListener('change', function() {
-            if (this.checked) {
-                loadData(this.value);
-            }
-        });
-    });
-});
+    document.querySelectorAll('input[name="period"]').forEach(el =>
+      el.addEventListener('change', () => el.checked && loadData(el.value))
+    );
+  });
 </script>
 {% endblock %}
