@@ -159,14 +159,12 @@ ROSETTA_ENABLE_TRANSLATION_SUGGESTIONS = True
 ROSETTA_STORAGE_CLASS = 'rosetta.storage.CacheRosettaStorage'
 ROSETTA_UWSGI_AUTO_RELOAD = True
 
-
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static'),
-#     os.path.join(BASE_DIR, 'ework_core', 'static'),
-# ]
-
 STATIC_URL = '/static/'
-STATIC_ROOT = '/home/HelpWork/Ework/static'
+STATIC_ROOT = '/home/HelpWork/Ework/staticfiles'
+
+STATICFILES_DIRS = [
+    '/home/HelpWork/Ework/static',
+]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/home/HelpWork/Ework/media'
