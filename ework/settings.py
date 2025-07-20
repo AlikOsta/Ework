@@ -160,10 +160,10 @@ ROSETTA_STORAGE_CLASS = 'rosetta.storage.CacheRosettaStorage'
 ROSETTA_UWSGI_AUTO_RELOAD = True
 
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-    os.path.join(BASE_DIR, 'ework_core', 'static'),
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static'),
+#     os.path.join(BASE_DIR, 'ework_core', 'static'),
+# ]
 
 STATIC_URL = '/static/'
 STATIC_ROOT = '/home/HelpWork/Ework/static'
