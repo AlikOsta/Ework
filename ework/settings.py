@@ -1,17 +1,22 @@
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-
-SECRET_KEY = "dd"
 
 DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
     '46.254.107.43',
+    'helpwork.com.ua',
     '127.0.0.1',
     '*',  # Для разработки - в продакшене нужно указать конкретные домены
 ]
@@ -24,6 +29,7 @@ CSRF_USE_SESSIONS = True  # Используем сессии вместо cooki
 CSRF_COOKIE_AGE = None
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://helpwork.com.ua',  
     'https://*.ngrok-free.app',  # Для ngrok в разработке
 ]
 
@@ -148,7 +154,6 @@ LOCALE_PATHS = [
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-
 ROSETTA_MESSAGES_PER_PAGE = 50
 ROSETTA_ENABLE_TRANSLATION_SUGGESTIONS = True
 ROSETTA_STORAGE_CLASS = 'rosetta.storage.CacheRosettaStorage'
@@ -159,6 +164,12 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
     os.path.join(BASE_DIR, 'ework_core', 'static'),
 ]
+
+STATIC_URL = '/static/'
+STATIC_ROOT = '/home/HelpWork/Ework/static'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/home/HelpWork/Ework/media'
 
 # Настройки Django-Q
 Q_CLUSTER = {
