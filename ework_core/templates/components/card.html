@@ -30,7 +30,7 @@
 
                 <div class="card-body p-1 d-flex flex-column justify-content-between h-100 position-relative">
                     <div class="fw-bold text-break" style="font-size: 0.7rem; line-height: 1.1; word-break: break-word; hyphens: auto;">
-                    {{ category.name }}
+                    {% trans category.name %}
                     </div>
                     {% if category.icon %}
                         <img src="{{ category.icon.url }}" alt="{{ category.name }}"
