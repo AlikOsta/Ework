@@ -57,7 +57,7 @@ class BasePostForm(forms.ModelForm):
             }),
             'address': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': _('Введите адресс'),
+                'placeholder': _('Введите адрес'),
                 'maxlength': '50'
             }),
         }

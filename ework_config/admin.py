@@ -17,7 +17,7 @@ class SiteConfigAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Уведомления', {
-            'fields': ('admin_chat_id', 'admin_username'),
+            'fields': ('notification_bot_token', 'admin_chat_id', 'admin_username'),
             'classes': ('collapse',)
         }),
         ('Платежи', {
@@ -26,10 +26,6 @@ class SiteConfigAdmin(admin.ModelAdmin):
         }),
         ('AI и модерация', {
             'fields': ('mistral_api_key', 'auto_moderation_enabled', 'manual_approval_required'),
-            'classes': ('collapse',)
-        }),
-        ('Настройки постов', {
-            'fields': ('max_free_posts_per_user', 'post_expiry_days'),
             'classes': ('collapse',)
         }),
     )

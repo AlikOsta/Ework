@@ -20,7 +20,7 @@
                                 <option value="">{% trans "Все города" %}</option>
                                 {% for city in cities %}
                                 <option value="{{ city.id }}" {% if selected_city == city.id|stringformat:"s" %}selected{% endif %}>
-                                    {% trans city.name  %}
+                                    {{ city.name  }}
                                 </option>
                                 {% endfor %}
                             </select>

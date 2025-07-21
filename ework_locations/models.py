@@ -28,5 +28,4 @@ class City(models.Model):
         ordering = ['order']
 
     def __str__(self) -> str:
-        return self.name
-    
+        return str(dict(CHOICES_CITY).get(self.name, self.name))
