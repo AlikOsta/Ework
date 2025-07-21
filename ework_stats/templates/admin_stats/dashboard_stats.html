@@ -84,7 +84,8 @@
   <div class="row g-2 g-md-3">
     {% for section_data in sections %}
     <div class="col-12 col-md-6 col-lg-4">
-      <div class="card h-100 shadow-sm" onclick="location.href='/admin/stats/{{ section_data.section }}/'" role="button">
+      <div class="card h-100 shadow-sm">
+      {% comment %} <div class="card h-100 shadow-sm" onclick="location.href='/admin/stats/{{ section_data.section }}/'" role="button"> {% endcomment %}
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
             <h5 class="card-title mb-0 section-title">{% trans section_data.title %}</h5>

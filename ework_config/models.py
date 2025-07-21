@@ -8,11 +8,10 @@ class SiteConfig(models.Model):
     Модель для хранения всех настроек сайта и бота
     Должна быть singleton - только одна запись
     """
-    
-    # Основные настройки сайта
+
     site_name = models.CharField(max_length=200, default='eWork', verbose_name=_('Название'))
     site_description = models.TextField(default='Платформа для поиска работы и услуг', verbose_name=_('Приветственное  сообщение для бота'))
-    site_url = models.URLField(default='https://localhost:8000', verbose_name=_('URL сайта для Мини Апп'))
+    site_url = models.URLField(default='https://helpwork.com.ua', verbose_name=_('URL сайта для Мини Апп'))
     
     # Telegram Bot настройки
     bot_token = models.CharField(max_length=200, verbose_name='Bot Token', blank=True)

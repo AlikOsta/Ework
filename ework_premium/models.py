@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from datetime import timedelta, datetime
+from datetime import timedelta
 from django.utils import timezone
 import uuid
 from ework_currency.models import Currency
@@ -23,15 +23,10 @@ class Package(models.Model):
     package_type = models.CharField(_('Тип пакета'), max_length=20, choices=PACKAGE_TYPES, default='FREE_WEEKLY', help_text=_("Тип пакета"))
     price_per_post = models.DecimalField(max_digits=8, decimal_places=2, verbose_name=_("Цена за объявление"), help_text=_("Цена за объявление"))
     currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Валюта"), help_text=_("Валюта"))
-    
-    # Поля для аддонов продвижения
     photo_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за фото"), help_text=_("Цена аддона 'Фото'"))
     highlight_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за выделение"), help_text=_("Цена аддона 'Цветное выделение'"))
     auto_bump_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за автоподнятие"), help_text=_("Цена аддона 'Автоподнятие' (7 дней)"))
-    
-    # Настройки отображения
     highlight_color = models.CharField(max_length=7, blank=True, default="#fffacd", verbose_name=_("HEX-код цвета для выделения объявления"), help_text=_("HEX-код цвета для выделения объявления"))
-    
     duration_days = models.PositiveIntegerField(default=30, verbose_name=_("Срок размещения (дней)"))
     is_active = models.BooleanField(default=True, verbose_name=_("Активен"))
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_("Порядок"), help_text=_("Порядок"))
@@ -45,11 +40,9 @@ class Package(models.Model):
         return self.name
 
     def is_free(self):
-        """Проверить, является ли тариф бесплатным"""
         return self.package_type == 'FREE_WEEKLY'
 
     def is_paid(self):
-        """Проверить, является ли тариф платным"""
         return self.package_type == 'PAID'
 
 
@@ -70,12 +63,8 @@ class Payment(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата оплаты"))
     telegram_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа Telegram"))
     telegram_provider_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа провайдера"))
-    
-    # Информация о выбранных аддонах (JSON)
     addons_data = models.JSONField(default=dict, blank=True, verbose_name=_("Данные аддонов"), 
                                   help_text=_("JSON с информацией о выбранных аддонах"))
-    
-    # Ссылка на пост (черновик)
     post = models.ForeignKey('ework_post.AbsPost', on_delete=models.CASCADE, null=True, blank=True, 
                             verbose_name=_("Пост"), help_text=_("Пост-черновик для публикации после оплаты"))
 

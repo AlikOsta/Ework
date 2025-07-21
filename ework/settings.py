@@ -3,39 +3,30 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-
-
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
-
-
 DEBUG = False
-
 ALLOWED_HOSTS = [
     # 'localhost',
     '46.254.107.43',
     'helpwork.com.ua',
     # '127.0.0.1',
 ]
-
 CSRF_COOKIE_DOMAIN = None  
 CSRF_COOKIE_SECURE = True  
 CSRF_COOKIE_HTTPONLY = False  
 CSRF_COOKIE_SAMESITE = None  
 CSRF_USE_SESSIONS = True  
 CSRF_COOKIE_AGE = None
-
 CSRF_TRUSTED_ORIGINS = [
     'https://helpwork.com.ua',
 ]
-
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SAMESITE = None
 SESSION_SAVE_EVERY_REQUEST = True
-
 INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
@@ -63,7 +54,6 @@ INSTALLED_APPS = [
     'ework_config', # конфигурация
     'ework_stats', # статистика
 ]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -76,9 +66,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
 ]
-
 ROOT_URLCONF = 'ework.urls'
-
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -97,16 +85,13 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = 'ework.wsgi.application'
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -121,51 +106,34 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
-LANGUAGE_CODE = 'ru'
-
+LANGUAGE_CODE = 'uk'
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
-
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 AUTH_USER_MODEL = 'ework_user_tg.TelegramUser'
-
 USE_L10N = True 
-
 LANGUAGES = [
     ('ru', 'Russian'),
     ('uk', 'Ukrainian'),
 ]
-
-
 LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
-
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-
 ROSETTA_MESSAGES_PER_PAGE = 50
 ROSETTA_ENABLE_TRANSLATION_SUGGESTIONS = True
 ROSETTA_STORAGE_CLASS = 'rosetta.storage.CacheRosettaStorage'
 ROSETTA_UWSGI_AUTO_RELOAD = True
-
 STATIC_URL = '/static/'
 STATIC_ROOT = '/home/HelpWork/Ework/staticfiles'
-
 STATICFILES_DIRS = [
     '/home/HelpWork/Ework/static',
 ]
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/home/HelpWork/Ework/media'
-
 Q_CLUSTER = {
     'name': 'ework_cluster',
     'workers': 2,
@@ -215,7 +183,7 @@ LOGGING = {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'logs', 'django_q.log'),
-            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'maxBytes': 1024 * 1024 * 10,  
             'backupCount': 5,
             'formatter': 'verbose',
         },
@@ -238,46 +206,20 @@ LOGGING = {
         },
     },
 }
-
-
 JAZZMIN_SETTINGS = {
-    
     "site_title": "Help Work Admin",
-    
-    
     "site_header": "Help Work",
-    
-    
     "site_brand": "Help Work",
-    
-    
-    
-    
-    
     "site_url": "/",
-    
-    
     "copyright": "Help Work © 2025",
-    
-    
     "user_avatar": None,
-    
-
     "topmenu_links": [
-        
         {"name": "Главная", "url": "admin:index", "permissions": ["auth.view_user"]},
-        
-        
         {"name": "Перейти на сайт", "url": "/", "new_window": True},
-        
-        
         {"app": "ework_post"},
     ],
-    
-
     "show_sidebar": True,
     "navigation_expanded": True,
-    
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -294,8 +236,6 @@ JAZZMIN_SETTINGS = {
         "ework_premium.payment": "fas fa-credit-card",
         "ework_user_tg.telegramuser": "fab fa-telegram",
     },
-    
-    
     "order_with_respect_to": [
         "auth",
         "ework_user_tg",
@@ -305,16 +245,12 @@ JAZZMIN_SETTINGS = {
         "ework_premium",
         "ework_config",
     ],
-    
-
     "related_modal_active": True,
     "custom_css": None,
     "custom_js": None,
     "use_google_fonts_cdn": True,
     "show_ui_builder": True,
 }
-
-
 JAZZMIN_UI_TWEAKS = {
     "navbar_small_text": False,
     "footer_small_text": False,

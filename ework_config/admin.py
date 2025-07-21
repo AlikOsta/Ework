@@ -17,7 +17,7 @@ class SiteConfigAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Уведомления', {
-            'fields': ('notification_bot_token', 'admin_chat_id', 'admin_username'),
+            'fields': ('admin_chat_id', 'admin_username'),
             'classes': ('collapse',)
         }),
         ('Платежи', {

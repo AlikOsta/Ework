@@ -1,5 +1,4 @@
 from django.db import models
-from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -7,10 +6,8 @@ from django.core.validators import MinValueValidator, MaxValueValidator, RegexVa
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
-
 from polymorphic.models import PolymorphicModel
 from polymorphic.managers import PolymorphicManager
-
 from .choices import STATUS_CHOICES
 from .utils_img import process_image
 from ework_locations.models import City
@@ -28,7 +25,6 @@ phone_regex = RegexValidator(
 class AbsPost(PolymorphicModel):
     """Оптимизированная абстрактная модель поста"""
     objects = PolymorphicManager()
-    
     title = models.CharField(max_length=50, db_index=True, verbose_name=_('Название'))
     description = models.TextField(db_index=True, verbose_name=_('Описание'))
     image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), null=True, blank=True) 
@@ -46,13 +42,9 @@ class AbsPost(PolymorphicModel):
     is_deleted = models.BooleanField(default=False, db_index=True, verbose_name=_("Удалено"))
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата удаления"))
     package = models.ForeignKey(Package, on_delete=models.PROTECT, null=True, blank=True, verbose_name=_('Тариф'))
-    
-    # Поля для промо-функций
     has_photo_addon = models.BooleanField(default=False, verbose_name=_("Аддон фото"))
     has_highlight_addon = models.BooleanField(default=False, verbose_name=_("Аддон выделения"))
     has_auto_bump_addon = models.BooleanField(default=False, verbose_name=_("Аддон автоподнятия"))
-    
-    # Даты истечения промо
     highlight_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Выделение до"))
     auto_bump_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Автоподнятие до"))
     last_bump_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Последнее поднятие"))
@@ -80,7 +72,6 @@ class AbsPost(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Обрабатываем изображение только при первом сохранении
         if self.image and not hasattr(self, '_image_processed'):
             processed = process_image(self.image, self.pk)
             if processed != self.image:
@@ -90,23 +81,18 @@ class AbsPost(PolymorphicModel):
     
     def soft_delete(self):
         """Мягкое удаление поста"""
-        self.status = 5  # Удален
-        self.is_deleted = True  # Оставляем для совместимости
+        self.status = 5 
+        self.is_deleted = True  
         self.deleted_at = timezone.now()
         self.save(update_fields=['status', 'is_deleted', 'deleted_at'])
     
     def set_addons(self, photo=False, highlight=False, auto_bump=False):
         """Установить аддоны для поста"""
         from datetime import timedelta
-        
         self.has_photo_addon = photo
         self.has_highlight_addon = highlight
         self.has_auto_bump_addon = auto_bump
-        
-        # Если есть выделение цветом - делаем пост премиум
         self.is_premium = highlight
-        
-        # Устанавливаем время истечения для аддонов
         now = timezone.now()
         
         if highlight:

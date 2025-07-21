@@ -16,13 +16,7 @@ class TelegramPaymentWebhookView(View):
     
     def post(self, request):
         try:
-            # Получаем данные от Telegram
             data = json.loads(request.body)
-            
-            # Логируем входящий webhook
-            logger.info(f"Telegram payment webhook received: {data}")
-            
-            # Проверяем тип события
             if 'pre_checkout_query' in data:
                 return self.handle_pre_checkout(data['pre_checkout_query'])
             elif 'message' in data and 'successful_payment' in data['message']:
@@ -40,25 +34,17 @@ class TelegramPaymentWebhookView(View):
         try:
             payload = pre_checkout_query.get('invoice_payload', '')
             amount = pre_checkout_query.get('total_amount', 0)
-            
-            # Извлекаем user_id и payment_id из payload
             if '&&&' in payload:
                 user_id, payment_id = payload.split('&&&')
-                
-                # Проверяем существование платежа
                 try:
                     payment = Payment.objects.get(id=payment_id, user_id=user_id)
-                    
-                    # Проверяем сумму
-                    expected_amount = int(payment.amount * 100)  # Telegram использует копейки
+                    expected_amount = int(payment.amount * 100)
                     if amount != expected_amount:
                         logger.error(f"Amount mismatch: expected {expected_amount}, got {amount}")
                         return JsonResponse({
                             'ok': False,
                             'error_message': 'Неверная сумма платежа'
                         })
-                    
-                    # Все в порядке, разрешаем платеж
                     return JsonResponse({'ok': True})
                     
                 except Payment.DoesNotExist:
@@ -87,27 +73,15 @@ class TelegramPaymentWebhookView(View):
             payload = successful_payment.get('invoice_payload', '')
             telegram_charge_id = successful_payment.get('telegram_payment_charge_id')
             provider_charge_id = successful_payment.get('provider_payment_charge_id')
-            
-            # Извлекаем user_id и payment_id из payload
             if '&&&' in payload:
                 user_id, payment_id = payload.split('&&&')
                 
                 try:
                     payment = Payment.objects.get(id=payment_id, user_id=user_id)
-                    
-                    # Отмечаем платеж как оплаченный
                     payment.mark_as_paid(
                         telegram_charge_id=telegram_charge_id,
                         provider_charge_id=provider_charge_id
                     )
-                    
-                    logger.info(f"Payment {payment_id} marked as paid")
-                    
-                    # Здесь можно добавить дополнительную логику:
-                    # - отправка уведомления пользователю
-                    # - создание поста автоматически
-                    # - отправка email
-                    
                     return HttpResponse(status=200)
                     
                 except Payment.DoesNotExist:
