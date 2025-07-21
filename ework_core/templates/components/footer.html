@@ -12,7 +12,7 @@
             href="/"
             data-path="{% url 'core:home' %}">
             <i class="material-icons">home</i>
-            <span>{% trans "Домой" %}</span>
+            {% comment %} <span>{% trans "Домой" %}</span> {% endcomment %}
           </a>
         </div>
 
@@ -29,7 +29,7 @@
             aria-label="Избранное"
           >
             <i class="material-icons">favorite_border</i>
-            <span>{% trans "Избранное" %}</span>
+            {% comment %} <span>{% trans "Избранное" %}</span> {% endcomment %}
           </a>
         </div>
 
@@ -60,7 +60,7 @@
             aria-label="Тарифы"
           >
             <i class="material-icons">credit_card</i>
-            <span>{% trans "Тарифы" %}</span>
+            {% comment %} <span>{% trans "Тарифы" %}</span> {% endcomment %}
           </a>
         </div>
 
@@ -78,7 +78,7 @@
             aria-label="Профиль"
           >
             <i class="material-icons">person_outline</i>
-            <span>{% trans "Профиль" %}</span>
+            {% comment %} <span>{% trans "Профиль" %}</span> {% endcomment %}
           </a>
           {% else %}
           <a
@@ -92,7 +92,7 @@
             aria-label="Войти"
           >
             <i class="material-icons">person_outline</i>
-            <span>{% trans "Войти" %}</span>
+            {% comment %} <span>{% trans "Войти" %}</span> {% endcomment %}
           </a>
           {% endif %}
         </div>
