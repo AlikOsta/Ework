@@ -15,7 +15,7 @@ class PackageAdmin(admin.ModelAdmin):
             'fields': ('price_per_post', 'currency')
         }),
         ('Аддоны', {
-            'fields': ('photo_addon_price', 'highlight_addon_price', 'auto_bump_addon_price')
+            'fields': ('photo_addon_price', 'highlight_addon_price')
         }),
         ('Настройки отображения', {
             'fields': ('highlight_color',)

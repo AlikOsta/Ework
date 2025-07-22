@@ -10,7 +10,7 @@ class SiteConfig(models.Model):
     """
     
     # Основные настройки сайта
-    site_name = models.CharField(max_length=200, default='eWork', verbose_name=_('Название сайта'))
+    site_name = models.CharField(max_length=200, default='Help Work', verbose_name=_('Название сайта'))
     site_url = models.URLField(default='https://helpwork.com.ua', verbose_name=_('URL сайта для Мини Апп'))
     
     # Telegram Bot настройки
@@ -45,7 +45,6 @@ class SiteConfig(models.Model):
         verbose_name_plural = _('Конфигурация сайта')
     
     def save(self, *args, **kwargs):
-        # Обеспечиваем singleton паттерн
         if not self.pk and SiteConfig.objects.exists():
             raise ValidationError('Может существовать только одна конфигурация сайта')
         return super().save(*args, **kwargs)

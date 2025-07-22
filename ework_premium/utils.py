@@ -59,17 +59,17 @@ class PricingCalculator:
                 'photo': {
                     'selected': photo,
                     'price': self.package.photo_addon_price if photo and self.package else Decimal('0.00'),
-                    'description': _('Добавить фото (30 дней)')
+                    'description': _('Добавить фото')
                 },
                 'highlight': {
                     'selected': highlight,
                     'price': self.package.highlight_addon_price if highlight and self.package else Decimal('0.00'),
-                    'description': _('Выделить цветом (3 дня)')
+                    'description': _('Выделить цветом')
                 },
                 'auto_bump': {
                     'selected': auto_bump,
                     'price': self.package.auto_bump_addon_price if auto_bump and self.package else Decimal('0.00'),
-                    'description': _('Автоподнятие (7 дней)')
+                    'description': _('Автоподнятие')
                 }
             },
             'addons_total': addons_price,
