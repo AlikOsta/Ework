@@ -9,7 +9,7 @@ from .utils import moderate_post
 from ework_config.utils import get_config
 import logging
 
-config = get_config()
+config = None
 logger = logging.getLogger(__name__)
 
 def moderate_post_async(instance):
@@ -183,3 +183,4 @@ def handle_payment_save(sender, instance, created, **kwargs):
             thread.start()
     else:
         logger.warning(f"⏸️ Модерация пропущена для платежа {instance.id} (статус: {instance.status})")
+

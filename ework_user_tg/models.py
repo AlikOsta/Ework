@@ -22,6 +22,7 @@ class TelegramUser(AbstractUser):
     phone = models.CharField(max_length=15, blank=True, unique=True, null=True, verbose_name=_("Номер телефона"), help_text=_("Номер телефона"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"))    
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"))
+    balance = models.IntegerField(default=0, verbose_name=_("Баланс"), help_text=_("Баланс"))
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'telegram_id']
@@ -69,6 +70,7 @@ class UserRating(models.Model):
     from_user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='given_ratings', verbose_name=_("Кого оцениваем"), help_text=_("Кого оцениваем"))
     to_user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='received_ratings', verbose_name=_("Кто оценивает"), help_text=_("Кто оценивает"))
     rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], verbose_name=_("Рейтинг"), help_text=_("Рейтинг"))
+    comment = models.TextField(max_length=550, blank=True, null=True, verbose_name=_("Комментарий"), help_text=_("Комментарий"))
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Дата создания"), help_text=_("Дата создания"))
     updated_at = models.DateTimeField(auto_now=True, verbose_name=_("Дата обновления"), help_text=_("Дата обновления"))
 
