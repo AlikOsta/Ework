@@ -8,18 +8,19 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
-from django.db.models import Q, Count
+from django.db.models import Count
 import json
 from django.utils.decorators import method_decorator
-from asgiref.sync import sync_to_async
 import asyncio
-
+import logging
 from ework_rubric.models import SuperRubric, SubRubric
 from ework_post.models import AbsPost, Favorite, BannerPost, PostView
 from ework_post.views import BasePostListView
 from ework_locations.models import City
 from ework_job.choices import EXPERIENCE_CHOICES, WORK_FORMAT_CHOICES, WORK_SCHEDULE_CHOICES
 from ework_premium.models import Package
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -46,7 +47,6 @@ class PostListByRubricView(BasePostListView):
         self.super_rubric = None
         rubric_pk = self.kwargs.get('rubric_pk')
         if rubric_pk:
-            # Оптимизированный запрос с select_related
             self.super_rubric = SuperRubric.objects.select_related().filter(pk=rubric_pk).first()
         self.is_job_category = bool(self.super_rubric and self.super_rubric.slug == 'rabota')
         return super().dispatch(request, *args, **kwargs)
@@ -54,12 +54,8 @@ class PostListByRubricView(BasePostListView):
     def get_queryset(self):
         """Получить оптимизированный queryset с фильтрами"""
         qs = super().get_queryset()
-        
-        # Фильтрация по рубрике
         if self.super_rubric:
             qs = qs.filter(sub_rubric__super_rubric=self.super_rubric)
-        
-        # Дополнительные фильтры для работы
         if self.is_job_category:
             qs = self._apply_job_filters(qs)
         
@@ -68,12 +64,9 @@ class PostListByRubricView(BasePostListView):
     def _apply_job_filters(self, qs):
         """Применить фильтры специфичные для вакансий"""
         from ework_job.models import PostJob
-        
-        # Ограничиваем только постами работы
         job_ids = PostJob.objects.values_list('id', flat=True)
         qs = qs.filter(id__in=job_ids)
-        
-        # Применяем фильтры
+
         params = {
             'postjob__experience': self.request.GET.get('experience'),
             'postjob__work_format': self.request.GET.get('work_format'),
@@ -88,8 +81,6 @@ class PostListByRubricView(BasePostListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Получаем подкатегории для текущей рубрики
         if self.super_rubric:
             context['categories'] = SubRubric.objects.filter(
                 super_rubric=self.super_rubric
@@ -97,7 +88,6 @@ class PostListByRubricView(BasePostListView):
         else:
             context['categories'] = []
         
-        # Дополнительный контекст
         context.update({
             'cities': City.objects.order_by('order'),
             'rubric_pk': getattr(self.super_rubric, 'pk', None),
@@ -106,7 +96,6 @@ class PostListByRubricView(BasePostListView):
             'is_service_category': bool(self.super_rubric and self.super_rubric.slug == 'uslugi'),
         })
         
-        # Специфичные для работы данные
         if self.is_job_category:
             context.update({
                 'experience_choices': EXPERIENCE_CHOICES,
@@ -116,12 +105,11 @@ class PostListByRubricView(BasePostListView):
                 'work_format': self.request.GET.get('work_format', ''),
                 'work_schedule': self.request.GET.get('work_schedule', ''),
             })
-        
         return context
 
 @method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class PostDetailView(DetailView):
-    """Оптимизированный детальный просмотр поста"""
+    """детальный просмотр поста"""
     model = AbsPost
     template_name = 'includes/post_detail.html'
     context_object_name = 'post'
@@ -133,7 +121,6 @@ class PostDetailView(DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        # Записываем просмотр для авторизованных пользователей (кроме автора)
         if (self.request.user.is_authenticated and 
             obj.user_id != self.request.user.id):
             ct = ContentType.objects.get_for_model(obj)
@@ -198,57 +185,46 @@ class FavoriteListView(ListView):
         })
         return ctx
     
-
-
 @login_required
 @require_POST
 def toggle_favorite(request, post_pk):
     """Переключить статус избранного"""
     post = get_object_or_404(AbsPost, pk=post_pk)
     fav, created = Favorite.objects.get_or_create(user=request.user, post=post)
-    
     if not created:
         fav.delete()
         is_favorite = False
     else:
         is_favorite = True
-
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
             'success': True,
             'is_favorite': is_favorite,
             'post_id': post.pk
         })
-    
     return redirect('core:post_list_by_rubric', rubric_pk=post.sub_rubric.super_rubric.pk)
-
 
 def banner_view(request, banner_id):
     """Просмотр баннера"""
     banner = get_object_or_404(BannerPost, id=banner_id)
     return render(request, 'includes/banner_view.html', {'banner': banner})
 
-
 def banner_ad_info(request):
     """Информация о баннерной рекламе"""
     return render(request, 'includes/banner_ad_modal.html')
-
 
 def premium(request):
     """Страница тарифов"""
     packages = Package.objects.filter(is_active=True).order_by('order')
     context = {'packages': packages}
     if request.headers.get('HX-Request'):
-        # Возвращаем контент для модального окна
         return render(request, 'pages/premium.html', context)
-    
     return redirect('core:home')
 
-
+#перенесены в  Payment 
 @method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class CreateInvoiceView(View):
     """API для создания инвойса через Telegram Bot"""
-    
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
@@ -298,7 +274,7 @@ class CreateInvoiceView(View):
             traceback.print_exc()
             return JsonResponse({'success': False, 'error': f'Внутренняя ошибка: {e}'}, status=500)
 
-
+# перенести в  Payment 
 def publish_post_after_payment(user_id, payment_id):
     """Функция для публикации поста после успешной оплаты"""
     try:
@@ -310,26 +286,18 @@ def publish_post_after_payment(user_id, payment_id):
         )
     
         if not payment.post:
-            # Если нет поста, просто отмечаем платеж как оплаченный
             payment.status = 'paid'
             payment.save(update_fields=['status'])
             return False
-        
-        print(f"🔄 Найден платеж {payment_id} для поста {payment.post.title}")
-        print(f"📊 Текущий статус поста: {payment.post.status}")
-        
-        # Отмечаем платеж как оплаченный
-        # Это должно вызвать сигнал handle_payment_save
         payment.status = 'paid'
         payment.save(update_fields=['status'])
         
-        print(f"✅ Платеж {payment_id} отмечен как оплаченный")
         return True
         
     except Exception as e:
-        print(f"❌ Ошибка публикации поста после оплаты: {e}")
+        logger.error(f"❌ Ошибка публикации поста после оплаты: {e}")
         import traceback
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        logger.error(f"❌ Traceback: {traceback.format_exc()}")
         return False
 
 
@@ -338,27 +306,22 @@ def publish_post_after_payment(user_id, payment_id):
 def change_post_status(request, pk, status):
     """Изменение статуса поста"""
     post = get_object_or_404(AbsPost, pk=pk, user=request.user)
-    
-    # Проверяем допустимые переходы статусов
     allowed_transitions = {
         3: [4],  # Из опубликованного можно перевести в архив
         4: [0],  # Из архива можно отправить на модерацию
     }
-    
     if post.status in allowed_transitions and status in allowed_transitions[post.status]:
         post.status = status
         post.save(update_fields=['status'])
-        
         status_messages = {
             0: _('Объявление отправлено на модерацию'),
             4: _('Объявление перемещено в архив'),
         }
-        
         if status in status_messages:
             messages.success(request, status_messages[status])
     else:
+        logger.error(f"❌ Недопустимое изменение статуса для поста {post.id}")
         messages.error(request, _('Недопустимое изменение статуса'))
-    
     return redirect('users:author_profile', author_id=request.user.id)
 
 
@@ -366,8 +329,6 @@ def change_post_status(request, pk, status):
 def post_edit(request, pk):
     """Редактирование поста"""
     post = get_object_or_404(AbsPost, pk=pk, user=request.user)
-    
-    # Определяем тип поста и перенаправляем
     try:
         job_post = post.postjob
         return redirect('jobs:post_edit', pk=pk)

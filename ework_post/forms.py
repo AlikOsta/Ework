@@ -11,7 +11,6 @@ from ework_currency.models import Currency
 class BasePostForm(forms.ModelForm):
     """Оптимизированная базовая форма для создания постов"""
     
-    # Аддоны для премиум функций
     addon_photo = forms.BooleanField(
         required=False,
         label=_('Добавить фото'),
@@ -22,11 +21,6 @@ class BasePostForm(forms.ModelForm):
         label=_('Выделить цветом'),
         help_text=_('Объявление будет выделено цветом (3 дня)')
     )
-    # addon_auto_bump = forms.BooleanField(
-    #     required=False,
-    #     label=_('Автоподнятие'),
-    #     help_text=_('Автоматическое поднятие в топ каждые 12 часов (7 дней)')
-    # )
 
     class Meta:
         model = AbsPost
@@ -71,17 +65,11 @@ class BasePostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        
-        # Оптимизированные querysets
         self.fields['currency'].queryset = Currency.objects.all()
         self.fields['city'].queryset = City.objects.order_by('order', 'name')
         self.fields['sub_rubric'].queryset = SubRubric.objects.select_related('super_rubric').order_by('order')
-        
-        # Устанавливаем значения по умолчанию
         if self.user and hasattr(self.user, 'phone') and self.user.phone:
             self.fields['user_phone'].initial = self.user.phone
-        
-        # Первая валюта по умолчанию
         default_currency = Currency.objects.first()
         if default_currency:
             self.fields['currency'].initial = default_currency.pk

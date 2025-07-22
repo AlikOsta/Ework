@@ -6,8 +6,6 @@ def site_config(request):
     
     return {
         'site_config': {
-            'site_name': config.site_name,
-            'site_description': config.site_description,
             'bot_username': config.bot_username,
             'admin_telegram': config.admin_username if config else '@admin'
         }

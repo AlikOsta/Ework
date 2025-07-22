@@ -18,7 +18,7 @@ class PackageAdmin(admin.ModelAdmin):
             'fields': ('photo_addon_price', 'highlight_addon_price', 'auto_bump_addon_price')
         }),
         ('Настройки отображения', {
-            'fields': ('highlight_color', 'duration_days')
+            'fields': ('highlight_color',)
         }),
     )
 
@@ -33,7 +33,7 @@ class PaymentAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related('user', 'package')
     
     def get_readonly_fields(self, request, obj=None):
-        if obj:  # editing an existing object
+        if obj:
             return self.readonly_fields + ['user', 'package', 'amount']
         return self.readonly_fields
 

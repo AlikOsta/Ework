@@ -24,12 +24,10 @@ class Package(models.Model):
     price_per_post = models.DecimalField(max_digits=8, decimal_places=2, verbose_name=_("Цена за объявление"), help_text=_("Цена за объявление"))
     currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True, blank=True, verbose_name=_("Валюта"), help_text=_("Валюта"))
     
-    # Поля для аддонов продвижения
     photo_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за фото"), help_text=_("Цена аддона 'Фото' (30 дней)"))
     highlight_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за выделение"), help_text=_("Цена аддона 'Цветное выделение' (3 дня)"))
     auto_bump_addon_price = models.DecimalField(max_digits=8, decimal_places=2, default=0, verbose_name=_("Цена за автоподнятие"), help_text=_("Цена аддона 'Автоподнятие' (7 дней)"))
     
-    # Настройки отображения
     highlight_color = models.CharField(max_length=7, blank=True, default="#fffacd", verbose_name=_("HEX-код цвета для выделения объявления"), help_text=_("HEX-код цвета для выделения объявления"))
     
     duration_days = models.PositiveIntegerField(default=30, verbose_name=_("Срок размещения (дней)"))
@@ -70,12 +68,9 @@ class Payment(models.Model):
     paid_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата оплаты"))
     telegram_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа Telegram"))
     telegram_provider_payment_charge_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("ID платежа провайдера"))
-    
-    # Информация о выбранных аддонах (JSON)
     addons_data = models.JSONField(default=dict, blank=True, verbose_name=_("Данные аддонов"), 
                                   help_text=_("JSON с информацией о выбранных аддонах"))
-    
-    # Ссылка на пост (черновик)
+
     post = models.ForeignKey('ework_post.AbsPost', on_delete=models.CASCADE, null=True, blank=True, 
                             verbose_name=_("Пост"), help_text=_("Пост-черновик для публикации после оплаты"))
 

@@ -10,14 +10,12 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth import login
 from django.utils import timezone
-from django.conf import settings
 from .verify_telegram_init_data import verify_init_data
 import json
 from ework_post.models import AbsPost, Favorite
 from .forms import UserProfileForm, UserRatingForm
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import translation
-from django.db.models import Count, Avg
 from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
@@ -26,7 +24,7 @@ User = get_user_model()
 
 @method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class AuthorProfileView(ListView):
-    """Оптимизированное представление профиля автора"""
+    """представление профиля автора"""
     model = AbsPost
     template_name = 'user_ework/author_profile.html'
     context_object_name = 'posts'
@@ -66,8 +64,6 @@ class AuthorProfileView(ListView):
         """Получить посты автора, сгруппированные по статусам с оптимизацией"""
         author = self.get_author()
         is_own = self.is_own_profile()
-        
-        # Базовый queryset с оптимизацией
         base_queryset = AbsPost.objects.filter(
             user=author,
             is_deleted=False
@@ -76,7 +72,6 @@ class AuthorProfileView(ListView):
         ).prefetch_related('favorited_by').order_by('-created_at')
         
         if is_own:
-            # Для собственного профиля получаем посты всех статусов одним запросом
             posts = list(base_queryset)
             posts_by_status = {
                 'published': [p for p in posts if p.status == 3],
@@ -109,14 +104,10 @@ class AuthorProfileView(ListView):
             author = self.get_author()
             is_own_profile = self.is_own_profile()
             posts_by_status = self.get_posts_by_status()
-            
-            # Основные данные профиля
             context.update({
                 'author': author,
                 'is_own_profile': is_own_profile,
             })
-            
-            # Посты по статусам
             context.update({
                 'published_products': posts_by_status['published'],
                 'pending_products': posts_by_status['pending'],
@@ -124,8 +115,6 @@ class AuthorProfileView(ListView):
                 'rejected_products': posts_by_status['rejected'],
                 'archived_products': posts_by_status['archived'],
             })
-            
-            # Счетчики для бейджей
             context.update({
                 'published_count': len(posts_by_status['published']),
                 'pending_count': len(posts_by_status['pending']) + len(posts_by_status['approved']),
@@ -133,8 +122,6 @@ class AuthorProfileView(ListView):
                 'archived_count': len(posts_by_status['archived']),
                 'total_posts_count': sum(len(posts) for posts in posts_by_status.values()),
             })
-            
-            # Избранные посты для текущего пользователя
             if self.request.user.is_authenticated:
                 all_posts = []
                 for posts_list in posts_by_status.values():
@@ -150,8 +137,6 @@ class AuthorProfileView(ListView):
                     context['favorite_post_ids'] = []
             else:
                 context['favorite_post_ids'] = []
-            
-            # Дополнительная статистика для собственного профиля
             if is_own_profile:
                 context['profile_stats'] = self.get_profile_stats(author, posts_by_status)
             
@@ -180,8 +165,6 @@ class AuthorProfileView(ListView):
         """Получить статистику профиля с оптимизацией"""
         try:
             from ework_post.models import PostView
-            
-            # Все посты пользователя
             all_posts = []
             for posts_list in posts_by_status.values():
                 all_posts.extend(posts_list)
@@ -194,7 +177,6 @@ class AuthorProfileView(ListView):
             }
             
             if all_posts:
-                # Подсчет просмотров одним запросом
                 post_ids = [post.pk for post in all_posts]
                 content_types = ContentType.objects.get_for_models(
                     *[type(post) for post in all_posts]
@@ -204,11 +186,7 @@ class AuthorProfileView(ListView):
                     content_type__in=content_types,
                     object_id__in=post_ids
                 ).count()
-                
-                # Подсчет избранных одним запросом
                 total_favorites = Favorite.objects.filter(post__in=all_posts).count()
-                
-                # Средняя цена только для опубликованных
                 published_posts = posts_by_status['published']
                 if published_posts:
                     prices = [post.price for post in published_posts if post.price]
@@ -241,11 +219,8 @@ def profile_edit(request):
         form = UserProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             user = form.save()
-            
-            # Обрабатываем смену языка
             new_language = form.cleaned_data.get('language')
             if new_language and new_language != request.LANGUAGE_CODE:
-                # ИСПРАВЛЕНИЕ: используем строку напрямую
                 request.session['django_language'] = new_language
                 translation.activate(new_language)
             
@@ -276,7 +251,7 @@ class TelegramAuthView(TemplateView):
 @require_POST
 @csrf_exempt
 def telegram_login(request):
-    """Оптимизированная авторизация через Telegram"""
+    """авторизация через Telegram"""
     try:
         init_data = request.POST.get('initData')
         logger.debug("telegram_login: initData raw = %r", init_data)
@@ -284,8 +259,6 @@ def telegram_login(request):
         if not init_data:
             logger.error("telegram_login: Нет initData")
             return JsonResponse({'status': 'error', 'error': 'Нет initData'}, status=400)
-
-        # Токен бота из конфигурации
         from ework_config.utils import get_config
         config = get_config()
         bot_token = config.bot_token
@@ -307,8 +280,6 @@ def telegram_login(request):
         if not telegram_id:
             logger.error("telegram_login: Отсутствует Telegram ID в данных")
             return JsonResponse({'status': 'error', 'error': 'Отсутствует Telegram ID'}, status=400)
-
-        # Создаем или обновляем пользователя
         user, created = User.objects.get_or_create(
             telegram_id=telegram_id,
             defaults={
@@ -317,10 +288,8 @@ def telegram_login(request):
                 'username': user_data.get('username', f"tg_{telegram_id}"),
                 'photo_url': user_data.get('photo_url', ''),
             }
-        )
-        
+        ) 
         if not created:
-            # Обновляем данные существующего пользователя
             user.first_name = user_data.get('first_name', '')
             user.last_name = user_data.get('last_name', '')
             user.username = user_data.get('username', f"tg_{telegram_id}")

@@ -8,7 +8,6 @@ urlpatterns = [
     path('profile/edit/', profile_edit, name='profile_edit'),
     path('rating/<int:user_id>/', CreateRatingView.as_view(), name='create_rating'),
 
-    # авторизация
     path('telegram_login/', telegram_login, name='telegram_login'),
     path('index/', Index.as_view(), name='index'),
     path('auth/telegram/', TelegramAuthView.as_view(), name='telegram_auth'),

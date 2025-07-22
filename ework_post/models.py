@@ -1,5 +1,4 @@
 from django.db import models
-from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -47,12 +46,10 @@ class AbsPost(PolymorphicModel):
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Дата удаления"))
     package = models.ForeignKey(Package, on_delete=models.PROTECT, null=True, blank=True, verbose_name=_('Тариф'))
     
-    # Поля для промо-функций
     has_photo_addon = models.BooleanField(default=False, verbose_name=_("Аддон фото"))
     has_highlight_addon = models.BooleanField(default=False, verbose_name=_("Аддон выделения"))
     has_auto_bump_addon = models.BooleanField(default=False, verbose_name=_("Аддон автоподнятия"))
     
-    # Даты истечения промо
     highlight_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Выделение до"))
     auto_bump_expires_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Автоподнятие до"))
     last_bump_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Последнее поднятие"))
@@ -80,7 +77,6 @@ class AbsPost(PolymorphicModel):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Обрабатываем изображение только при первом сохранении
         if self.image and not hasattr(self, '_image_processed'):
             processed = process_image(self.image, self.pk)
             if processed != self.image:
@@ -101,11 +97,8 @@ class AbsPost(PolymorphicModel):
         self.has_photo_addon = photo
         self.has_highlight_addon = highlight
         self.has_auto_bump_addon = auto_bump
-        
-        # Если есть выделение цветом - делаем пост премиум
+
         self.is_premium = highlight
-        
-        # Устанавливаем время истечения для аддонов
         now = timezone.now()
         
         if highlight:

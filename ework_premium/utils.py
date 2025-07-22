@@ -111,7 +111,7 @@ def create_payment_for_post(user, package, photo=False, highlight=False, auto_bu
     total_price = calculator.calculate_total_price(photo, highlight, auto_bump)
     
     if total_price == 0:
-        return None  # Бесплатная публикация
+        return None 
     
     payment = Payment.objects.create(
         user=user,
@@ -120,7 +120,6 @@ def create_payment_for_post(user, package, photo=False, highlight=False, auto_bu
         order_id=Payment.generate_order_id(user.id)
     )
     
-    # Сохранить информацию об аддонах
     payment.set_addons(photo=photo, highlight=highlight, auto_bump=auto_bump)
     payment.save()
     

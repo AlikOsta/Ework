@@ -6,18 +6,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 
 from ework_post.models import AbsPost, Favorite, PostView
-from ework_rubric.models import SuperRubric, SubRubric
 from ework_premium.models import Package, FreePostRecord
 from ework_premium.utils import create_payment_for_post
 
 
 class BasePostListView(ListView):
-    """Оптимизированное базовое представление для списка объявлений"""
+    """ базовое представление для списка объявлений"""
     model = AbsPost
     template_name = 'components/card.html'
     context_object_name = 'posts'
@@ -102,7 +101,7 @@ class BasePostListView(ListView):
 
 
 class BasePostDetailView(DetailView):
-    """Оптимизированное базовое представление для детального просмотра поста"""
+    """ базовое представление для детального просмотра поста"""
     model = AbsPost
     template_name = 'includes/post_detail.html'
     context_object_name = 'post'
@@ -117,7 +116,6 @@ class BasePostDetailView(DetailView):
         """Получить объект и записать просмотр"""
         obj = super().get_object(queryset)
         
-        # Записываем просмотр только для авторизованных пользователей
         if (self.request.user.is_authenticated and 
             obj.user_id != self.request.user.id):
             ct = ContentType.objects.get_for_model(obj)
@@ -133,7 +131,6 @@ class BasePostDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Статистика просмотров
         stats = PostView.objects.filter(
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk
@@ -161,7 +158,7 @@ class BasePostDetailView(DetailView):
 
 
 class BasePostCreateView(LoginRequiredMixin, CreateView):
-    """Оптимизированное базовое представление для создания объявления"""
+    """ базовое представление для создания объявления"""
     template_name = 'post/post_form.html'
     success_message = _('Объявление успешно создано и отправлено на модерацию')
     
@@ -173,27 +170,19 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         """Добавить информацию о тарифах в контекст"""
         context = super().get_context_data(**kwargs)
-        
-        # Добавляем информацию о тарифах
         if hasattr(self.get_form(), 'get_package_info'):
             context['package_info'] = self.get_form().get_package_info()
-        
-        # Проверяем доступность бесплатного тарифа
         context['can_use_free_package'] = FreePostRecord.can_user_post_free(self.request.user)
         
         return context
     
     def form_valid(self, form):
-        """Обработка валидной формы"""
-        # Получаем аддоны из формы
         addon_photo = form.cleaned_data.get('addon_photo', False)
         addon_highlight = form.cleaned_data.get('addon_highlight', False)
         addon_auto_bump = form.cleaned_data.get('addon_auto_bump', False)
-        
-        # Получаем пакет по умолчанию
+
         package = Package.objects.filter(is_active=True, package_type='PAID').first()
-        
-        # Создаем платеж
+
         payment = create_payment_for_post(
             user=self.request.user,
             package=package,
@@ -202,7 +191,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             auto_bump=addon_auto_bump
         )
         
-        # Если платеж не требуется (бесплатная публикация)
         if payment is None:
             return self._publish_free_post(form)
         else:
@@ -216,7 +204,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             self.object.status = 0  # На модерацию - это вызовет сигнал модерации
             self.object.save()
             
-            # Отметить использование бесплатной публикации
             FreePostRecord.use_free_post(self.request.user, self.object)
             
             messages.success(self.request, self.success_message)
@@ -276,7 +263,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
 
 
 class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Оптимизированное базовое представление для редактирования объявления"""
+    """ базовое представление для редактирования объявления"""
     template_name = 'post/post_form.html'
     success_message = _('Объявление успешно обновлено и отправлено на модерацию')
     
@@ -292,7 +279,6 @@ class BasePostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     
     def form_valid(self, form):
         """Обработка валидной формы"""
-        # При обновлении отправляем на модерацию
         form.instance.status = 0  # Не проверено
         form.save()
         
@@ -321,7 +307,6 @@ class PricingCalculatorView(View):
         from ework_premium.utils import PricingCalculator
         from django.contrib.auth import get_user_model
         
-        # Получаем параметры аддонов
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
         addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'

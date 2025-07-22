@@ -10,12 +10,10 @@ def get_bot_config():
         config = get_config()
         _bot_config = {
             'bot_token': config.bot_token,
-            'miniapp_url': config.site_url + '/users/index/' if config.site_url else 'https://localhost:8000/users/index/',
+            'miniapp_url': config.site_url + '/users/index/',
             'payment_provider_token': config.payment_provider_token,
-            'notification_bot_token': config.notification_bot_token,
+            'notification_bot_token': config.bot_token,
             'admin_chat_id': config.admin_chat_id,
-            'welcome_text': config.site_description,
-            'text_button': config.site_name,
         }
     return _bot_config
 

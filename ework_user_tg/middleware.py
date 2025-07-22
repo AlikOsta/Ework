@@ -8,7 +8,6 @@ class UserLanguageMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Если пользователь аутентифицирован и у него есть предпочитаемый язык
         if request.user.is_authenticated and hasattr(request.user, 'language'):
             user_language = request.user.language
             if user_language and user_language != request.LANGUAGE_CODE:

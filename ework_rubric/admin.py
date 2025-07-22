@@ -25,7 +25,6 @@ class SubRubricAdmin(admin.ModelAdmin):
     form = SubRubricForm
     
     def posts_count(self, obj):
-        # Подсчитываем посты из обеих моделей
         from ework_job.models import PostJob
         from ework_services.models import PostServices
         

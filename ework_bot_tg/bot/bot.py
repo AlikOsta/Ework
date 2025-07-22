@@ -4,21 +4,13 @@ import asyncio
 import logging
 from logging.handlers import RotatingFileHandler
 from django.utils.translation import gettext as _ 
-
 import httpx
 from aiogram import Dispatcher, types
 from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from aiogram.types import (
-    WebAppInfo,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    LabeledPrice,
-)
+from aiogram.types import (WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup)
 from asgiref.sync import sync_to_async
-
-
 from ework_job.models import PostJob
 from ework_services.models import PostServices
 
@@ -57,8 +49,19 @@ logger.addHandler(console_handler)
 # Инициализация бота и диспетчера
 default_props = DefaultBotProperties(parse_mode="HTML")
 bot = Bot(token=cfg['bot_token'], default=default_props)
-welcome_text = _(cfg['welcome_text'])
-text_button = _(cfg['text_button'])
+welcome_text = _("""Вас вітає Help Work🔎!
+
+Кілька слів про наш проект👇
+•  Зручність: Подавайте оголошення чи знаходьте роботу мрії в кілька кліків.
+•  Безкоштовно: Розміщуйте оголошення або шукайте роботу без жодних витрат.
+•  Великі охвати: Багато актуальних вакансій і широка аудиторія для ваших оголошень.
+•  Без реєстрацій: Ніяких складних форм — усе просто і швидко.
+💪 Для шукачів роботи: Легко переглядайте вакансії, відгукуйтесь і знаходьте ідеальну роботу!
+📢 Для роботодавців: Розміщуйте вакансії та швидко знаходьте найкращих кандидатів!
+Починайте вже зараз — це просто, зручно та ефективно!
+
+📨 @HelpWorkUa""")
+text_button = _('Открыть')
 
 dp = Dispatcher()
 
@@ -136,10 +139,9 @@ async def cmd_start(message: types.Message):
     )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[webapp_button]])
     await message.answer(
-        text=f"Привет!\n{welcome_text}", 
+        text=f"{welcome_text}", 
         reply_markup=keyboard
     )
-
 
 # Обработка коллбеков модерации - ИСПРАВЛЕННАЯ ВЕРСИЯ
 @dp.callback_query(lambda c: c.data and (c.data.startswith('approve_post_') or c.data.startswith('reject_post_')))
@@ -147,10 +149,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     callback_data = callback_query.data
     
-    print(f"🔔 Получен коллбек: {callback_data} от пользователя {user_id}")
-    
     try:
-        # Парсим callback_data правильно
         if callback_data.startswith('approve_post_'):
             action = 'approve'
             post_id = callback_data.replace('approve_post_', '')
@@ -158,55 +157,39 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
             action = 'reject'
             post_id = callback_data.replace('reject_post_', '')
         else:
-            print(f"❌ Неизвестный callback_data: {callback_data}")
+            logger.warning("Неизвестная команда: %s", callback_data)
             await callback_query.answer("❌ Неизвестная команда", show_alert=True)
             return
-        
-        print(f"📊 Обработка: action={action}, post_id={post_id}")
-        
-        # Ищем пост в двух моделях
         post = None
         try:
             post = await sync_to_async(PostJob.objects.get)(id=int(post_id), status=1)  # На модерации
-            print(f"📋 Найден пост-вакансия: {post.title}")
         except (PostJob.DoesNotExist, ValueError):
             try:
                 post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)  # На модерации
-                print(f"🛠️ Найден пост-услуга: {post.title}")
             except (PostServices.DoesNotExist, ValueError):
-                print(f"❌ Пост с ID {post_id} не найден или не на модерации")
+                logger.warning("Пост не найден или уже обработан")
                 await callback_query.answer("❌ Пост не найден или уже обработан", show_alert=True)
                 return
 
         if action == 'approve':
-            # Одобряем пост
             post.status = 3  # Опубликовано
             await sync_to_async(post.save)(update_fields=['status'])
             
             response_text = f"✅ Пост '{post.title}' одобрен и опубликован!"
-            print(f"✅ Пост {post_id} одобрен и опубликован")
             
         elif action == 'reject':
-            # Отклоняем пост
             post.status = 2  # Отклонено
             await sync_to_async(post.save)(update_fields=['status'])
-            
-            # Возвращаем деньги если пост был платным
             from ework_core.signals import refund_if_paid
             await sync_to_async(refund_if_paid)(post)
             
             response_text = f"❌ Пост '{post.title}' отклонен"
-            print(f"❌ Пост {post_id} отклонен")
-
-        # Редактируем сообщение вместо удаления
         try:
             await callback_query.message.edit_text(
                 f"✅ Обработано!\n\n{response_text}",
                 parse_mode="HTML"
             )
         except Exception as e:
-            print(f"⚠️ Не удалось отредактировать сообщение: {e}")
-            # Если не получилось отредактировать, удаляем
             try:
                 await callback_query.message.delete()
             except:
@@ -216,9 +199,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
         await callback_query.answer(response_text, show_alert=True)
         
     except Exception as e:
-        print(f"❌ Ошибка при обработке модерации: {e}")
-        import traceback
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        logger.exception("Ошибка при обработке коллбека модерации: %s", e)
         await callback_query.answer("❌ Произошла ошибка при модерации", show_alert=True)
 
 
@@ -231,7 +212,6 @@ async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
         ok=True
     )
 
-# Успешная оплата
 @dp.message(lambda msg: msg.successful_payment)
 async def successful_payment(message: types.Message):
     payload = message.successful_payment.invoice_payload
@@ -250,9 +230,14 @@ async def successful_payment(message: types.Message):
         logger.exception("Error handling successful payment payload=%s", payload)
         await message.answer(_("⚠️ Оплата получена, но произошла ошибка. Обратитесь в поддержку."))
 
+
+
+
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
+
+
 
 if __name__ == "__main__":
     asyncio.run(main())
