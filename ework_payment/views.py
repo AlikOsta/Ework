@@ -1,9 +1,12 @@
 """
 Views для обработки платежей
 """
+from django.utils.translation import gettext_lazy as _
 import json
 import logging
+from pyexpat.errors import messages
 from django.http import JsonResponse, HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from aiogram import Bot
@@ -11,6 +14,9 @@ import asyncio
 import time
 from asgiref.sync import sync_to_async
 
+from ework_premium.models import Payment
+
+logger = logging.getLogger(__name__)
 
 
 @csrf_exempt
@@ -46,11 +52,10 @@ def create_payment(request):
         return JsonResponse({'invoice_link': invoice_link})
     
     except Exception as e:
-        logger.error(f"Ошибка проверки статуса платежа {payment_id}: {e}")
+        logger.error(f"Ошибка проверки статуса платежа: {e}")
         return JsonResponse({'error': 'Ошибка проверки статуса'}, status=500)
 
 
-@login_required
 def payment_success(request, payment_id):
     """Страница успешной оплаты"""
     payment = get_object_or_404(Payment, id=payment_id, user=request.user)
@@ -63,7 +68,7 @@ def payment_success(request, payment_id):
     return redirect('core:home')
 
 
-@login_required
+
 def payment_cancel(request, payment_id):
     """Страница отмены платежа"""
     payment = get_object_or_404(Payment, id=payment_id, user=request.user)
