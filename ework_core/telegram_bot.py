@@ -1,5 +1,4 @@
 from aiogram import Bot
-import asyncio
 import html
 
 import logging

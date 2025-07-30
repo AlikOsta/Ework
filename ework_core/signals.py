@@ -6,15 +6,16 @@ from ework_services.models import PostServices
 from .telegram_bot import send_telegram_message, send_telegram_message_with_keyboard
 from ework_job.models import PostJob
 from .utils import moderate_post
+from ework_config.utils import get_config
 import logging
 
-config = None
 logger = logging.getLogger(__name__)
 
 
 def moderate_post_async(instance):
     """Модерация поста в отдельном потоке"""
     try:
+        config = get_config()
         if not config.auto_moderation_enabled and not config.manual_approval_required:
             # Нет модерации - сразу публикуем
             new_status = 3  # Опубликовано
@@ -52,7 +53,8 @@ def moderate_post_async(instance):
 def send_admin_approval_notification(instance):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
     def send_notification():
-        try:            
+        try:
+            config = get_config()            
             if not config.bot_token or not config.admin_chat_id:
                 return
             message = f"""
@@ -98,7 +100,8 @@ def send_admin_approval_notification(instance):
 def send_telegram_notification_async(instance):
     """Отправка уведомления в Telegram в отдельном потоке"""
     def send_notification():
-        try:            
+        try:
+            config = get_config()            
             if not config.bot_token or not config.admin_chat_id:
                 logger.error("❌ Нет токена или чата для отправки уведомления")
                 return
