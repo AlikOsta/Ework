@@ -10,6 +10,7 @@
         <h5 class="modal-title">{% trans "Создать услугу" %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
+    
     <div class="modal-body">
         <!-- Отображение общих ошибок формы -->
         {% if form.non_field_errors %}
@@ -128,7 +129,7 @@
             </button>
         {% endif %}
     </div>
-</div>
+</form>
 
 <script>
 // Простое переключение поля изображения

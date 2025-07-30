@@ -6,7 +6,7 @@ from ework_rubric.models import SubRubric, SuperRubric
 class JobPostForm(BasePostForm):
     class Meta(BasePostForm.Meta):
         model = PostJob
-        fields = BasePostForm.Meta.fields + ['experience', 'work_schedule', 'work_format']
+        fields = BasePostForm.Meta.fields + ['experience', 'work_schedule']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

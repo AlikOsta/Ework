@@ -3,14 +3,15 @@
 {% load static %}
 
 {% with WIDGET_ERROR_CLASS="is-invalid" %}
-<form hx-post="{{ request.path }}" hx-target="this" hx-swap="outerHTML" hx-encoding="multipart/form-data" class="modal-content" enctype="multipart/form-data">
+<form hx-post="{{ request.path }}" hx-target="this" hx-swap="outerHTML" hx-encoding="multipart/form-data" class="modal-content" id="post-form" enctype="multipart/form-data">
     {% csrf_token %}
 
     <div class="modal-header">
         <h5 class="modal-title">{% trans "Создать вакансию" %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
-    <div class="modal-body">  
+
+    <div class="modal-body">
         <!-- Отображение общих ошибок формы -->
         {% if form.non_field_errors %}
         <div class="alert alert-danger">
@@ -20,22 +21,22 @@
         
         <!-- Основная информация -->
         <div class="mb-3">
-            <label for="{{ form.title.id_for_label }}" class="form-label">{% trans "Название услуги" %}</label>
-            {% render_field form.title class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите название услуги" %}
+            <label for="{{ form.title.id_for_label }}" class="form-label">{% trans "Название вакансии" %}</label>
+            {% render_field form.title class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите название вакансии" %}
             <div class="invalid-feedback">{{ form.title.errors|first }}</div>
         </div>
 
         <div class="mb-3">
-            <label for="{{ form.description.id_for_label }}" class="form-label">{% trans "Описание услуги" %}</label>
-            {% render_field form.description class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите описание услуги" rows="5" %}
+            <label for="{{ form.description.id_for_label }}" class="form-label">{% trans "Описание вакансии" %}</label>
+            {% render_field form.description class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите описание вакансии" rows="5" %}
             <div class="invalid-feedback">{{ form.description.errors|first }}</div>
         </div>
 
         <!-- Финансовая информация -->
         <div class="row mb-3">
             <div class="col-8">
-                <label for="{{ form.price.id_for_label }}" class="form-label">{% trans "Зарплата" %}</label>
-                {% render_field form.price class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите зарплату" %}
+                <label for="{{ form.price.id_for_label }}" class="form-label">{% trans "Заплата" %}</label>
+                {% render_field form.price class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите заплату" %}
                 <div class="invalid-feedback">{{ form.price.errors|first }}</div>
             </div>
             <div class="col-4">
@@ -52,6 +53,7 @@
             <div class="invalid-feedback">{{ form.city.errors|first }}</div>
         </div>
 
+        <!-- Адресс -->
         <div class="mb-3">
             <label for="{{ form.address.id_for_label }}" class="form-label">{% trans "Адрес" %}</label>
             {% render_field form.address class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите адресс" %}
@@ -68,23 +70,15 @@
         <!-- Детали работы -->
         <div class="mb-3">
             <label for="{{ form.experience.id_for_label }}" class="form-label">{% trans "Опыт работы" %}</label>
-            {% render_field form.experience class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите опыт работы" %}
+            {% render_field form.experience class="form-select" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.experience.errors|first }}</div>
         </div>
 
         <div class="mb-3">
             <label for="{{ form.work_schedule.id_for_label }}" class="form-label">{% trans "График работы" %}</label>
-            {% render_field form.work_schedule class="form-control" error_class=WIDGET_ERROR_CLASS %}
+            {% render_field form.work_schedule class="form-select" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.work_schedule.errors|first }}</div>
-        </div>
-
-            <div class="mb-3">
-                <label for="{{ form.user_phone.id_for_label }}" class="form-label">{{ form.user_phone.label }}</label>
-                {{ form.user_phone|add_class:"form-control" }}
-                {% if form.user_phone.errors %}
-                    <div class="text-danger">{{ form.user_phone.errors.0 }}</div>
-                {% endif %}
-            </div>
+        </div> 
 
         <!-- Телефон для связи -->
         <div class="mb-3">
@@ -119,7 +113,7 @@
             </div>
         </div>
 
-        <!-- Поле для изображения (показывается только при выборе аддона фото) -->
+          <!-- Поле для изображения (показывается только при выборе аддона фото) -->
         <div id="image-field" class="mb-3" style="display: {{ form.addon_photo.value|yesno:'block,none' }};">
             <label for="{{ form.image.id_for_label }}" class="form-label">{% trans "Изображение" %}</label>
             {% render_field form.image class="form-control" error_class=WIDGET_ERROR_CLASS %}
@@ -138,20 +132,17 @@
         </div>
         {% endif %}
 
-        <!-- Кнопки управления -->
         <div class="d-grid gap-3 d-md-flex justify-content-md-end">
-            <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</button>
+        <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</button>
+        {% if object %}
+            <button type="submit" class="btn btn-primary">{% trans "Сохранить изменения" %}</button>
+        {% else %}
             <button type="submit" id="submit-btn" class="btn btn-primary">
-                {% if object %}
-                    {% trans "Сохранить изменения" %}
-                {% else %}
-                    {% trans "Опубликовать" %}
-                {% endif %}
+                {% trans "Опубликовать" %}
             </button>
-        </div> 
+        {% endif %}
     </div>
 </form>
-
 
 <script>
 // Простое переключение поля изображения
