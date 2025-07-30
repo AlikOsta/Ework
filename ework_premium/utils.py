@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.utils.translation import gettext_lazy as _
 from .models import Package, FreePostRecord
 
-
+# шаг 2 -  Расчет стоимости публикации
 class PricingCalculator:
     """Калькулятор стоимости публикации с аддонами"""
     
@@ -102,7 +102,7 @@ class PricingCalculator:
                 'action': 'pay_and_publish'
             }
 
-
+# шаг 3 - Создание платежа
 def create_payment_for_post(user, package, photo=False, highlight=False, auto_bump=False):
     """Создать платеж для публикации поста с аддонами"""
     from .models import Payment

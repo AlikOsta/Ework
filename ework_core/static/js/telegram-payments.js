@@ -34,7 +34,8 @@ class TelegramPayments {
             }
         });
     }
-
+    
+    //Этап 4: Инициализация платежа через Telegram
     async openPayment(paymentData) {
         if (!this.tg) {
             alert('Платежи доступны только в Telegram');

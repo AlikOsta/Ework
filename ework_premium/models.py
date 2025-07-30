@@ -90,7 +90,7 @@ class Payment(models.Model):
     def generate_order_id(cls, user_id):
         """Генерировать уникальный ID заказа"""
         return f"{user_id}_{int(timezone.now().timestamp())}_{uuid.uuid4().hex[:8]}"
-
+# Этап 9: Обновление статуса платежа
     def mark_as_paid(self, telegram_charge_id=None, provider_charge_id=None):
         """Отметить платеж как оплаченный"""
         self.status = 'paid'

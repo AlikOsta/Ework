@@ -4,28 +4,22 @@ if (typeof window.PostFormPricing !== 'undefined') {
 } else {
     console.log('PostFormPricing.js loaded');
 
+    // шаг 1 Заполнение формы объявления
 class PostFormPricing {
     constructor() {
         this.init();
     }
 
     init() {
-        // Выполнится один раз, когда скрипт загрузился
         this.bindAll();
     }
 
     bindAll() {
-        // При первой загрузке страницы
         document.addEventListener('DOMContentLoaded', () => this.setupForm());
-        
-        // При показе Bootstrap модалки
         document.addEventListener('shown.bs.modal', (evt) => {
             this.setupForm();
         });
-
-        // После любой подгрузки HTMX
         document.body.addEventListener('htmx:afterSwap', (evt) => {
-            // если в swap-обновлении была ваша форма
             if (evt.detail.target.closest('form[hx-post]') || 
                 evt.detail.target.querySelector('form[hx-post]')) {
                 this.setupForm();
@@ -38,25 +32,19 @@ class PostFormPricing {
         if (!form) {
             return;
         }
-        // Сохраняем референсы
         this.form            = form;
         this.submitBtn       = form.querySelector('#submit-btn');
         this.imageField      = form.querySelector('#image-field');
         this.pricingBreakdown= form.querySelector('#pricing-breakdown');
         this.addonsCheckboxes= Array.from(form.querySelectorAll('input[type=checkbox].pricing-addon'));
-    
-        // Убираем предыдущие слушатели (чтобы не дублировались)
         this.addonsCheckboxes.forEach(cb => cb.replaceWith(cb.cloneNode(true)));
         this.addonsCheckboxes = Array.from(form.querySelectorAll('input[type=checkbox].pricing-addon'));
 
-        // Вешаем обработчики
         this.addonsCheckboxes.forEach(cb => cb.addEventListener('change', () => {
-            console.log('PostFormPricing: чекбокс сменился', cb.name, cb.checked);
             this.toggleImageField();
             this.updatePricing();
         }));
 
-        // Первоначальные действия
         this.toggleImageField();
         this.updatePricing();
     }
@@ -138,8 +126,7 @@ class PostFormPricing {
     }
 }
 
-// Экспортируем класс и создаем экземпляр
 window.PostFormPricing = PostFormPricing;
 new PostFormPricing();
 
-} // Закрываем if
+} 

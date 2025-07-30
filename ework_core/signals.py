@@ -6,11 +6,11 @@ from ework_services.models import PostServices
 from .telegram_bot import send_telegram_message, send_telegram_message_with_keyboard
 from ework_job.models import PostJob
 from .utils import moderate_post
-from ework_config.utils import get_config
 import logging
 
 config = None
 logger = logging.getLogger(__name__)
+
 
 def moderate_post_async(instance):
     """Модерация поста в отдельном потоке"""
@@ -47,22 +47,8 @@ def moderate_post_async(instance):
         type(instance).objects.filter(pk=instance.pk).update(status=1)
 
 
-# def refund_if_paid(instance):
-#     """Возврат денег если пост был платным"""
-#     try:
-#         from ework_premium.models import Payment
-#         # Ищем платеж за этот пост
-#         payment = Payment.objects.filter(post=instance, status='paid').first()
-#         if payment:
-#             payment.status = 'refunded'
-#             payment.save()
-#             print(f"💰 Возвращены деньги за отклоненный пост: {payment.amount} руб.")
-#             # Здесь можно добавить реальный возврат через платежную систему
-#     except Exception as e:
-#         print(f"❌ Ошибка возврата денег: {e}")
-
-
 #перенести в бот + .telegram_bot.py
+# отправка поста админу для модерации
 def send_admin_approval_notification(instance):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
     def send_notification():
@@ -79,8 +65,6 @@ def send_admin_approval_notification(instance):
 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
 🏙️ <b>Город:</b> {instance.city.name}
 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-
-#moderation #post_id_{instance.id}
             """.strip()
             
             # Создаем inline кнопки
@@ -119,14 +103,14 @@ def send_telegram_notification_async(instance):
                 logger.error("❌ Нет токена или чата для отправки уведомления")
                 return
             message = f"""
-Новое объявление:
-Название: {instance.title}
-Описание: {instance.description}
-Категория: {instance.sub_rubric.super_rubric.name}
-Подкатегория: {instance.sub_rubric.name}
-Цена: {instance.price} {instance.currency.code}
-Город: {instance.city.name}
-Автор: @{instance.user.username}
+Объявление {instance.id}:
+📝 <b>Название:</b> {instance.title}
+📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
+📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
+📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
+💰 <b>Цена:</b> {instance.price} {instance.currency.code}
+🏙️ <b>Город:</b> {instance.city.name}
+👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
             """.strip()
             
             asyncio.run(send_telegram_message(
@@ -159,6 +143,7 @@ def handle_post_save(sender, instance, created, **kwargs):
         thread.start()
     else:
         logger.warning(f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})")
+
 
 @receiver(post_save, sender='ework_premium.Payment')
 def handle_payment_save(sender, instance, created, **kwargs):

@@ -74,14 +74,8 @@ def get_http_client() -> httpx.AsyncClient:
         _http_client = httpx.AsyncClient(timeout=30.0)
     return _http_client
 
-async def create_invoice_link(
-    user_id: int,
-    payment_id: int,
-    payload: str,
-    amount: float,
-    order_id: int,
-    addons_data: dict | None = None
-) -> str | None:
+# Этап 6: Генерация ссылки на оплату
+async def create_invoice_link( user_id: int, payment_id: int, payload: str, amount: float, order_id: int, addons_data: dict | None = None) -> str | None:
     """
     Создать инвойс через HTTP API Telegram и вернуть ссылку
     """
@@ -103,7 +97,7 @@ async def create_invoice_link(
         "description": description,
         "payload": payload,
         "provider_token": cfg['payment_provider_token'],
-        "currency": "RUB",
+        "currency": "RUB", # заменить валюту
         "prices": [{"label": "Публикация объявления", "amount": price_kopecks}],
         "need_name": False,
         "need_phone_number": False,
@@ -148,7 +142,6 @@ async def cmd_start(message: types.Message):
 async def handle_moderation_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
     callback_data = callback_query.data
-    
     try:
         if callback_data.startswith('approve_post_'):
             action = 'approve'

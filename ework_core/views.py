@@ -134,8 +134,6 @@ class PostDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # Оптимизированный подсчет просмотров
         stats = PostView.objects.filter(
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk
@@ -222,6 +220,7 @@ def premium(request):
     return redirect('core:home')
 
 #перенесены в  Payment 
+# Этап 5: Создание инвойса
 @method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')
 class CreateInvoiceView(View):
     """API для создания инвойса через Telegram Bot"""
@@ -275,6 +274,7 @@ class CreateInvoiceView(View):
             return JsonResponse({'success': False, 'error': f'Внутренняя ошибка: {e}'}, status=500)
 
 # перенести в  Payment 
+# Этап 8: Обработка успешной оплаты
 def publish_post_after_payment(user_id, payment_id):
     """Функция для публикации поста после успешной оплаты"""
     try:
