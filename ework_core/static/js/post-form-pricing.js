@@ -90,7 +90,7 @@ class PostFormPricing {
         if (!this.pricingBreakdown) return;
         let html = '';
         if (b.is_free && b.can_post_free) {
-            html = `<div class="alert alert-success">Бесплатная публикация</div>`;
+            html = `<div class="alert alert-success">Безкоштовна публікація</div>`;
         } else {
             html = `
                 <div class="d-flex justify-content-between">

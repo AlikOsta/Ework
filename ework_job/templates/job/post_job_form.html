@@ -10,26 +10,26 @@
         <h5 class="modal-title">{% trans "Создать вакансию" %}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
     </div>
-    <div class="modal-body">
-        <form method="post" enctype="multipart/form-data" id="job-post-form">
-            {% csrf_token %}
-            
-            <!-- Основные поля -->
-            <div class="mb-3">
-                <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
-                {{ form.title|add_class:"form-control" }}
-                {% if form.title.errors %}
-                    <div class="text-danger">{{ form.title.errors.0 }}</div>
-                {% endif %}
-            </div>
+    <div class="modal-body">  
+        <!-- Отображение общих ошибок формы -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+        
+        <!-- Основная информация -->
+        <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label">{% trans "Название услуги" %}</label>
+            {% render_field form.title class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите название услуги" %}
+            <div class="invalid-feedback">{{ form.title.errors|first }}</div>
+        </div>
 
-            <div class="mb-3">
-                <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-                {{ form.description|add_class:"form-control"|attr:"rows:3" }}
-                {% if form.description.errors %}
-                    <div class="text-danger">{{ form.description.errors.0 }}</div>
-                {% endif %}
-            </div>
+        <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label">{% trans "Описание услуги" %}</label>
+            {% render_field form.description class="form-control" error_class=WIDGET_ERROR_CLASS placeholder="Укажите описание услуги" rows="5" %}
+            <div class="invalid-feedback">{{ form.description.errors|first }}</div>
+        </div>
 
         <!-- Финансовая информация -->
         <div class="row mb-3">
@@ -116,14 +116,6 @@
                         <small class="text-muted">({{ form.addon_highlight.help_text }})</small>
                     </label>
                 </div>
-                
-                {% comment %} <div class="mb-3 form-check">
-                    {% render_field form.addon_auto_bump class="form-check-input pricing-addon" %}
-                    <label class="form-check-label" for="{{ form.addon_auto_bump.id_for_label }}">
-                        {{ form.addon_auto_bump.label }}
-                        <small class="text-muted">({{ form.addon_auto_bump.help_text }})</small>
-                    </label>
-                </div> {% endcomment %}
             </div>
         </div>
 
@@ -160,63 +152,10 @@
     </div>
 </form>
 
-<!-- ОТЛАДОЧНЫЙ СКРИПТ - временно -->
-{% if not object %}
-<script>
-
-// Запускаем сразу, так как скрипт уже в DOM
-(function() {
-    
-    // Проверяем наличие элементов
-    const form = document.querySelector('form[hx-post]');
-    const submitBtn = document.querySelector('#submit-btn');
-    const imageField = document.querySelector('#image-field');
-    const pricingBreakdown = document.querySelector('#pricing-breakdown');
-    const checkboxes = document.querySelectorAll('input[type=checkbox].pricing-addon');
-        
-    // Добавляем обработчики напрямую
-    checkboxes.forEach((cb, i) => {
-        cb.addEventListener('change', function() {
-            
-            // Показать/скрыть поле изображения
-            if (cb.name === 'addon_photo') {
-                if (cb.checked) {
-                    imageField.style.display = 'block';
-                } else {
-                    imageField.style.display = 'none';
-                }
-            }
-            
-            // Обновить цену
-            updatePrice();
-        });
-    });
-    
-function updatePrice() {
-    const photo = document.querySelector('input[name="addon_photo"]').checked;
-    const highlight = document.querySelector('input[name="addon_highlight"]').checked; 
-    
-    if (photo || highlight) {
-        pricingBreakdown.innerHTML = '<div class="text-info">Услуги: Тестовая цена 150 руб</div>';
-        submitBtn.textContent = 'Оплатить 150 руб';
-        submitBtn.className = 'btn btn-success';
-    } else {
-        pricingBreakdown.innerHTML = '<div class="text-success">Бесплатная публикация</div>';
-        submitBtn.textContent = 'Опубликовать бесплатно';
-        submitBtn.className = 'btn btn-primary';
-    }
-}
-    
-    // Первоначальный вызов
-    updatePrice();
-})(); // Вызываем IIFE сразу
-
-</script>
-{% endif %}
 
 <script>
 // Простое переключение поля изображения
-document.addEventListener('change', function(e) {
+document.addEventListener('change', function(e) {    
     if (e.target.dataset.toggle === 'image-field') {
         document.getElementById('image-field').style.display = e.target.checked ? 'block' : 'none';
     }

@@ -96,14 +96,6 @@
                         <small class="text-muted">({{ form.addon_highlight.help_text }})</small>
                     </label>
                 </div>
-                
-                {% comment %} <div class="mb-3 form-check">
-                    {% render_field form.addon_auto_bump class="form-check-input pricing-addon" %}
-                    <label class="form-check-label" for="{{ form.addon_auto_bump.id_for_label }}">
-                        {{ form.addon_auto_bump.label }}
-                        <small class="text-muted">({{ form.addon_auto_bump.help_text }})</small>
-                    </label>
-                </div> {% endcomment %}
             </div>
         </div>
 
@@ -137,49 +129,6 @@
         {% endif %}
     </div>
 </div>
-
-<!-- ОТЛАДОЧНЫЙ СКРИПТ - временно -->
-{% if not object %}
-<script>
-
-(function() {
-    const form = document.querySelector('form[hx-post]');
-    const submitBtn = document.querySelector('#submit-btn');
-    const imageField = document.querySelector('#image-field');
-    const pricingBreakdown = document.querySelector('#pricing-breakdown');
-    const checkboxes = document.querySelectorAll('input[type=checkbox].pricing-addon');
-        
-    checkboxes.forEach((cb, i) => {
-        cb.addEventListener('change', function() {            
-            if (cb.name === 'addon_photo') {
-                imageField.style.display = cb.checked ? 'block' : 'none';
-            }
-            
-            updatePrice();
-        });
-    });
-    
-    function updatePrice() {
-        const photo = document.querySelector('input[name="addon_photo"]').checked;
-        const highlight = document.querySelector('input[name="addon_highlight"]').checked; 
-        // Убираем строку с addon_auto_bump
-        
-        if (photo || highlight) {
-            pricingBreakdown.innerHTML = '<div class="text-info">Услуги: Тестовая цена 150 руб</div>';
-            submitBtn.textContent = 'Оплатить 150 руб';
-            submitBtn.className = 'btn btn-success';
-        } else {
-            pricingBreakdown.innerHTML = '<div class="text-success">Бесплатная публикация</div>';
-            submitBtn.textContent = 'Опубликовать бесплатно';
-            submitBtn.className = 'btn btn-primary';
-        }
-    }
-    
-    updatePrice();
-})();
-
-</script>
-{% endif %}
 
 <script>
 // Простое переключение поля изображения
