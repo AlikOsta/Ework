@@ -192,22 +192,20 @@
         });
     });
     
-    function updatePrice() {
-        const photoChecked = document.querySelector('input[name="addon_photo"]').checked;
-        const highlightChecked = document.querySelector('input[name="addon_highlight"]').checked; 
-        const autoBumpChecked = document.querySelector('input[name="addon_auto_bump"]').checked;
-                
-        // Простая заглушка для проверки
-        if (photoChecked || highlightChecked || autoBumpChecked) {
-            pricingBreakdown.innerHTML = '<div class="text-info">Тестовая цена: 100 руб</div>';
-            submitBtn.textContent = 'Оплатить 100 руб';
-            submitBtn.className = 'btn btn-success';
-        } else {
-            pricingBreakdown.innerHTML = '<div class="text-success">Бесплатная публикация</div>';
-            submitBtn.textContent = 'Опубликовать бесплатно';
-            submitBtn.className = 'btn btn-primary';
-        }
+function updatePrice() {
+    const photo = document.querySelector('input[name="addon_photo"]').checked;
+    const highlight = document.querySelector('input[name="addon_highlight"]').checked; 
+    
+    if (photo || highlight) {
+        pricingBreakdown.innerHTML = '<div class="text-info">Услуги: Тестовая цена 150 руб</div>';
+        submitBtn.textContent = 'Оплатить 150 руб';
+        submitBtn.className = 'btn btn-success';
+    } else {
+        pricingBreakdown.innerHTML = '<div class="text-success">Бесплатная публикация</div>';
+        submitBtn.textContent = 'Опубликовать бесплатно';
+        submitBtn.className = 'btn btn-primary';
     }
+}
     
     // Первоначальный вызов
     updatePrice();

@@ -69,7 +69,6 @@ class PostFormPricing {
         const data = {
             addon_photo: this.form.querySelector('input[name="addon_photo"]')?.checked || false,
             addon_highlight: this.form.querySelector('input[name="addon_highlight"]')?.checked || false,
-            addon_auto_bump: this.form.querySelector('input[name="addon_auto_bump"]')?.checked || false,
         };
 
         fetch('/api/pricing-calculator/?' + new URLSearchParams(data), {

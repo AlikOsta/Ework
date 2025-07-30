@@ -162,9 +162,9 @@
     function updatePrice() {
         const photo = document.querySelector('input[name="addon_photo"]').checked;
         const highlight = document.querySelector('input[name="addon_highlight"]').checked; 
-        const autoBump = document.querySelector('input[name="addon_auto_bump"]').checked;
+        // Убираем строку с addon_auto_bump
         
-        if (photo || highlight || autoBump) {
+        if (photo || highlight) {
             pricingBreakdown.innerHTML = '<div class="text-info">Услуги: Тестовая цена 150 руб</div>';
             submitBtn.textContent = 'Оплатить 150 руб';
             submitBtn.className = 'btn btn-success';
