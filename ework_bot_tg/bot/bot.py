@@ -86,8 +86,6 @@ async def create_invoice_link( user_id: int, payment_id: int, payload: str, amou
             addons.append("Фото")
         if addons_data.get('highlight'):
             addons.append("Выделение")
-        if addons_data.get('auto_bump'):
-            addons.append("Автоподнятие")
         if addons:
             description += f" с опциями: {', '.join(addons)}"
 
@@ -179,8 +177,6 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
         elif action == 'reject':
             post.status = 2  # Отклонено
             await sync_to_async(post.save)(update_fields=['status'])
-            from ework_core.signals import refund_if_paid
-            await sync_to_async(refund_if_paid)(post)
             
             response_text = f"❌ Пост '{post.title}' отклонен"
         try:

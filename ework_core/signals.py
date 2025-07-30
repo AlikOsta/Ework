@@ -69,7 +69,6 @@ def send_admin_approval_notification(instance):
 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
             """.strip()
             
-            # Создаем inline кнопки
             from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
             keyboard = InlineKeyboardMarkup(inline_keyboard=[
                 [
