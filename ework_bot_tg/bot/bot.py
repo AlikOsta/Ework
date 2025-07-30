@@ -128,14 +128,20 @@ async def create_invoice_link( user_id: int, payment_id: int, payload: str, amou
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
     webapp_button = InlineKeyboardButton(
-        text=text_button, 
+        text=text_button,
         web_app=WebAppInfo(url=cfg['miniapp_url'])
     )
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[webapp_button]])
-    await message.answer(
-        text=f"{welcome_text}", 
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[[webapp_button]]
+    )
+    photo = 'https://i.ibb.co/vCwQnC3D/photo-2025-07-05-23-14-52.jpg'
+
+    await message.answer_photo(
+        photo=photo,
+        caption=welcome_text,
         reply_markup=keyboard
     )
+
 
 # Обработка коллбеков модерации - ИСПРАВЛЕННАЯ ВЕРСИЯ
 @dp.callback_query(lambda c: c.data and (c.data.startswith('approve_post_') or c.data.startswith('reject_post_')))
