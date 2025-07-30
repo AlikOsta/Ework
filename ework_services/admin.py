@@ -1,12 +1,13 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import PostServices
 
 
 @admin.register(PostServices)
 class PostServicesAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'city', 'price_display', 'status', 'is_premium', 'created_at')
-    list_filter = ('status', 'is_premium', 'city', 'sub_rubric', 'created_at')
+    list_display = ('title', 'user', 'city', 'price_display', 'status', 'is_premium', 'image_preview', 'created_at')
+    list_filter = ('status', 'city', 'sub_rubric', 'created_at')
     search_fields = ('title', 'description', 'user__username', 'user__first_name', 'user__last_name')
     readonly_fields = ('created_at', 'updated_at')
     
@@ -55,16 +56,22 @@ class PostServicesAdmin(admin.ModelAdmin):
         """Одобрить посты (ручная модерация)"""
         updated = queryset.filter(status=1).update(status=3)  # На модерации → Опубликовано
         self.message_user(request, f"Одобрено: {updated} объявлений")
-    approve_posts.short_description = "✅ Одобрить посты"
+    approve_posts.short_description = "Одобрить посты"
     
     def reject_posts(self, request, queryset):
         """Отклонить посты (ручная модерация)"""
         updated = queryset.exclude(status=2).update(status=2)  # → Отклонено
         self.message_user(request, f"Отклонено: {updated} объявлений")
-    reject_posts.short_description = "❌ Отклонить посты"
+    reject_posts.short_description = "Отклонить посты"
     
     def archive_posts(self, request, queryset):
         """Архивировать посты"""
         updated = queryset.update(status=4)  # → Архив
         self.message_user(request, f"Архивировано: {updated} объявлений")
-    archive_posts.short_description = "📦 Архивировать"
+    archive_posts.short_description = "Архивировать"
+
+    def image_preview(self, obj):
+        if obj.image:
+            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 50px; max-width: 50px;">')
+        return "Нет изображения"
+    image_preview.short_description = 'Превью'

@@ -32,7 +32,7 @@ class BannerPostAdmin(admin.ModelAdmin):
     
     def image_preview(self, obj):
         if obj.image:
-            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 100px; max-width: 200px;">')
+            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 50px; max-width: 50px;">')
         return "Нет изображения"
     image_preview.short_description = 'Превью'
     
