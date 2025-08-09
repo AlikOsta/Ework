@@ -1,0 +1,345 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}Статистика просмотров - Сарубага{% endblock %}
+
+{% block extrahead %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+    .stats-container {
+        padding: 20px;
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+    
+    .header-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+        height: 100%;
+    }
+    
+    .metric-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        padding: 16px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+    
+    .metric-icon.views { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .metric-icon.favorites { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+    .metric-icon.avg { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    
+    .metric-label {
+        color: #7f8c8d;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    .small-chart {
+        height: 200px !important;
+    }
+    
+    .post-title {
+        font-weight: 600;
+        color: #2c3e50;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+    <!-- Заголовок -->
+    <div class="header-section">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-eye me-2"></i>
+                <h1 class="h2 mb-0">Статистика просмотров</h1>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <a href="/admin/stats/dashboard/" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Назад к общей статистике
+                </a>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="period" id="day" value="day">
+                    <label class="btn btn-outline-primary" for="day">День</label>
+                    
+                    <input type="radio" class="btn-check" name="period" id="week" value="week">
+                    <label class="btn btn-outline-primary" for="week">Неделя</label>
+                    
+                    <input type="radio" class="btn-check" name="period" id="month" value="month" checked>
+                    <label class="btn btn-outline-primary" for="month">Месяц</label>
+                    
+                    <input type="radio" class="btn-check" name="period" id="year" value="year">
+                    <label class="btn btn-outline-primary" for="year">Год</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основные показатели -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon views">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="metric-value" id="total-views">-</div>
+                <div class="metric-label">Всего просмотров</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon favorites">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div class="metric-value" id="total-favorites">-</div>
+                <div class="metric-label">Всего избранного</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon avg">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="metric-value" id="avg-views-per-post">-</div>
+                <div class="metric-label">Среднее просмотров на пост</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon avg">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="metric-value" id="avg-favorites-per-post">-</div>
+                <div class="metric-label">Среднее избранного на пост</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики -->
+    <div class="row g-3 mb-4">
+        <!-- Основной график просмотров -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Динамика просмотров и избранного</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="viewsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Топ объявлений по просмотрам -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Топ объявлений по просмотрам</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Объявление</th>
+                            <th>Автор</th>
+                            <th>Просмотры</th>
+                            <th>Избранное</th>
+                            <th>Дата создания</th>
+                        </tr>
+                    </thead>
+                    <tbody id="top-posts-body">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                                Загрузка данных...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let viewsChart;
+let currentPeriod = 'month';
+
+// Конфигурация графиков
+const lineConfig = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top'
+        }
+    },
+    scales: {
+        x: {
+            grid: {
+                display: false
+            }
+        },
+        y: {
+            beginAtZero: true,
+            grid: {
+                color: '#f0f0f0'
+            }
+        }
+    },
+    elements: {
+        point: {
+            radius: 4,
+            hoverRadius: 6
+        }
+    }
+};
+
+// Инициализация графиков
+function initCharts() {
+    // График просмотров
+    const viewsCtx = document.getElementById('viewsChart').getContext('2d');
+    viewsChart = new Chart(viewsCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Просмотры',
+                    data: [],
+                    borderColor: '#4facfe',
+                    backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Избранное',
+                    data: [],
+                    borderColor: '#fa709a',
+                    backgroundColor: 'rgba(250, 112, 154, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: lineConfig
+    });
+}
+
+// Загрузка данных
+async function loadData(period = 'month') {
+    currentPeriod = period;
+    
+    try {
+        const response = await fetch(`/admin/stats/api/views/?period=${period}`);
+        const data = await response.json();
+        
+        // Обновляем показатели
+        document.getElementById('total-views').textContent = data.total_views.toLocaleString();
+        document.getElementById('total-favorites').textContent = data.total_favorites.toLocaleString();
+        document.getElementById('avg-views-per-post').textContent = data.avg_views_per_post.toLocaleString();
+        document.getElementById('avg-favorites-per-post').textContent = data.avg_favorites_per_post.toLocaleString();
+        
+        // Обновляем график
+        viewsChart.data.labels = data.labels;
+        viewsChart.data.datasets[0].data = data.datasets[0].data;
+        viewsChart.data.datasets[1].data = data.datasets[1].data;
+        viewsChart.update('none');
+        
+        // Загружаем топ объявлений
+        loadTopPosts(data.top_posts);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+    }
+}
+
+// Загрузка топ объявлений
+function loadTopPosts(topPosts) {
+    const tbody = document.getElementById('top-posts-body');
+    
+    if (topPosts && topPosts.length > 0) {
+        tbody.innerHTML = topPosts.map(post => `
+            <tr>
+                <td class="post-title">${post.title}</td>
+                <td>@user</td>
+                <td><strong>${post.views}</strong></td>
+                <td><strong>${post.favorites}</strong></td>
+                <td>Недавно</td>
+            </tr>
+        `).join('');
+    } else {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                    Нет данных для отображения
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Обработчики событий
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    loadData();
+
+    // Обработчик кнопок периода
+    document.querySelectorAll('input[name="period"]').forEach(btn => {
+        btn.addEventListener('change', function() {
+            if (this.checked) {
+                loadData(this.value);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

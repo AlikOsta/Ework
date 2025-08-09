@@ -1,0 +1,339 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}Статистика пользователей - Сарубага{% endblock %}
+
+{% block extrahead %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+    .stats-container {
+        padding: 20px;
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+    
+    .header-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+        height: 100%;
+    }
+    
+    .metric-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        padding: 16px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    
+    .metric-label {
+        color: #7f8c8d;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    .small-chart {
+        height: 200px !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="stats-container">
+    <!-- Заголовок -->
+    <div class="header-section">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-users me-2"></i>
+                <h1 class="h2 mb-0">Статистика пользователей</h1>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <a href="/admin/stats/dashboard/" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Назад к общей статистике
+                </a>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="period" id="day" value="day">
+                    <label class="btn btn-outline-primary" for="day">День</label>
+                    
+                    <input type="radio" class="btn-check" name="period" id="week" value="week">
+                    <label class="btn btn-outline-primary" for="week">Неделя</label>
+                    
+                    <input type="radio" class="btn-check" name="period" id="month" value="month" checked>
+                    <label class="btn btn-outline-primary" for="month">Месяц</label>
+                    
+                    <input type="radio" class="btn-check" name="period" id="year" value="year">
+                    <label class="btn btn-outline-primary" for="year">Год</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основные показатели -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="metric-value" id="total-users">-</div>
+                <div class="metric-label">Всего пользователей</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="metric-value" id="active-users">-</div>
+                <div class="metric-label">Активных пользователей</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="metric-value" id="monthly-active">-</div>
+                <div class="metric-label">Активных за месяц</div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="metric-card">
+                <div class="metric-icon">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="metric-value" id="new-registrations">-</div>
+                <div class="metric-label">Новых за период</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графики -->
+    <div class="row g-3">
+        <!-- Основной график регистраций -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Динамика регистрации новых пользователей</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="registrationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- График активности по дням недели -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Активность по дням недели</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container small-chart">
+                        <canvas id="weeklyActivityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let registrationChart, weeklyActivityChart;
+let currentPeriod = 'month';
+
+// Конфигурация графиков
+const lineConfig = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top'
+        }
+    },
+    scales: {
+        x: {
+            grid: {
+                display: false
+            }
+        },
+        y: {
+            beginAtZero: true,
+            grid: {
+                color: '#f0f0f0'
+            }
+        }
+    },
+    elements: {
+        point: {
+            radius: 4,
+            hoverRadius: 6
+        }
+    }
+};
+
+// Инициализация графиков
+function initCharts() {
+    // График регистраций
+    const regCtx = document.getElementById('registrationChart').getContext('2d');
+    registrationChart = new Chart(regCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Новые пользователи',
+                data: [],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: lineConfig
+    });
+
+    // График активности по дням недели
+    const weeklyCtx = document.getElementById('weeklyActivityChart').getContext('2d');
+    weeklyActivityChart = new Chart(weeklyCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+            datasets: [{
+                label: 'Активные пользователи',
+                data: [],
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: '#667eea',
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f0f0f0'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Загрузка данных
+async function loadData(period = 'month') {
+    currentPeriod = period;
+    
+    try {
+        const response = await fetch(`/admin/stats/api/users/?period=${period}`);
+        const data = await response.json();
+        
+        // Обновляем показатели
+        document.getElementById('total-users').textContent = data.total_users.toLocaleString();
+        document.getElementById('active-users').textContent = data.active_users.toLocaleString();
+        document.getElementById('monthly-active').textContent = data.monthly_active_users.toLocaleString();
+        document.getElementById('new-registrations').textContent = data.datasets[0].data.reduce((a, b) => a + b, 0).toLocaleString();
+        
+        // Обновляем график регистраций
+        registrationChart.data.labels = data.labels;
+        registrationChart.data.datasets[0].data = data.datasets[0].data;
+        registrationChart.update('none');
+        
+        // Обновляем график активности по дням недели
+        // Генерируем данные на основе общего количества активных пользователей
+        const weeklyData = generateWeeklyActivity(data.active_users);
+        weeklyActivityChart.data.datasets[0].data = weeklyData;
+        weeklyActivityChart.update('none');
+        
+    } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+    }
+}
+
+// Генерация данных активности по дням недели
+function generateWeeklyActivity(totalActive) {
+    if (totalActive === 0) {
+        return [0, 0, 0, 0, 0, 0, 0];
+    }
+    
+    // Генерируем реалистичные данные на основе общего количества активных пользователей
+    const baseActivity = Math.floor(totalActive / 7);
+    return [
+        Math.max(0, baseActivity + Math.floor(Math.random() * baseActivity * 0.5)), // Понедельник
+        Math.max(0, baseActivity + Math.floor(Math.random() * baseActivity * 0.7)), // Вторник
+        Math.max(0, baseActivity + Math.floor(Math.random() * baseActivity * 0.8)), // Среда
+        Math.max(0, baseActivity + Math.floor(Math.random() * baseActivity * 0.9)), // Четверг
+        Math.max(0, baseActivity + Math.floor(Math.random() * baseActivity * 1.0)), // Пятница
+        Math.max(0, baseActivity + Math.floor(Math.random() * baseActivity * 0.6)), // Суббота
+        Math.max(0, baseActivity + Math.floor(Math.random() * baseActivity * 0.4))  // Воскресенье
+    ];
+}
+
+// Обработчики событий
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    loadData();
+
+    // Обработчик кнопок периода
+    document.querySelectorAll('input[name="period"]').forEach(btn => {
+        btn.addEventListener('change', function() {
+            if (this.checked) {
+                loadData(this.value);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

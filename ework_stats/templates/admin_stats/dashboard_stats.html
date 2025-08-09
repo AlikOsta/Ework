@@ -1,0 +1,281 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Статистика" %}{% endblock %}
+
+{% block extrahead %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  /* Стили для мобильных устройств */
+  @media (max-width: 767.98px) {
+    .mobile-compact .card {
+      margin-bottom: 0.5rem !important;
+    }
+    .mobile-compact .card-body {
+      padding: 0.75rem !important;
+    }
+    .mobile-compact h5 {
+      font-size: 1rem !important;
+    }
+    .mobile-compact .material-icons {
+      font-size: 1.5rem !important;
+    }
+    .mobile-compact .small {
+      font-size: 0.7rem !important;
+    }
+    .mobile-compact .chart-container {
+      height: 120px !important;
+    }
+    .mobile-compact .metric-value {
+      font-size: 0.9rem !important;
+    }
+    .mobile-compact .section-title {
+      font-size: 1.1rem !important;
+    }
+    .mobile-compact .btn {
+      padding: 0.25rem 0.5rem !important;
+      font-size: 0.75rem !important;
+    }
+    .mobile-compact .row.g-3 {
+      --bs-gutter-y: 0.5rem !important;
+      --bs-gutter-x: 0.5rem !important;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2 py-md-4 mobile-compact">
+  <!-- Заголовок -->
+  <div class="card mb-2 mb-md-4 shadow-sm">
+    <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+      <h2 class="h4 mb-0 section-title">{% trans "Статистика" %}</h2>
+      <div class="btn-group mt-2 mt-md-0" role="group">
+        {% for period in period_choices %}
+        <input type="radio" class="btn-check" name="period" id="{{ period.value }}" value="{{ period.value }}"{% if period.value == 'month' %} checked{% endif %}>
+        <label class="btn btn-outline-primary btn-sm" for="{{ period.value }}">{% trans period.label %}</label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Основные метрики -->
+  <div class="row g-2 g-md-3 mb-2 mb-md-4">
+    {% for metric in metrics %}
+    <div class="col-4 col-md-4 col-lg-2">
+      <div class="card text-center h-100 shadow-sm">
+        <div class="card-body">
+          <div class="mb-1 mb-md-2">
+            <span class="material-icons text-primary">{{ metric.icon }}</span>
+          </div>
+          <h5 class="fw-bold mb-0 mb-md-1 metric-value" id="{{ metric.id }}">-</h5>
+          <p class="text-muted small mb-0">{% trans metric.label %}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Детальная статистика -->
+  <div class="row g-2 g-md-3">
+    {% for section_data in sections %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm">
+      {% comment %} <div class="card h-100 shadow-sm" onclick="location.href='/admin/stats/{{ section_data.section }}/'" role="button"> {% endcomment %}
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+            <h5 class="card-title mb-0 section-title">{% trans section_data.title %}</h5>
+          </div>
+          <div class="chart-container" style="height: 120px; height: 150px;">
+            <canvas id="{{ section_data.chart_id }}"></canvas>
+          </div>
+          <div class="mt-2 mt-md-3 border-top pt-2 pt-md-3 row row-cols-3 text-center">
+            {% for metric in section_data.metrics %}
+            <div>
+              <div class="fw-semibold metric-value" id="{{ metric.id }}">-</div>
+              <div class="text-muted small">{% trans metric.label %}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  let usersChart, postsChart, financeChart;
+
+  const chartConfig = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { 
+      legend: { display: false },
+      tooltip: {
+        // Более компактные тултипы для мобильных
+        titleFont: { size: window.innerWidth < 768 ? 10 : 12 },
+        bodyFont: { size: window.innerWidth < 768 ? 10 : 12 },
+        padding: window.innerWidth < 768 ? 6 : 10
+      }
+    },
+    scales: {
+      x: { 
+        grid: { display: false },
+        ticks: {
+          // Меньший размер шрифта на мобильных
+          font: { size: window.innerWidth < 768 ? 8 : 11 },
+          maxRotation: 45,
+          minRotation: 45
+        }
+      },
+      y: { 
+        beginAtZero: true, 
+        grid: { color: '#f0f0f0' },
+        ticks: {
+          // Меньший размер шрифта на мобильных
+          font: { size: window.innerWidth < 768 ? 8 : 11 }
+        }
+      }
+    },
+    elements: { 
+      point: { radius: window.innerWidth < 768 ? 1 : 2, hoverRadius: window.innerWidth < 768 ? 3 : 4 },
+      line: { borderWidth: window.innerWidth < 768 ? 1.5 : 2 }
+    }
+  };
+
+  function initCharts() {
+    usersChart = new Chart(document.getElementById('usersChart'), getChartConfig('#0d6efd'));
+    postsChart = new Chart(document.getElementById('postsChart'), getChartConfig('#dc3545'));
+    financeChart = new Chart(document.getElementById('financeChart'), getChartConfig('#198754'));
+  }
+
+  function getChartConfig(color) {
+    return {
+      type: 'line',
+      data: { 
+        labels: [], 
+        datasets: [{ 
+          label: '', 
+          data: [], 
+          borderColor: color, 
+          backgroundColor: color + '20', 
+          borderWidth: window.innerWidth < 768 ? 1.5 : 2, 
+          tension: 0.4, 
+          fill: true 
+        }] 
+      },
+      options: chartConfig
+    };
+  }
+
+  function updateChart(chart, labels, data) {
+    // Для мобильных устройств показываем меньше точек на графике
+    if (window.innerWidth < 768 && labels.length > 10) {
+      const step = Math.ceil(labels.length / 10);
+      const filteredLabels = [];
+      const filteredData = [];
+      
+      for (let i = 0; i < labels.length; i += step) {
+        filteredLabels.push(labels[i]);
+        filteredData.push(data[i]);
+      }
+      
+      chart.data.labels = filteredLabels;
+      chart.data.datasets[0].data = filteredData;
+    } else {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = data;
+    }
+    
+    chart.update();
+  }
+
+  async function loadData(period = 'month') {
+    try {
+      const [users, posts, views, revenue] = await Promise.all([
+        fetchData('users', period),
+        fetchData('posts', period),
+        fetchData('views', period),
+        fetchData('revenue', period)
+      ]);
+
+      // Основные показатели
+      setText('total-users', users.total_users);
+      setText('total-posts', posts.total_posts);
+      setText('active-posts', posts.active_posts);
+      setText('total-favorites', views.total_favorites);
+      setText('total-revenue', revenue.total_revenue);
+
+      // Доп. метрики
+      setText('new-users', users.active_users);
+      setText('active-users', users.daily_active_users);
+      setText('users-growth', users.weekly_active_users);
+      setText('new-posts', sum(posts.datasets[0].data));
+      setText('posts-moderation', posts.status_data?.[0] || 0);
+      setText('posts-growth', posts.active_posts);
+      setText('period-revenue', sum(revenue.datasets[0].data));
+      setText('total-payments', revenue.total_payments);
+      setText('avg-payment', revenue.avg_payment);
+
+      // Графики
+      updateChart(usersChart, users.labels, users.datasets[0].data);
+      updateChart(postsChart, posts.labels, posts.datasets[0].data);
+      updateChart(financeChart, revenue.labels, revenue.datasets[0].data);
+    } catch (e) {
+      alert('Ошибка загрузки данных');
+      console.error(e);
+    }
+  }
+
+  const fetchData = (endpoint, period) =>
+    fetch(`/admin/stats/api/${endpoint}/?period=${period}`).then(r => {
+      if (!r.ok) throw new Error(`${endpoint} fetch error`);
+      return r.json();
+    });
+
+  // Форматирование чисел с учетом размера экрана
+  const setText = (id, val) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    
+    const num = +val;
+    // На мобильных устройствах сокращаем большие числа
+    if (window.innerWidth < 768 && num > 1000) {
+      if (num > 1000000) {
+        element.textContent = (num / 1000000).toFixed(1) + 'M';
+      } else if (num > 1000) {
+        element.textContent = (num / 1000).toFixed(1) + 'K';
+      }
+    } else {
+      element.textContent = num.toLocaleString();
+    }
+  };
+  
+  const sum = arr => arr.reduce((a, b) => a + b, 0);
+
+  // Обработка изменения размера окна
+  window.addEventListener('resize', () => {
+    // Перезагрузка графиков при изменении размера окна
+    if (usersChart && postsChart && financeChart) {
+      usersChart.destroy();
+      postsChart.destroy();
+      financeChart.destroy();
+      initCharts();
+      loadData(document.querySelector('input[name="period"]:checked').value);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    loadData();
+    document.querySelectorAll('input[name="period"]').forEach(el =>
+      el.addEventListener('change', () => el.checked && loadData(el.value))
+    );
+  });
+</script>
+{% endblock %}
