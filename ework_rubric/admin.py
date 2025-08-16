@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from .models import SuperRubric, SubRubric
 from .forms import SubRubricForm
 
+from modeltranslation.admin import TabbedTranslationAdmin
 
 @admin.register(SuperRubric)
 class SuperRubricAdmin(admin.ModelAdmin):
@@ -17,7 +18,7 @@ class SuperRubricAdmin(admin.ModelAdmin):
 
 
 @admin.register(SubRubric)
-class SubRubricAdmin(admin.ModelAdmin):
+class SubRubricAdmin(TabbedTranslationAdmin):
     list_display = ('name', 'super_rubric', 'posts_count', 'order')
     list_filter = ('super_rubric',)
     search_fields = ('name', 'super_rubric__name')
@@ -37,3 +38,5 @@ class SubRubricAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('super_rubric')
+
+

@@ -62,7 +62,7 @@
 
         <!-- Подрубрика -->
         <div class="mb-3">
-            <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Категория" %}</label>
+            <label for="{{ form.sub_rubric.id_for_label }}" class="form-label">{% trans "Формат работы" %}</label>
             {% render_field form.sub_rubric class="form-control" error_class=WIDGET_ERROR_CLASS %}
             <div class="invalid-feedback">{{ form.sub_rubric.errors|first }}</div>
         </div>

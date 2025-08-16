@@ -62,21 +62,19 @@ class PostListByRubricView(BasePostListView):
         return qs
 
     def _apply_job_filters(self, qs):
-        """Применить фильтры специфичные для вакансий"""
         from ework_job.models import PostJob
         job_ids = PostJob.objects.values_list('id', flat=True)
         qs = qs.filter(id__in=job_ids)
 
-        params = {
-            'postjob__experience': self.request.GET.get('experience'),
-            'postjob__work_format': self.request.GET.get('work_format'),
-            'postjob__work_schedule': self.request.GET.get('work_schedule'),
-        }
-        
-        for field, value in params.items():
-            if value and value.isdigit():
-                qs = qs.filter(**{field: int(value)})
-        
+        if (experience := self.request.GET.get('experience')) and experience.isdigit():
+            qs = qs.filter(postjob__experience=int(experience))
+
+        if (work_schedule := self.request.GET.get('work_schedule')) and work_schedule.isdigit():
+            qs = qs.filter(postjob__work_schedule=int(work_schedule))
+
+        if (subrubric := self.request.GET.get('subrubric')) and subrubric.isdigit():
+            qs = qs.filter(sub_rubric_id=int(subrubric))
+
         return qs
 
     def get_context_data(self, **kwargs):

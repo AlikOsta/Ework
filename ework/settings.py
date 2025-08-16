@@ -29,6 +29,7 @@ SESSION_COOKIE_SAMESITE = None
 SESSION_SAVE_EVERY_REQUEST = True
 INSTALLED_APPS = [
     'jazzmin',
+    'modeltranslation', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

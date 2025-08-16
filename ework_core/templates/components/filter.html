@@ -57,16 +57,16 @@
                         
                         <div class="col-md-4">
                             <label for="format-select" class="form-label small text-muted">{% trans "Формат работы" %}</label>
-                            <select class="form-select form-select-sm" id="format-select" name="work_format">
+                            <select class="form-select form-select-sm" id="format-select" name="subrubric">
                                 <option value="">{% trans "Любой формат" %}</option>
-                                {% for choice_value, choice_label in work_format_choices %}
-                                <option value="{{ choice_value }}" {% if work_format == choice_value|stringformat:"s" %}selected{% endif %}>
-                                    {{ choice_label }}
-                                </option>
+                                {% for rubric in categories %}
+                                    <option value="{{ rubric.id }}" {% if rubric.id|stringformat:"s" == request.GET.subrubric %}selected{% endif %}>
+                                        {{ rubric.name }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </div>
-                        
+
                         <div class="col-md-4">
                             <label for="schedule-select" class="form-label small text-muted">{% trans "График работы" %}</label>
                             <select class="form-select form-select-sm" id="schedule-select" name="work_schedule">
