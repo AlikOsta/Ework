@@ -99,13 +99,12 @@
                                 <span class="text-muted">{{ post.postjob.get_work_schedule_display }}</span>
                             </div>
                             {% endif %}
-                            
-                            {% if post.postjob.work_format is not None %}
-                            <div class="mb-0">
-                                <strong>{% trans "Формат работы" %}:</strong>
-                                <span class="text-muted">{{ post.postjob.get_work_format_display }}</span>
-                            </div>
-                            {% endif %}
+                             <!--  
+				{% if post.postjob.work_format is not None %} <div class="mb-0"> <strong>{% 
+                                trans "Формат работы" %}:</strong> <span class="text-muted">{{ 
+                                post.postjob.get_work_format_display }}</span>
+                             </div>
+                            {% endif %} -->
                         </div>
                     </div>
                 </div>
