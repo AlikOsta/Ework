@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from modeltranslation.admin import TabbedTranslationAdmin
 from .models import City
 
 
 @admin.register(City)
-class CityAdmin(admin.ModelAdmin):
+class CityAdmin(TabbedTranslationAdmin):
     list_display = ('name', 'users_count', 'posts_count', 'order')
     search_fields = ('name',)
     ordering = ('order', 'name')
