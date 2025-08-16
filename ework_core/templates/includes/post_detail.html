@@ -73,10 +73,12 @@
                                 <strong>{% trans "Город" %}:</strong>
                                 <span class="text-muted">{{ post.city }}</span>
                             </div>
+                            {% if post.address %}
                             <div class="mb-2">
                                 <strong>{% trans "Адрес" %}:</strong>
                                 <span class="text-muted">{{ post.address }}</span>
                             </div>
+                            {% endif %}
                             <div class="mb-2">
                                 <strong>
                                     {% if post.postjob %}
@@ -84,7 +86,11 @@
                                     {% else %}
                                     {% trans "Категория" %}
                                     {% endif %}:</strong>
-                                <span class="text-muted">{{ post.sub_rubric }}</span>
+                                <span class="text-muted">
+                                    {% blocktrans with name=post.sub_rubric %}
+                                    {{ name }}
+                                    {% endblocktrans %}
+                                </span>
                             </div>
                             {% if post.postjob.experience is not None %}
                             <div class="mb-2">
@@ -99,24 +105,20 @@
                                 <span class="text-muted">{{ post.postjob.get_work_schedule_display }}</span>
                             </div>
                             {% endif %}
-                             <!--  
-				{% if post.postjob.work_format is not None %} <div class="mb-0"> <strong>{% 
-                                trans "Формат работы" %}:</strong> <span class="text-muted">{{ 
-                                post.postjob.get_work_format_display }}</span>
-                             </div>
-                            {% endif %} -->
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-
-
         <!-- Информация о продавце -->
         <div class="seller-info mb-4">
             <h5 class="section-title fw-bold mb-3">
-                {% trans "Продавец" %}
+                {% if post.postjob %}
+                    {% trans "Работодатель" %}
+                {% else %}
+                    {% trans "Рекламодатель" %}
+                {% endif %}
             </h5>
             <div class="card border-0 bg-light">
                 <div class="card-body p-3">
