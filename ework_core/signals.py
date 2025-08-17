@@ -1,12 +1,13 @@
-import asyncio
+
 import threading
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from ework_bot_tg.bot.bot import send_telegram_notification_async, send_admin_approval_notification
 from ework_services.models import PostServices
-from .telegram_bot import send_telegram_message, send_telegram_message_with_keyboard
 from ework_job.models import PostJob
 from .utils import moderate_post
 from ework_config.utils import get_config
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,89 +49,6 @@ def moderate_post_async(instance):
         type(instance).objects.filter(pk=instance.pk).update(status=1)
 
 
-#перенести в бот + .telegram_bot.py
-# отправка поста админу для модерации
-def send_admin_approval_notification(instance):
-    """Отправка уведомления админам с кнопками одобрения/отклонения"""
-    def send_notification():
-        try:
-            config = get_config()            
-            if not config.bot_token or not config.admin_chat_id:
-                return
-            message = f"""
-🔍 <b>Требуется модерация поста!</b>
-
-📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Город:</b> {instance.city.name}
-👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-            """.strip()
-            
-            from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="✅ Одобрить", 
-                        callback_data=f"approve_post_{instance.id}"
-                    ),
-                    InlineKeyboardButton(
-                        text="❌ Отклонить", 
-                        callback_data=f"reject_post_{instance.id}"
-                    )
-                ]
-            ])
-            asyncio.run(send_telegram_message_with_keyboard(
-                config.bot_token, 
-                config.admin_chat_id, 
-                message,
-                keyboard
-            ))
-        except Exception as e:
-            logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
-
-    thread = threading.Thread(target=send_notification)
-    thread.daemon = True
-    thread.start()
-
-#перенести в бот + .telegram_bot.py
-def send_telegram_notification_async(instance):
-    """Отправка уведомления в Telegram в отдельном потоке"""
-    def send_notification():
-        try:
-            config = get_config()            
-            if not config.bot_token or not config.admin_chat_id:
-                logger.error("❌ Нет токена или чата для отправки уведомления")
-                return
-            message = f"""
-Объявление {instance.id}:
-📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Город:</b> {instance.city.name}
-👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-            """.strip()
-            
-            asyncio.run(send_telegram_message(
-                config.bot_token, 
-                config.admin_chat_id, 
-                message, 
-                parse_mode=None
-            ))
-            logger.error("Уведомление отправлено в Telegram")
-        except Exception as e:
-            logger.error(f"❌ Ошибка при отправке уведомления: {e}")
-
-    
-    thread = threading.Thread(target=send_notification)
-    thread.daemon = True
-    thread.start()
-
-
 @receiver(post_save, sender=PostJob)
 @receiver(post_save, sender=PostServices)
 def handle_post_save(sender, instance, created, **kwargs):
@@ -154,15 +72,11 @@ def handle_payment_save(sender, instance, created, **kwargs):
     Когда платеж становится оплаченным - отправляем пост на модерацию
     """    
     if instance.status == 'paid' and instance.post:
-        # Применяем аддоны к посту
         instance.post.apply_addons_from_payment(instance)
-        # Переводим пост из черновика на модерацию
         old_status = instance.post.status
-        instance.post.status = 0  # Это должно вызвать handle_post_save
+        instance.post.status = 0 
         instance.post.save(update_fields=['status'])
-        # Проверяем что статус действительно изменился
         instance.post.refresh_from_db()
-        # Если статус не изменился, принудительно вызываем модерацию
         if instance.post.status == 0:
             from threading import Thread
             thread = Thread(target=moderate_post_async, args=(instance.post,))

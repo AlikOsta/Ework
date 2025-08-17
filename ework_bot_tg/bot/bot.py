@@ -2,54 +2,48 @@ import os
 import django
 import asyncio
 import logging
-from logging.handlers import RotatingFileHandler
 from django.utils.translation import gettext as _ 
 import httpx
+import threading
 from aiogram import Dispatcher, types
 from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from aiogram.types import (WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup)
+from aiogram.types import WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
 from asgiref.sync import sync_to_async
 from ework_job.models import PostJob
 from ework_services.models import PostServices
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-# Django setup
+logger = logging.getLogger(__name__)
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ework.settings')
 django.setup()
 
-# Получаем конфигурацию бота
 from ework_config.bot_config import get_bot_config
 cfg = get_bot_config()
 
-# Настройка логирования
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+admin_chat = cfg['admin_chat_id']
 
-# Файл с ротацией: до 5 файлов по 5 МБ
-file_handler = RotatingFileHandler(
-    filename='bot.log',
-    maxBytes=5 * 1024 * 1024,
-    backupCount=5,
-    encoding='utf-8'
-)
-file_handler.setFormatter(logging.Formatter(
-    '%(asctime)s | %(name)s | %(levelname)s | %(message)s'
-))
-
-# Консольный вывод
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter(
-    '%(levelname)s %(message)s'
-))
-
-logger.addHandler(file_handler)
-logger.addHandler(console_handler)
-
-# Инициализация бота и диспетчера
 default_props = DefaultBotProperties(parse_mode="HTML")
 bot = Bot(token=cfg['bot_token'], default=default_props)
-welcome_text = _("""Вас вітає Help Work🔎!
+dp = Dispatcher()
+
+
+@dp.message(Command(commands=["start"]))
+async def cmd_start(message: types.Message):
+    webapp_button = InlineKeyboardButton(
+        text=_('Открыть'),
+        web_app=WebAppInfo(url=cfg['miniapp_url'])
+    )
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[[webapp_button]]
+    )
+    photo = 'https://i.ibb.co/vCwQnC3D/photo-2025-07-05-23-14-52.jpg'
+
+    await message.answer_photo(
+        photo=photo,
+        caption = _("""Вас вітає Help Work🔎!
 
 Кілька слів про наш проект👇
 •  Зручність: Подавайте оголошення чи знаходьте роботу мрії в кілька кліків.
@@ -60,10 +54,87 @@ welcome_text = _("""Вас вітає Help Work🔎!
 📢 Для роботодавців: Розміщуйте вакансії та швидко знаходьте найкращих кандидатів!
 Починайте вже зараз — це просто, зручно та ефективно!
 
-📨 @HelpWorkUa""")
-text_button = _('Открыть')
+📨 @HelpWorkUa"""),
+        reply_markup=keyboard
+    )
 
-dp = Dispatcher()
+
+async def send_telegram_message(message):
+    try:
+        await bot.send_message(chat_id=cfg['admin_chat_id'], text=message)
+    except Exception as e:
+        logging.error(f"Ошибка при отправке сообщения: {e}")
+
+
+async def send_telegram_message_with_keyboard(message, keyboard):
+    """Отправляет сообщение в Telegram с inline клавиатурой"""
+    try:
+        await bot.send_message(chat_id=cfg['admin_chat_id'], text=message, reply_markup=keyboard)
+    except Exception as e:
+        logging.error(f"Ошибка при отправке сообщения: {e}")
+
+
+def send_admin_approval_notification(instance):
+    """Отправка уведомления админам с кнопками одобрения/отклонения"""
+    def send_notification():
+        try:
+            message = f"""
+🔍 <b>Требуется модерация поста!</b>
+
+📝 <b>Название:</b> {instance.title}
+📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
+📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
+📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
+💰 <b>Цена:</b> {instance.price} {instance.currency.code}
+🏙️ <b>Город:</b> {instance.city.name}
+👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
+            """.strip()
+            
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅ Одобрить", 
+                        callback_data=f"approve_post_{instance.id}"
+                    ),
+                    InlineKeyboardButton(
+                        text="❌ Отклонить", 
+                        callback_data=f"reject_post_{instance.id}"
+                    )
+                ]
+            ])
+            asyncio.run(send_telegram_message_with_keyboard(message, keyboard))
+        except Exception as e:
+            logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
+
+    thread = threading.Thread(target=send_notification)
+    thread.daemon = True
+    thread.start()
+
+
+def send_telegram_notification_async(instance):
+    """Отправка уведомления в Telegram в отдельном потоке"""
+    def send_notification():
+        try:
+            message = f"""
+Объявление {instance.id}:
+📝 <b>Название:</b> {instance.title}
+📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
+📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
+📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
+💰 <b>Цена:</b> {instance.price} {instance.currency.code}
+🏙️ <b>Город:</b> {instance.city.name}
+👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
+            """.strip()
+            
+            asyncio.run(send_telegram_message(message))
+
+        except Exception as e:
+            logger.error(f"❌ Ошибка при отправке уведомления: {e}")
+
+    thread = threading.Thread(target=send_notification)
+    thread.daemon = True
+    thread.start()
+
 
 # Асинхронный HTTP-клиент (singleton)
 _http_client: httpx.AsyncClient | None = None
@@ -74,29 +145,30 @@ def get_http_client() -> httpx.AsyncClient:
         _http_client = httpx.AsyncClient(timeout=30.0)
     return _http_client
 
+
 # Этап 6: Генерация ссылки на оплату
 async def create_invoice_link( user_id: int, payment_id: int, payload: str, amount: float, order_id: int, addons_data: dict | None = None) -> str | None:
     """
     Создать инвойс через HTTP API Telegram и вернуть ссылку
     """
-    description = f"Публикация объявления #{order_id}"
+    description = f"Публікація оголошення #{order_id}"
     if addons_data:
         addons = []
         if addons_data.get('photo'):
             addons.append("Фото")
         if addons_data.get('highlight'):
-            addons.append("Выделение")
+            addons.append("Виділення")
         if addons:
-            description += f" с опциями: {', '.join(addons)}"
+            description += f" з опціями: {', '.join(addons)}"
 
     price_kopecks = int(amount * 100)
     data = {
-        "title": "Публикация объявления",
+        "title": "Публікація оголошення",
         "description": description,
         "payload": payload,
         "provider_token": cfg['payment_provider_token'],
-        "currency": "RUB", # заменить валюту
-        "prices": [{"label": "Публикация объявления", "amount": price_kopecks}],
+        "currency": "UAH", # заменить валюту
+        "prices": [{"label": "Публікація оголошення", "amount": price_kopecks}],
         "need_name": False,
         "need_phone_number": False,
         "need_email": False,
@@ -122,26 +194,8 @@ async def create_invoice_link( user_id: int, payment_id: int, payload: str, amou
         )
     return None
 
-# Команда /start
-@dp.message(Command(commands=["start"]))
-async def cmd_start(message: types.Message):
-    webapp_button = InlineKeyboardButton(
-        text=text_button,
-        web_app=WebAppInfo(url=cfg['miniapp_url'])
-    )
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[[webapp_button]]
-    )
-    photo = 'https://i.ibb.co/vCwQnC3D/photo-2025-07-05-23-14-52.jpg'
-
-    await message.answer_photo(
-        photo=photo,
-        caption=welcome_text,
-        reply_markup=keyboard
-    )
 
 
-# Обработка коллбеков модерации - ИСПРАВЛЕННАЯ ВЕРСИЯ
 @dp.callback_query(lambda c: c.data and (c.data.startswith('approve_post_') or c.data.startswith('reject_post_')))
 async def handle_moderation_callback(callback_query: types.CallbackQuery):
     user_id = callback_query.from_user.id
@@ -155,7 +209,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
             post_id = callback_data.replace('reject_post_', '')
         else:
             logger.warning("Неизвестная команда: %s", callback_data)
-            await callback_query.answer("❌ Неизвестная команда", show_alert=True)
+            await callback_query.answer("❌ Невідома команда", show_alert=True)
             return
         post = None
         try:
@@ -165,7 +219,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
                 post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)  # На модерации
             except (PostServices.DoesNotExist, ValueError):
                 logger.warning("Пост не найден или уже обработан")
-                await callback_query.answer("❌ Пост не найден или уже обработан", show_alert=True)
+                await callback_query.answer("❌ Пост не знайдений або вже оброблений", show_alert=True)
                 return
 
         if action == 'approve':
@@ -195,7 +249,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
         
     except Exception as e:
         logger.exception("Ошибка при обработке коллбека модерации: %s", e)
-        await callback_query.answer("❌ Произошла ошибка при модерации", show_alert=True)
+        await callback_query.answer("❌ Сталася помилка під час модерації", show_alert=True)
 
 
 
@@ -206,6 +260,7 @@ async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
         pre_checkout_query_id=pre_checkout.id,
         ok=True
     )
+
 
 @dp.message(lambda msg: msg.successful_payment)
 async def successful_payment(message: types.Message):
@@ -218,12 +273,12 @@ async def successful_payment(message: types.Message):
         success = await sync_to_async(publish_post_after_payment)(user_id, payment_id)
         
         if success:
-            await message.answer(_("✅ Оплата прошла успешно! Ваше объявление опубликовано и отправлено на модерацию."))
+            await message.answer(_("✅ Оплата пройшла успішно! Ваше оголошення опубліковано та надіслано на модерацію."))
         else:
-            await message.answer(_("⚠️ Оплата получена, но при публикации произошла ошибка. Обратитесь в поддержку."))
+            await message.answer(_("⚠️ Оплату отримано, але при публікації сталася помилка. Зверніться на підтримку."))
     except Exception:
         logger.exception("Error handling successful payment payload=%s", payload)
-        await message.answer(_("⚠️ Оплата получена, но произошла ошибка. Обратитесь в поддержку."))
+        await message.answer(_("⚠️ Оплату отримано, але сталася помилка. Зверніться на підтримку."))
 
 
 
