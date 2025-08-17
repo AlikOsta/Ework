@@ -12,7 +12,6 @@ urlpatterns = [
     path('users/', include('ework_user_tg.urls', namespace='users')),
     path('jobs/', include('ework_job.urls', namespace='jobs')),
     path('services/', include('ework_services.urls')),
-    path('payments/', include('ework_payment.urls')),
     path("", include('ework_core.urls', namespace='core')),
 
 ]
