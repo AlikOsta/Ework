@@ -157,7 +157,7 @@ async def create_invoice_link( user_id: int, payment_id: int, payload: str, amou
         "description": description,
         "payload": payload,
         "provider_token": cfg['payment_provider_token'],
-        "currency": "UAH", # заменить валюту
+        "currency": "RUB", # заменить валюту
         "prices": [{"label": "Публікація оголошення", "amount": price_kopecks}],
         "need_name": False,
         "need_phone_number": False,
