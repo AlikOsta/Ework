@@ -77,13 +77,12 @@ class AbsPost(PolymorphicModel):
         return reverse("users:author_profile", kwargs={"author_id": self.user.pk})
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
         if self.image and not hasattr(self, '_image_processed'):
-            processed = process_image(self.image, self.pk)
-            if processed != self.image:
-                self.image = processed
-                self._image_processed = True
-                super().save(update_fields=['image'])
+            processed_image = process_image(self.image, self.pk)
+            if processed_image != self.image:
+                self.image = processed_image
+                self._image_processed = True  # Устанавливаем флаг, чтобы избежать повторной обработки
+        super().save(*args, **kwargs)
     
     def soft_delete(self):
         """Мягкое удаление поста"""
