@@ -37,6 +37,7 @@ class AbsPost(PolymorphicModel):
     city = models.ForeignKey(City, verbose_name=_('Город'), db_index=True, on_delete=models.PROTECT)
     address = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Адрес'))
     user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, db_index=True, verbose_name=_('Автор'))
+    # phone = models.CharField(max_length=15, blank=True, unique=True, null=True, verbose_name=_("Номер телефона"), help_text=_("Номер телефона"))
     user_phone = models.CharField(max_length=20, validators=[phone_regex], verbose_name=_('Телефон'), null=True, blank=True)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0, db_index=True, verbose_name=_('Статус'))
     is_premium = models.BooleanField(default=False, db_index=True, verbose_name=_('Цветной фон карточки'))

@@ -1,6 +1,34 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import PostJob
+from ework_user_tg.models import TelegramUser
+from django import forms
+
+
+class PostJobAdminForm(forms.ModelForm):
+    user_phone = forms.CharField(required=False, label="Телефон пользователя")
+
+    class Meta:
+        model = PostJob
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.user:
+            tg_user = getattr(self.instance.user, "telegramuser", None)
+            if tg_user:
+                self.fields["user_phone"].initial = tg_user.phone
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        phone = self.cleaned_data.get("user_phone")
+        if instance.user and hasattr(instance.user, "telegramuser"):
+            instance.user.telegramuser.phone = phone
+            instance.user.telegramuser.save()
+        if commit:
+            instance.save()
+        return instance
+    
 
 
 @admin.register(PostJob)
@@ -12,7 +40,7 @@ class PostJobAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('title', 'description', 'user', 'city', 'address', 'sub_rubric')
+            'fields': ('title', 'description', 'user', 'user_phone', 'city', 'address', 'sub_rubric')
         }),
         ('Цена и условия', {
             'fields': ('price', 'currency')
@@ -32,6 +60,11 @@ class PostJobAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    # def user_phone(self, obj):
+    #     return getattr(obj.user, 'phone', '') or '-'
+
+    # user_phone.short_description = 'Телефон пользователя'
     
     def price_display(self, obj):
         if obj.price and obj.currency:
