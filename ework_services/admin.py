@@ -13,7 +13,7 @@ class PostServicesAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('title', 'description', 'user', 'city', 'sub_rubric')
+            'fields': ('title', 'description', 'user', 'city', 'address', 'sub_rubric')
         }),
         ('Цена и условия', {
             'fields': ('price', 'currency')

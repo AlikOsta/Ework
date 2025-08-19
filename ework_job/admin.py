@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from .models import PostJob
 
@@ -13,7 +12,7 @@ class PostJobAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('title', 'description', 'user', 'city', 'sub_rubric')
+            'fields': ('title', 'description', 'user', 'city', 'address', 'sub_rubric')
         }),
         ('Цена и условия', {
             'fields': ('price', 'currency')

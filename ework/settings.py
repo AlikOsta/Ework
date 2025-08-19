@@ -13,6 +13,7 @@ ALLOWED_HOSTS = [
     '46.254.107.43',
     'helpwork.com.ua',
     '127.0.0.1',
+    '*'
 ]
 CSRF_COOKIE_DOMAIN = None  
 CSRF_COOKIE_SECURE = True  
@@ -22,6 +23,7 @@ CSRF_USE_SESSIONS = True
 CSRF_COOKIE_AGE = None
 CSRF_TRUSTED_ORIGINS = [
     'https://helpwork.com.ua',
+    'https://d4359261af9d.ngrok-free.app',
 ]
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = False

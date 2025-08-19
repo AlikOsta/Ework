@@ -12,7 +12,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 def moderate_post_async(instance):
     """Модерация поста в отдельном потоке"""
     try:
@@ -57,6 +56,7 @@ def handle_post_save(sender, instance, created, **kwargs):
     ВАЖНО: Модерация запускается только для статуса 0 (На модерации)
     """    
     if instance.status == 0:
+        logger.warning("⏸️ Модерация для поста")
         type(instance).objects.filter(pk=instance.pk).update(status=1)
         thread = threading.Thread(target=moderate_post_async, args=(instance,))
         thread.daemon = True
@@ -84,4 +84,5 @@ def handle_payment_save(sender, instance, created, **kwargs):
             thread.start()
     else:
         logger.warning(f"⏸️ Модерация пропущена для платежа {instance.id} (статус: {instance.status})")
+
 

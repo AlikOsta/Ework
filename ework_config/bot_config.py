@@ -21,3 +21,5 @@ def clear_bot_config_cache():
     """Очистить кэш конфигурации бота"""
     global _bot_config
     _bot_config = None
+
+

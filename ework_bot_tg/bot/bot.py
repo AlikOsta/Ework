@@ -1,10 +1,8 @@
 import os
-import django
 import asyncio
 import logging
 from django.utils.translation import gettext as _ 
 import httpx
-import threading
 from aiogram import Dispatcher, types
 from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
@@ -14,11 +12,11 @@ from asgiref.sync import sync_to_async
 from ework_job.models import PostJob
 from ework_services.models import PostServices
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from asgiref.sync import async_to_sync
 
 logger = logging.getLogger(__name__)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ework.settings')
-django.setup()
 
 from ework_config.bot_config import get_bot_config
 cfg = get_bot_config()
@@ -29,6 +27,15 @@ default_props = DefaultBotProperties(parse_mode="HTML")
 bot = Bot(token=cfg['bot_token'], default=default_props)
 dp = Dispatcher()
 
+async def _send_with_local_bot(message, reply_markup=None):
+    bot_local = Bot(token=cfg['bot_token'], default=default_props)
+    try:
+        await bot_local.send_message(chat_id=cfg['admin_chat_id'], text=message, reply_markup=reply_markup)
+    finally:
+        try:
+            await bot_local.close()
+        except Exception:
+            pass
 
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
@@ -59,26 +66,18 @@ async def cmd_start(message: types.Message):
     )
 
 
-async def send_telegram_message(message):
-    try:
-        await bot.send_message(chat_id=cfg['admin_chat_id'], text=message)
-    except Exception as e:
-        logging.error(f"Ошибка при отправке сообщения: {e}")
+def send_telegram_message(message):
+    async_to_sync(_send_with_local_bot)(message)
 
 
-async def send_telegram_message_with_keyboard(message, keyboard):
-    """Отправляет сообщение в Telegram с inline клавиатурой"""
-    try:
-        await bot.send_message(chat_id=cfg['admin_chat_id'], text=message, reply_markup=keyboard)
-    except Exception as e:
-        logging.error(f"Ошибка при отправке сообщения: {e}")
+def send_telegram_message_with_keyboard(message, keyboard):
+    async_to_sync(_send_with_local_bot)(message, reply_markup=keyboard)
 
 
 def send_admin_approval_notification(instance):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
-    def send_notification():
-        try:
-            message = f"""
+    try:
+        message = f"""
 🔍 <b>Требуется модерация поста!</b>
 
 📝 <b>Название:</b> {instance.title}
@@ -88,34 +87,29 @@ def send_admin_approval_notification(instance):
 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
 🏙️ <b>Город:</b> {instance.city.name}
 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-            """.strip()
-            
-            keyboard = InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="✅ Одобрить", 
-                        callback_data=f"approve_post_{instance.id}"
-                    ),
-                    InlineKeyboardButton(
-                        text="❌ Отклонить", 
-                        callback_data=f"reject_post_{instance.id}"
-                    )
-                ]
-            ])
-            asyncio.run(send_telegram_message_with_keyboard(message, keyboard))
-        except Exception as e:
-            logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
+        """.strip()
 
-    thread = threading.Thread(target=send_notification)
-    thread.daemon = True
-    thread.start()
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="✅ Одобрить",
+                    callback_data=f"approve_post_{instance.id}"
+                ),
+                InlineKeyboardButton(
+                    text="❌ Отклонить",
+                    callback_data=f"reject_post_{instance.id}"
+                )
+            ]
+        ])
+
+        send_telegram_message_with_keyboard(message, keyboard)
+    except Exception as e:
+        logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
 
 
 def send_telegram_notification_async(instance):
-    """Отправка уведомления в Telegram в отдельном потоке"""
-    def send_notification():
-        try:
-            message = f"""
+    try:
+        message = f"""
 Объявление {instance.id}:
 📝 <b>Название:</b> {instance.title}
 📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
@@ -124,16 +118,12 @@ def send_telegram_notification_async(instance):
 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
 🏙️ <b>Город:</b> {instance.city.name}
 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-            """.strip()
-            
-            asyncio.run(send_telegram_message(message))
+        """.strip()
+        
+        send_telegram_message(message)
 
-        except Exception as e:
-            logger.error(f"❌ Ошибка при отправке уведомления: {e}")
-
-    thread = threading.Thread(target=send_notification)
-    thread.daemon = True
-    thread.start()
+    except Exception as e:
+        logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
 # Асинхронный HTTP-клиент (singleton)
