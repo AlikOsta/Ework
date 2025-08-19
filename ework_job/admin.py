@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from .models import PostJob
-from ework_user_tg.models import TelegramUser
 from django import forms
 
 

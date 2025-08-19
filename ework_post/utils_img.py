@@ -87,10 +87,7 @@ def process_image(image_field, instance_id=None, max_size=None, img_format=None,
 
     buffer.seek(0)
 
-    # Генерируем новое имя файла
-    base, _ = image_field.name.rsplit('.', 1) if '.' in image_field.name else (image_field.name, '')
-    prefix = f"{instance_id}_" if instance_id else ''
-    unique_id = uuid.uuid4().hex[:8]
-    new_name = f"{prefix}{base}_{unique_id}.{img_format.lower()}"
+    unique_id = uuid.uuid4().hex[:5]
+    new_name = f"{unique_id}.{img_format.lower()}"
 
     return ContentFile(buffer.read(), name=new_name)

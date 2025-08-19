@@ -51,7 +51,6 @@ INSTALLED_APPS = [
     'ework_locations', # города 
     'ework_premium', # модели для премиум объявления
     'ework_rubric', # рубрики объявлений
-    'ework_payment', # оплата
     'ework_currency', # валюты
     'ework_core', # ядро
     'ework_config', # конфигурация

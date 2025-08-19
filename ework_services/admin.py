@@ -1,8 +1,32 @@
 from django.contrib import admin
-from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from .models import PostServices
+from django import forms
 
+
+class PostJobAdminForm(forms.ModelForm):
+    user_phone = forms.CharField(required=False, label="Телефон пользователя")
+
+    class Meta:
+        model = PostServices
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.user:
+            tg_user = getattr(self.instance.user, "telegramuser", None)
+            if tg_user:
+                self.fields["user_phone"].initial = tg_user.phone
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        phone = self.cleaned_data.get("user_phone")
+        if instance.user and hasattr(instance.user, "telegramuser"):
+            instance.user.telegramuser.phone = phone
+            instance.user.telegramuser.save()
+        if commit:
+            instance.save()
+        return instance
 
 @admin.register(PostServices)
 class PostServicesAdmin(admin.ModelAdmin):
@@ -13,7 +37,7 @@ class PostServicesAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('title', 'description', 'user', 'city', 'address', 'sub_rubric')
+            'fields': ('title', 'description', 'user', 'user_phone', 'city', 'address', 'sub_rubric')
         }),
         ('Цена и условия', {
             'fields': ('price', 'currency')
