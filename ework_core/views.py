@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView, DetailView, View
+from django.views.generic import ListView, DetailView, View, TemplateView
 from django.db.models import Count
 import json
 from django.utils.decorators import method_decorator
@@ -360,3 +360,11 @@ def post_delete_confirm(request, pk):
         return redirect('users:author_profile', author_id=request.user.id)
     
     return render(request, 'includes/post_delete_confirm.html', {'post': post})
+
+
+class PrivacyPolicy(TemplateView):
+    template_name = "pages/PrivacyPolicy.html"
+
+
+class TermsOfUse(TemplateView):
+    template_name = "pages/TermsOfUse.html"

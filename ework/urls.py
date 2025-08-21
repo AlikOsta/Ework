@@ -3,6 +3,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from ework_core import views
+
 
 urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
@@ -12,6 +14,9 @@ urlpatterns = [
     path('users/', include('ework_user_tg.urls', namespace='users')),
     path('jobs/', include('ework_job.urls', namespace='jobs')),
     path('services/', include('ework_services.urls')),
+    path('privacy-policy/', views.PrivacyPolicy.as_view(), name='privacy-policy'),
+    path('terms-of-use/', views.TermsOfUse.as_view(), name='privacy-policy'),
+
     path("", include('ework_core.urls', namespace='core')),
 
 ]
