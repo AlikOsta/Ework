@@ -1,0 +1,38 @@
+{% load i18n %}
+
+{% if posts %}
+<div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 g-3 mb-4">
+  {% for post in posts %}
+  <div class="col">
+    {% include 'components/unified_card.html' with post=post show_seller=True show_controls=False favorite_post_ids=favorite_post_ids %}
+  </div>
+  {% endfor %}
+</div>
+
+{% if has_next_page %}
+<div hx-get="{% url 'core:post_list_by_rubric' rubric_pk %}?page={{ next_page_number }}{% if request.GET.sub_rubric %}&sub_rubric={{ request.GET.sub_rubric }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+     hx-trigger="revealed"
+     hx-swap="outerHTML"
+     hx-indicator="#loading-spinner"
+     class="text-center py-3">
+    <div id="loading-spinner" class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+    {% if not request.GET.page or request.GET.page == '1' %}
+    <div class="col-12 text-center py-5">
+        <div class="empty-icon mb-3">
+            <i class="material-icons text-muted fs-1">search</i>
+        </div>
+        <h5 class="mb-3">
+            {% trans "Объявления не найдены" %}
+        </h5>
+        <p class="text-muted">
+            {% trans "По вашему запросу ничего не найдено." %}
+        </p>
+    </div>
+    {% endif %}
+{% endif %}

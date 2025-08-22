@@ -43,6 +43,11 @@ class PostListByRubricView(BasePostListView):
     template_name = 'components/card.html'
     paginate_by = 20
 
+    def get_template_names(self):
+        if self.request.htmx and self.request.GET.get('page'):
+            return ['components/post_list_content.html']
+        return [self.template_name]
+
     def dispatch(self, request, *args, **kwargs):
         self.super_rubric = None
         rubric_pk = self.kwargs.get('rubric_pk')
@@ -103,6 +108,14 @@ class PostListByRubricView(BasePostListView):
                 'work_format': self.request.GET.get('work_format', ''),
                 'work_schedule': self.request.GET.get('work_schedule', ''),
             })
+            
+        # Добавляем информацию для бесконечной прокрутки
+        page_obj = context.get('page_obj')
+        if page_obj:
+            context['has_next_page'] = page_obj.has_next
+            context['next_page_number'] = page_obj.next_page_number
+            context['current_page_number'] = page_obj.number
+
         return context
 
 @method_decorator(login_required(login_url='users:telegram_auth'), name='dispatch')

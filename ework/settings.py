@@ -7,12 +7,12 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = [
-    # 'localhost',
+    'localhost',
     '46.254.107.43',
     'helpwork.com.ua',
-    # '127.0.0.1',
+    '127.0.0.1',
 
 ]
 CSRF_COOKIE_DOMAIN = None  
