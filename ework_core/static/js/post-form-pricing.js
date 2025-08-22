@@ -110,7 +110,7 @@ class PostFormPricing {
             html += `
                 <hr>
                 <div class="d-flex justify-content-between fw-bold">
-                    <span>Итого:</span>
+                    <span>Разом:</span>
                     <span>${b.total_price} ${b.currency.symbol}</span>
                 </div>`;
         }
