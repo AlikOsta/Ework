@@ -98,6 +98,9 @@ class AbsPost(PolymorphicModel):
         self.has_highlight_addon = highlight
         self.has_auto_bump_addon = auto_bump
 
+        if not photo and self.image:  # Clear image if photo addon is deselected
+            self.image = None
+
         self.is_premium = highlight
         now = timezone.now()
         
