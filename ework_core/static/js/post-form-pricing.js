@@ -94,7 +94,7 @@ class PostFormPricing {
         } else {
             html = `
                 <div class="d-flex justify-content-between">
-                    <span>Базовая:</span>
+                    <span>Базова:</span>
                     <span>${b.base_price} ${b.currency.symbol}</span>
                 </div>`;
             for (let key in b.addons) {
