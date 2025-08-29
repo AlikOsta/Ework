@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 class City(models.Model):
     name = models.CharField(max_length=50, db_index=True, verbose_name=_("Название города"), help_text=_("Название города"))
     order = models.SmallIntegerField(default=0, db_index=True, verbose_name=_("Порядок"), help_text=_("Порядок города"))
+    chat_id = models.BigIntegerField(blank=True, null=True, verbose_name=_("Чат города"), help_text=_("Чат города"))
 
     class Meta:
         app_label = "ework_config"

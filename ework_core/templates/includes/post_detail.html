@@ -214,8 +214,8 @@
                     onclick="
                     (function(){
                         var detail = this.closest('.product-detail').dataset;
-                        var msg = 'Здравствуйте! Меня интересует «' + detail.productTitle +
-                                '» за ' + detail.productPrice + '. Ещё актуально?';
+                        var msg = 'Привіт! Мене цікавить «' + detail.productTitle +
+                                '» за ' + detail.productPrice + '. Ще актуально?';
                         window.open(
                         'https://t.me/{{ post.user.username }}?text=' + encodeURIComponent(msg),
                         '_blank'

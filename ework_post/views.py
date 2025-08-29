@@ -179,7 +179,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         addon_photo = form.cleaned_data.get('addon_photo', False)
         addon_highlight = form.cleaned_data.get('addon_highlight', False)
-        addon_auto_bump = form.cleaned_data.get('addon_auto_bump', False)
+        # addon_auto_bump = form.cleaned_data.get('addon_auto_bump', False)
 
         package = Package.objects.filter(is_active=True, package_type='PAID').first()
 
@@ -188,7 +188,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             package=package,
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
+            # auto_bump=addon_auto_bump
         )
         
         if payment is None:
@@ -236,7 +236,7 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
         post.set_addons(
             photo=form.cleaned_data.get('addon_photo', False),
             highlight=form.cleaned_data.get('addon_highlight', False),
-            auto_bump=form.cleaned_data.get('addon_auto_bump', False)
+            # auto_bump=form.cleaned_data.get('addon_auto_bump', False)
         )
         
         post.save()

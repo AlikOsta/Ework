@@ -64,6 +64,10 @@ class TelegramUser(AbstractUser):
     def get_avatar_url(self):
         """Возвращает URL аватара или заглушку"""
         return self.photo_url 
+    
+    def get_mi_balance(self):
+        """Возвращает баланс пользователя"""
+        return self.balance
 
 
 class UserRating(models.Model):

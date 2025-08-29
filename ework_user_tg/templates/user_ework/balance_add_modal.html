@@ -3,26 +3,27 @@
 <div class="modal-content">
     <div class="modal-header">
         <h5 class="modal-title">
-            {% trans "Размещение рекламы" %}
+            {% trans "Пополнить баланс" %}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body text-center">
         <h5 class="mb-3">
-            {% trans "Заинтересованы в размещении рекламы?" %}
+            {% trans "Хотите пополнить баланс?" %}
             
         </h5>
         <p class="mb-4">
-            {% trans "Для размещения рекламы свяжитесь с администратором!" %}
+            {% trans "Для пополнения баланса вам необходимо связаться с администратором!" %}
         </p>
     </div>
-        <div class="modal-footer justify-content-center">
+
+    <div class="modal-footer justify-content-center">
         <button
             id="contactSellerBtn"
             type="button"
             class="btn btn-primary d-flex align-items-center" target="_blank"
             onclick="
-                const msg = 'Я хочу розмістити рекламу у вас. Як це мені зробити?';
+                const msg = 'Привіт! Я хочу поповнити свій баланс. Як це зробити?';
                 window.open(
                     'https://t.me/{{ site_config.admin_telegram|cut:"@" }}?text=' + encodeURIComponent(msg),
                     '_blank'

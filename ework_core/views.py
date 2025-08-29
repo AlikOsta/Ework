@@ -375,6 +375,7 @@ def post_delete_confirm(request, pk):
     return render(request, 'includes/post_delete_confirm.html', {'post': post})
 
 
+
 class PrivacyPolicy(TemplateView):
     template_name = "pages/PrivacyPolicy.html"
 

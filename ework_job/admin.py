@@ -59,11 +59,6 @@ class PostJobAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-
-    # def user_phone(self, obj):
-    #     return getattr(obj.user, 'phone', '') or '-'
-
-    # user_phone.short_description = 'Телефон пользователя'
     
     def price_display(self, obj):
         if obj.price and obj.currency:

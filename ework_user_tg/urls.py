@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AuthorProfileView, telegram_login, Index, TelegramAuthView, profile_edit, CreateRatingView
+from .views import AuthorProfileView, telegram_login, Index, TelegramAuthView, profile_edit, CreateRatingView, balane_add_info
 
 app_name = 'user'
 
@@ -11,5 +11,7 @@ urlpatterns = [
     path('telegram_login/', telegram_login, name='telegram_login'),
     path('index/', Index.as_view(), name='index'),
     path('auth/telegram/', TelegramAuthView.as_view(), name='telegram_auth'),
+
+    path('banner-ad-info/', balane_add_info, name='balane_add_info'),
 
 ]

@@ -361,3 +361,8 @@ class CreateRatingView(TemplateView):
             return JsonResponse({'success': True, 'message': 'Отзыв добавлен!'})
         else:
             return JsonResponse({'success': False, 'errors': form.errors})
+
+
+def balane_add_info(request):
+    """Информация о баннерной рекламе"""
+    return render(request, 'user_ework/balance_add_modal.html')
