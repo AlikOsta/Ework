@@ -30,8 +30,8 @@ class PostJobAdminForm(forms.ModelForm):
 
 @admin.register(PostServices)
 class PostServicesAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'city', 'price_display', 'status', 'is_premium', 'image_preview', 'created_at')
-    list_filter = ('status', 'city', 'sub_rubric', 'created_at')
+    list_display = ('title', 'user', 'sub_rubric', 'city', 'price_display', 'status', 'is_premium', 'image_preview', 'created_at')
+    list_filter = ('status', 'city', 'created_at')
     search_fields = ('title', 'description', 'user__username', 'user__first_name', 'user__last_name')
     readonly_fields = ('created_at', 'updated_at')
     
@@ -64,35 +64,25 @@ class PostServicesAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user', 'city', 'currency', 'sub_rubric')
     
-    actions = ['make_premium', 'make_regular', 'approve_posts', 'reject_posts', 'archive_posts']
-    
-    def make_premium(self, request, queryset):
-        queryset.update(is_premium=True)
-        self.message_user(request, f"Сделано премиум: {queryset.count()} объявлений")
-    make_premium.short_description = "Сделать премиум"
-    
-    def make_regular(self, request, queryset):
-        queryset.update(is_premium=False)
-        self.message_user(request, f"Убрано премиум: {queryset.count()} объявлений")
-    make_regular.short_description = "Убрать премиум"
+    actions = ['approve_posts', 'reject_posts', 'archive_posts']
     
     def approve_posts(self, request, queryset):
         """Одобрить посты (ручная модерация)"""
-        updated = queryset.filter(status=1).update(status=3)  # На модерации → Опубликовано
+        updated = queryset.update(status=3)
         self.message_user(request, f"Одобрено: {updated} объявлений")
-    approve_posts.short_description = "Одобрить посты"
+    approve_posts.short_description = "Опубликовать выбранные Услуги"
     
     def reject_posts(self, request, queryset):
         """Отклонить посты (ручная модерация)"""
-        updated = queryset.exclude(status=2).update(status=2)  # → Отклонено
+        updated = queryset.exclude(status=2).update(status=2)
         self.message_user(request, f"Отклонено: {updated} объявлений")
-    reject_posts.short_description = "Отклонить посты"
+    reject_posts.short_description = "Отклонить выбранные Услуги"
     
     def archive_posts(self, request, queryset):
         """Архивировать посты"""
-        updated = queryset.update(status=4)  # → Архив
+        updated = queryset.update(status=4)
         self.message_user(request, f"Архивировано: {updated} объявлений")
-    archive_posts.short_description = "Архивировать"
+    archive_posts.short_description = "Архивировать выбранные Услуги"
 
     def image_preview(self, obj):
         if obj.image:

@@ -174,40 +174,22 @@
         var previewContainer = document.getElementById('image-preview-container');
         var uploadLabel = document.getElementById('upload-label');
         var photoUpload = document.getElementById('photo-upload');
-
-        // Clear the file input
         photoUpload.value = '';
-        // Hide preview and show upload label
         previewContainer.classList.add('hidden');
         previewContainer.style.display = 'none';
         uploadLabel.classList.remove('hidden');
-        document.getElementById('image-preview').src = '#'; // Reset image source
+        document.getElementById('image-preview').src = '#';
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initial check for image preview if an image already exists (e.g., when editing a post)
-        var existingImageSrc = document.getElementById('image-preview').src;
-        if (existingImageSrc && existingImageSrc !== window.location.href + '#') {
-            document.getElementById('image-preview-container').classList.remove('hidden');
-            document.getElementById('image-preview-container').style.display = 'block';
-            document.getElementById('upload-label').classList.add('hidden');
+    // Простое переключение поля изображения
+    document.addEventListener('change', function(e) {    
+        if (e.target.dataset.toggle === 'image-field') {
+            document.getElementById('image-upload-wrapper').style.display = e.target.checked ? 'block' : 'none';
+            if (!e.target.checked) {
+                clearImage(); 
+            }
         }
-
-        // Event listener for remove button
-        document.getElementById('remove-image-btn').addEventListener('click', function() {
-            clearImage();
-        });
     });
-
-// Простое переключение поля изображения
-document.addEventListener('change', function(e) {    
-    if (e.target.dataset.toggle === 'image-field') {
-        document.getElementById('image-upload-wrapper').style.display = e.target.checked ? 'block' : 'none';
-        if (!e.target.checked) {
-            clearImage(); // Clear image if addon is unchecked
-        }
-    }
-});
 </script>
 
 {% endwith %}

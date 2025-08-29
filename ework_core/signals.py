@@ -5,7 +5,9 @@ from django.dispatch import receiver
 from ework_bot_tg.bot.bot import send_telegram_notification_async, send_admin_approval_notification
 from ework_services.models import PostServices
 from ework_job.models import PostJob
+
 from .utils import moderate_post
+
 from ework_config.utils import get_config
 
 import logging
@@ -78,8 +80,7 @@ def handle_payment_save(sender, instance, created, **kwargs):
         instance.post.save(update_fields=['status'])
         instance.post.refresh_from_db()
         if instance.post.status == 0:
-            from threading import Thread
-            thread = Thread(target=moderate_post_async, args=(instance.post,))
+            thread = threading.Thread(target=moderate_post_async, args=(instance.post,))
             thread.daemon = True
             thread.start()
     else:
