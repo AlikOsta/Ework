@@ -6,6 +6,7 @@ from ework_post.models import AbsPost
 from ework_rubric.models import SubRubric
 from ework_locations.models import City
 from ework_currency.models import Currency
+from ework_rubric.models import SuperRubric
 
 
 class BasePostForm(forms.ModelForm):
@@ -91,3 +92,17 @@ class BasePostForm(forms.ModelForm):
         if len(description) < 10:
             raise forms.ValidationError(_('Описание должно содержать минимум 10 символов'))
         return description
+
+    def _set_subrubric_queryset(self, super_rubric_slug):
+        try:
+            super_rubric = SuperRubric.objects.get(slug=super_rubric_slug)
+            qs = SubRubric.objects.filter(super_rubric=super_rubric).order_by('order')
+        except SuperRubric.DoesNotExist:
+            qs = SubRubric.objects.none()
+
+        self.fields['sub_rubric'].queryset = qs
+        self.fields['sub_rubric'].empty_label = None
+
+        first = qs.first()
+        if first:
+            self.fields['sub_rubric'].initial = first.pk

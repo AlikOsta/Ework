@@ -10,15 +10,4 @@ class JobPostForm(BasePostForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        try:
-            job_rubric = SuperRubric.objects.get(slug='rabota')
-            qs = SubRubric.objects.filter(super_rubric=job_rubric).order_by('order')
-        except SuperRubric.DoesNotExist:
-            qs = SubRubric.objects.none()
-
-        self.fields['sub_rubric'].queryset = qs
-        self.fields['sub_rubric'].empty_label = None
-
-        first = qs.first()
-        if first:
-            self.fields['sub_rubric'].initial = first.pk
+        self._set_subrubric_queryset(super_rubric_slug='rabota')

@@ -137,52 +137,52 @@ def get_http_client() -> httpx.AsyncClient:
 
 
 # Этап 6: Генерация ссылки на оплату
-async def create_invoice_link( user_id: int, payment_id: int, payload: str, amount: float, order_id: int, addons_data: dict | None = None) -> str | None:
-    """
-    Создать инвойс через HTTP API Telegram и вернуть ссылку
-    """
-    description = f"Публікація оголошення #{order_id}"
-    if addons_data:
-        addons = []
-        if addons_data.get('photo'):
-            addons.append("Фото")
-        if addons_data.get('highlight'):
-            addons.append("Виділення")
-        if addons:
-            description += f" з опціями: {', '.join(addons)}"
+# async def create_invoice_link( user_id: int, payment_id: int, payload: str, amount: float, order_id: int, addons_data: dict | None = None) -> str | None:
+#     """
+#     Создать инвойс через HTTP API Telegram и вернуть ссылку
+#     """
+#     description = f"Публікація оголошення #{order_id}"
+#     if addons_data:
+#         addons = []
+#         if addons_data.get('photo'):
+#             addons.append("Фото")
+#         if addons_data.get('highlight'):
+#             addons.append("Виділення")
+#         if addons:
+#             description += f" з опціями: {', '.join(addons)}"
 
-    price_kopecks = int(amount * 100)
-    data = {
-        "title": "Публікація оголошення",
-        "description": description,
-        "payload": payload,
-        "provider_token": cfg['payment_provider_token'],
-        "currency": "UAH", # заменить валюту
-        "prices": [{"label": "Публікація оголошення", "amount": price_kopecks}],
-        "need_name": False,
-        "need_phone_number": False,
-        "need_email": False,
-        "need_shipping_address": False,
-        "send_phone_number_to_provider": False,
-        "send_email_to_provider": False,
-        "is_flexible": False,
-    }
-    url = f"https://api.telegram.org/bot{cfg['bot_token']}/createInvoiceLink"
-    try:
-        client = get_http_client()
-        response = await client.post(url, json=data)
-        response.raise_for_status()
-        result = response.json()
-        if result.get('ok'):
-            return result['result']
-        else:
-            logger.error("Telegram API error creating invoice: %s", result)
-    except Exception:
-        logger.exception(
-            "Failed to create invoice link for payment %s (user %s)",
-            payment_id, user_id
-        )
-    return None
+#     price_kopecks = int(amount * 100)
+#     data = {
+#         "title": "Публікація оголошення",
+#         "description": description,
+#         "payload": payload,
+#         "provider_token": cfg['payment_provider_token'],
+#         "currency": "UAH", # заменить валюту
+#         "prices": [{"label": "Публікація оголошення", "amount": price_kopecks}],
+#         "need_name": False,
+#         "need_phone_number": False,
+#         "need_email": False,
+#         "need_shipping_address": False,
+#         "send_phone_number_to_provider": False,
+#         "send_email_to_provider": False,
+#         "is_flexible": False,
+#     }
+#     url = f"https://api.telegram.org/bot{cfg['bot_token']}/createInvoiceLink"
+#     try:
+#         client = get_http_client()
+#         response = await client.post(url, json=data)
+#         response.raise_for_status()
+#         result = response.json()
+#         if result.get('ok'):
+#             return result['result']
+#         else:
+#             logger.error("Telegram API error creating invoice: %s", result)
+#     except Exception:
+#         logger.exception(
+#             "Failed to create invoice link for payment %s (user %s)",
+#             payment_id, user_id
+#         )
+#     return None
 
 
 
@@ -244,31 +244,31 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
 
 
 # Pre-checkout
-@dp.pre_checkout_query()
-async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
-    await pre_checkout.bot.answer_pre_checkout_query(
-        pre_checkout_query_id=pre_checkout.id,
-        ok=True
-    )
+# @dp.pre_checkout_query()
+# async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
+#     await pre_checkout.bot.answer_pre_checkout_query(
+#         pre_checkout_query_id=pre_checkout.id,
+#         ok=True
+#     )
 
 
-@dp.message(lambda msg: msg.successful_payment)
-async def successful_payment(message: types.Message):
-    payload = message.successful_payment.invoice_payload
-    try:
-        user_id_str, payment_id_str = payload.split('&&&')
-        user_id, payment_id = int(user_id_str), int(payment_id_str)
-        
-        from ework_core.views import publish_post_after_payment
-        success = await sync_to_async(publish_post_after_payment)(user_id, payment_id)
-        
-        if success:
-            await message.answer(_("✅ Оплата пройшла успішно! Ваше оголошення опубліковано та надіслано на модерацію."))
-        else:
-            await message.answer(_("⚠️ Оплату отримано, але при публікації сталася помилка. Зверніться на підтримку."))
-    except Exception:
-        logger.exception("Error handling successful payment payload=%s", payload)
-        await message.answer(_("⚠️ Оплату отримано, але сталася помилка. Зверніться на підтримку."))
+# @dp.message(lambda msg: msg.successful_payment)
+# async def successful_payment(message: types.Message):
+#     payload = message.successful_payment.invoice_payload
+#     try:
+#         user_id_str, payment_id_str = payload.split('&&&')
+#         user_id, payment_id = int(user_id_str), int(payment_id_str)
+#         
+#         from ework_core.views import publish_post_after_payment
+#         success = await sync_to_async(publish_post_after_payment)(user_id, payment_id)
+#         
+#         if success:
+#             await message.answer(_("✅ Оплата пройшла успішно! Ваше оголошення опубліковано та надіслано на модерацію."))
+#         else:
+#             await message.answer(_("⚠️ Оплату отримано, але при публікації сталася помилка. Зверніться на підтримку."))
+#     except Exception:
+#         logger.exception("Error handling successful payment payload=%s", payload)
+#         await message.answer(_("⚠️ Оплату отримано, але сталася помилка. Зверніться на підтримку."))
 
 
 

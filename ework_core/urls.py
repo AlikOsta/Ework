@@ -2,7 +2,7 @@
 from django.urls import path
 
 from . import views
-from ework_post.views import PricingCalculatorView, PostPaymentSuccessView
+from ework_post.views import PricingCalculatorView
 
 app_name = 'core'
 

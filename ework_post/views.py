@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 
 from ework_post.models import AbsPost, Favorite, PostView
 from ework_premium.models import Package, FreePostRecord
-from ework_premium.utils import create_payment_for_post, PricingCalculator
+from ework_premium.utils import PricingCalculator
 
 
 class BasePostListView(ListView):
@@ -182,20 +182,41 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         addon_photo = form.cleaned_data.get('addon_photo', False)
         addon_highlight = form.cleaned_data.get('addon_highlight', False)
-
-        package = Package.objects.filter(is_active=True, package_type='PAID').first()
-
-        payment = create_payment_for_post(
-            user=self.request.user,
-            package=package,
-            photo=addon_photo,
-            highlight=addon_highlight,
-        )
         
-        if payment is None:
+        # Расчет стоимости
+        calculator = PricingCalculator(self.request.user)
+        total_price = calculator.calculate_total_price(photo=addon_photo, highlight=addon_highlight)
+
+        # Публикация бесплатного поста
+        if total_price == 0:
             return self._publish_free_post(form)
+
+        # Обработка платного поста с использованием баланса
+        if self.request.user.balance >= total_price:
+            self.object = form.save(commit=False)
+            self.object.user = self.request.user
+            self.object.status = 0  # На модерацию
+            self.object.has_photo_addon = addon_photo
+            self.object.is_premium = addon_highlight
+            self.object.save()
+
+            # Списание средств с баланса
+            self.request.user.balance -= total_price
+            self.request.user.save(update_fields=['balance'])
+
+            messages.success(self.request, self.success_message)
+            if self.request.headers.get('HX-Request'):
+                return HttpResponse(
+                    status=200,
+                    headers={
+                        'HX-Trigger': 'closeModal',
+                        'HX-Redirect': str(self.get_success_url())
+                    }
+                )
+            return redirect(self.get_success_url())
         else:
-            return self._handle_paid_post(form, payment)
+            form.add_error(None, _("Недостаточно средств на балансе. Пополните баланс, чтобы опубликовать объявление."))
+            return self.form_invalid(form)
     
     def _publish_free_post(self, form):
         """Опубликовать бесплатный пост"""
@@ -224,39 +245,6 @@ class BasePostCreateView(LoginRequiredMixin, CreateView):
             form.add_error(None, e)
             return self.form_invalid(form)
 
-    
-    def _handle_paid_post(self, form, payment):
-        """Обработать платную публикацию"""
-        # Создаем пост-черновик
-        post = form.save(commit=False)
-        post.user = self.request.user
-        post.package = payment.package
-        post.status = -1  # Черновик
-        
-        # Применяем аддоны
-        post.set_addons(
-            photo=form.cleaned_data.get('addon_photo', False),
-            highlight=form.cleaned_data.get('addon_highlight', False),
-        )
-        
-        post.save()
-        
-        # Связываем платеж с постом
-        payment.post = post
-        payment.save(update_fields=['post'])
-        
-        # HTMX запрос
-        if self.request.headers.get('HX-Request'):
-            return JsonResponse({
-                'action': 'payment_required',
-                'payment_id': payment.id,
-                'amount': str(payment.amount),
-                'currency': payment.package.currency.symbol if payment.package.currency else '$',
-                'payload': payment.get_payload(),
-                'order_id': payment.order_id
-            })
-        
-        return redirect('payments:payment_page', payment_id=payment.id)
     
     def get_success_url(self):
         return reverse_lazy('core:home')
@@ -308,15 +296,8 @@ class PricingCalculatorView(View):
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
         
-        # Для неавторизованных пользователей создаем временного пользователя
-        if request.user.is_authenticated:
-            user = request.user
-        # else:
-        #     User = get_user_model()
-        #     user = User(id=999999)  # Фиктивный пользователь
-        
         # Создаем калькулятор
-        calculator = PricingCalculator(user)
+        calculator = PricingCalculator(request.user)
         
         # Получаем разбивку цен
         breakdown = calculator.get_pricing_breakdown(
@@ -345,44 +326,44 @@ class PricingCalculatorView(View):
         })
 
 
-class PostPaymentSuccessView(LoginRequiredMixin, View):
-    """View для обработки публикации после успешной оплаты"""
+# class PostPaymentSuccessView(LoginRequiredMixin, View):
+#     """View для обработки публикации после успешной оплаты"""
     
-    def post(self, request, payment_id, *args, **kwargs):
-        """Опубликовать пост после успешной оплаты"""
-        from ework_premium.models import Payment
+#     def post(self, request, payment_id, *args, **kwargs):
+#         """Опубликовать пост после успешной оплаты"""
+#         from ework_premium.models import Payment
         
-        try:
-            payment = Payment.objects.get(
-                id=payment_id,
-                user=request.user,
-                status='paid'
-            )
-        except Payment.DoesNotExist:
-            return JsonResponse({
-                'error': 'Платеж не найден или не оплачен'
-            }, status=400)
+#         try:
+#             payment = Payment.objects.get(
+#                 id=payment_id,
+#                 user=request.user,
+#                 status='paid'
+#             )
+#         except Payment.DoesNotExist:
+#             return JsonResponse({
+#                 'error': 'Платеж не найден или не оплачен'
+#             }, status=400)
         
-        if not payment.post:
-            return JsonResponse({
-                'error': 'Пост не найден'
-            }, status=400)
+#         if not payment.post:
+#             return JsonResponse({
+#                 'error': 'Пост не найден'
+#             }, status=400)
         
-        try:
-            # Переводим пост из черновика на модерацию
-            post = payment.post
-            post.status = 0  # На модерацию
-            post.save(update_fields=['status'])
+#         try:
+#             # Переводим пост из черновика на модерацию
+#             post = payment.post
+#             post.status = 0  # На модерацию
+#             post.save(update_fields=['status'])
             
-            messages.success(request, _('Объявление успешно опубликовано!'))
+#             messages.success(request, _('Объявление успешно опубликовано!'))
             
-            return JsonResponse({
-                'success': True,
-                'post_id': post.id,
-                'redirect_url': post.get_absolute_url()
-            })
+#             return JsonResponse({
+#                 'success': True,
+#                 'post_id': post.id,
+#                 'redirect_url': post.get_absolute_url()
+#             })
             
-        except Exception as e:
-            return JsonResponse({
-                'error': f'Ошибка при создании объявления: {str(e)}'
-            }, status=500)
+#         except Exception as e:
+#             return JsonResponse({
+#                 'error': f'Ошибка при создании объявления: {str(e)}'
+#             }, status=500)

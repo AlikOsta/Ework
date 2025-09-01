@@ -259,9 +259,9 @@ def telegram_login(request):
         if not init_data:
             logger.error("telegram_login: Нет initData")
             return JsonResponse({'status': 'error', 'error': 'Нет initData'}, status=400)
-        from ework_config.utils import get_config
-        config = get_config()
-        bot_token = config.bot_token
+        from ework_config.bot_config import get_bot_config
+        cfg = get_bot_config()
+        bot_token = cfg['bot_token']
 
         if not verify_init_data(init_data, bot_token):
             logger.error("telegram_login: Неправильная подпись initData")
