@@ -129,3 +129,5 @@ window.PostFormPricing = PostFormPricing;
 new PostFormPricing();
 
 } 
+
+

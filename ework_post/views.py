@@ -10,9 +10,11 @@ from django.shortcuts import redirect
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 
+from django.contrib.auth import get_user_model
+
 from ework_post.models import AbsPost, Favorite, PostView
 from ework_premium.models import Package, FreePostRecord
-from ework_premium.utils import create_payment_for_post
+from ework_premium.utils import create_payment_for_post, PricingCalculator
 
 
 class BasePostListView(ListView):
@@ -302,19 +304,16 @@ class PricingCalculatorView(View):
     
     def get(self, request, *args, **kwargs):
         """Рассчитать стоимость на основе выбранных аддонов"""
-        from ework_premium.utils import PricingCalculator
-        from django.contrib.auth import get_user_model
         
         addon_photo = request.GET.get('addon_photo') == 'true'
         addon_highlight = request.GET.get('addon_highlight') == 'true'
-        addon_auto_bump = request.GET.get('addon_auto_bump') == 'true'
         
         # Для неавторизованных пользователей создаем временного пользователя
         if request.user.is_authenticated:
             user = request.user
-        else:
-            User = get_user_model()
-            user = User(id=999999)  # Фиктивный пользователь
+        # else:
+        #     User = get_user_model()
+        #     user = User(id=999999)  # Фиктивный пользователь
         
         # Создаем калькулятор
         calculator = PricingCalculator(user)
@@ -323,14 +322,12 @@ class PricingCalculatorView(View):
         breakdown = calculator.get_pricing_breakdown(
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
         )
         
         # Получаем конфигурацию кнопки
         button_config = calculator.get_button_config(
             photo=addon_photo,
             highlight=addon_highlight,
-            auto_bump=addon_auto_bump
         )
         
         # Сериализуем currency объект

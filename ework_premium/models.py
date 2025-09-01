@@ -90,6 +90,7 @@ class Payment(models.Model):
     def generate_order_id(cls, user_id):
         """Генерировать уникальный ID заказа"""
         return f"{user_id}_{int(timezone.now().timestamp())}_{uuid.uuid4().hex[:8]}"
+    
 # Этап 9: Обновление статуса платежа
     def mark_as_paid(self, telegram_charge_id=None, provider_charge_id=None):
         """Отметить платеж как оплаченный"""
@@ -110,12 +111,11 @@ class Payment(models.Model):
         """Получить payload для Telegram"""
         return f"{self.user.telegram_id}&&&{self.id}"
     
-    def set_addons(self, photo=False, highlight=False, auto_bump=False):
+    def set_addons(self, photo=False, highlight=False):
         """Установить информацию о выбранных аддонах"""
         self.addons_data = {
             'photo': photo,
-            'highlight': highlight,
-            'auto_bump': auto_bump
+            'highlight': highlight
         }
     
     def has_photo_addon(self):
@@ -125,10 +125,6 @@ class Payment(models.Model):
     def has_highlight_addon(self):
         """Проверить, выбран ли аддон выделения"""
         return self.addons_data.get('highlight', False)
-    
-    def has_auto_bump_addon(self):
-        """Проверить, выбран ли аддон автоподнятия"""
-        return self.addons_data.get('auto_bump', False)
 
 
 class FreePostRecord(models.Model):

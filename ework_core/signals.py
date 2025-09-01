@@ -57,7 +57,7 @@ def handle_post_save(sender, instance, created, **kwargs):
     Обработка создания/обновления поста
     ВАЖНО: Модерация запускается только для статуса 0 (На модерации)
     """    
-    if instance.status == 0:
+    if created:
         logger.warning("⏸️ Модерация для поста")
         type(instance).objects.filter(pk=instance.pk).update(status=1)
         thread = threading.Thread(target=moderate_post_async, args=(instance,))

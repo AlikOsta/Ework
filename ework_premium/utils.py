@@ -1,6 +1,6 @@
 from decimal import Decimal
 from django.utils.translation import gettext_lazy as _
-from .models import Package, FreePostRecord
+from .models import Package, FreePostRecord, Payment
 
 # шаг 2 -  Расчет стоимости публикации
 class PricingCalculator:
@@ -24,7 +24,7 @@ class PricingCalculator:
             return Decimal('0.00')
         return self.package.price_per_post if self.package else Decimal('0.00')
     
-    def calculate_addons_price(self, photo=False, highlight=False, auto_bump=False):
+    def calculate_addons_price(self, photo=False, highlight=False):
         """Рассчитать стоимость аддонов"""
         if not self.package:
             return Decimal('0.00')
@@ -35,21 +35,19 @@ class PricingCalculator:
             total += self.package.photo_addon_price
         if highlight:
             total += self.package.highlight_addon_price
-        if auto_bump:
-            total += self.package.auto_bump_addon_price
             
         return total
     
-    def calculate_total_price(self, photo=False, highlight=False, auto_bump=False):
+    def calculate_total_price(self, photo=False, highlight=False):
         """Рассчитать общую стоимость"""
         base_price = self.calculate_base_price()
-        addons_price = self.calculate_addons_price(photo, highlight, auto_bump)
+        addons_price = self.calculate_addons_price(photo, highlight)
         return base_price + addons_price
     
-    def get_pricing_breakdown(self, photo=False, highlight=False, auto_bump=False):
+    def get_pricing_breakdown(self, photo=False, highlight=False):
         """Получить детальную разбивку цен"""
         base_price = self.calculate_base_price()
-        addons_price = self.calculate_addons_price(photo, highlight, auto_bump)
+        addons_price = self.calculate_addons_price(photo, highlight)
         total_price = base_price + addons_price
         
         breakdown = {
@@ -66,11 +64,6 @@ class PricingCalculator:
                     'price': self.package.highlight_addon_price if highlight and self.package else Decimal('0.00'),
                     'description': _('Выделить цветом')
                 },
-                'auto_bump': {
-                    'selected': auto_bump,
-                    'price': self.package.auto_bump_addon_price if auto_bump and self.package else Decimal('0.00'),
-                    'description': _('Автоподнятие')
-                }
             },
             'addons_total': addons_price,
             'total_price': total_price,
@@ -80,9 +73,9 @@ class PricingCalculator:
         
         return breakdown
     
-    def get_button_config(self, photo=False, highlight=False, auto_bump=False):
+    def get_button_config(self, photo=False, highlight=False):
         """Получить конфигурацию кнопки оплаты"""
-        total_price = self.calculate_total_price(photo, highlight, auto_bump)
+        total_price = self.calculate_total_price(photo, highlight)
         currency = self.package.currency if self.package else None
         
         if total_price == 0:
@@ -103,12 +96,11 @@ class PricingCalculator:
             }
 
 # шаг 3 - Создание платежа
-def create_payment_for_post(user, package, photo=False, highlight=False, auto_bump=False):
+def create_payment_for_post(user, package, photo=False, highlight=False):
     """Создать платеж для публикации поста с аддонами"""
-    from .models import Payment
-    
+
     calculator = PricingCalculator(user, package)
-    total_price = calculator.calculate_total_price(photo, highlight, auto_bump)
+    total_price = calculator.calculate_total_price(photo, highlight)
     
     if total_price == 0:
         return None 
@@ -120,7 +112,7 @@ def create_payment_for_post(user, package, photo=False, highlight=False, auto_bu
         order_id=Payment.generate_order_id(user.id)
     )
     
-    payment.set_addons(photo=photo, highlight=highlight, auto_bump=auto_bump)
+    payment.set_addons(photo=photo, highlight=highlight)
     payment.save()
     
     return payment
