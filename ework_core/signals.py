@@ -26,7 +26,7 @@ def moderate_post_async(instance):
         elif not config.auto_moderation_enabled and config.manual_approval_required:
             # Только ручная модерация
             new_status = 1  # На модерации
-            send_admin_approval_notification(instance)
+            send_admin_post_notification(instance, 'moderation_needed')
         elif config.auto_moderation_enabled and not config.manual_approval_required:
             # Только авто модерация
             goods_text = f"{instance.title}\n{instance.description}"
@@ -37,23 +37,25 @@ def moderate_post_async(instance):
                 send_telegram_city_chat(instance)
             else:
                 new_status = 2  # Отклонено 
+                send_admin_post_notification(instance, 'rejected')
         else:
             # Авто + ручная модерация
             goods_text = f"{instance.title}\n{instance.description}"
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 1  # На модерации (ждем ручного одобрения)
-                send_admin_approval_notification(instance)
+                send_admin_post_notification(instance, 'moderation_needed')
             else:
                 new_status = 2  # Отклонено
+                send_admin_post_notification(instance, 'rejected')
         type(instance).objects.filter(pk=instance.pk).update(status=new_status)
     except Exception as e:
         logger.error(f"❌ Ошибка при модерации поста: {e}")
         type(instance).objects.filter(pk=instance.pk).update(status=1)
 
 
-@receiver(post_save, sender=PostJob)
-@receiver(post_save, sender=PostServices)
+@receiver(post_save, sender='ework_job.PostJob') # Используем строковую ссылку
+@receiver(post_save, sender='ework_services.PostServices') # Используем строковую ссылку
 def handle_post_save(sender, instance, created, **kwargs):
     """
     Обработка создания/обновления поста

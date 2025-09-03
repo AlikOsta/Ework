@@ -94,7 +94,7 @@ def send_admin_approval_notification(instance):
         async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
 
     except Exception as e:
-        logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
+        logger.error(f"❌ Ошибка при отправке админ-уведомления ({notification_type}): {e}")
 
 
 
@@ -125,7 +125,7 @@ def send_telegram_city_chat(instance):
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Відкрити", url="https://t.me/HelpWorkUaBoT")]
+                [InlineKeyboardButton(text="Відкрити", url=f"{cfg['miniapp_url']}{instance.get_absolute_url()}")]
             ]
         )
 
