@@ -2,7 +2,7 @@
 import threading
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from ework_bot_tg.bot.bot import send_telegram_notification_async, send_admin_approval_notification
+from ework_bot_tg.bot.bot import send_telegram_notification_async, send_admin_approval_notification, send_telegram_city_chat
 from ework_services.models import PostServices
 from ework_job.models import PostJob
 
@@ -22,6 +22,7 @@ def moderate_post_async(instance):
             # Нет модерации - сразу публикуем
             new_status = 3  # Опубликовано
             send_telegram_notification_async(instance)
+            send_telegram_city_chat(instance)
         elif not config.auto_moderation_enabled and config.manual_approval_required:
             # Только ручная модерация
             new_status = 1  # На модерации
@@ -33,6 +34,7 @@ def moderate_post_async(instance):
             if is_approved:
                 new_status = 3  # Опубликовано
                 send_telegram_notification_async(instance)
+                send_telegram_city_chat(instance)
             else:
                 new_status = 2  # Отклонено 
         else:

@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+from aiohttp import request
 from django.utils.translation import gettext as _ 
 import httpx
 from aiogram import Dispatcher, types
@@ -126,6 +127,50 @@ def send_telegram_notification_async(instance):
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
+def send_telegram_city_chat(instance):
+    try:
+        message = (f"""
+📝 <b>Назва:</b> {instance.title}
+📄 <b>Опис:</b> {instance.description}
+📂 <b>Категорія:</b> {instance.sub_rubric.super_rubric.name}
+📁 <b>Підкатегорія:</b> {instance.sub_rubric.name}
+💰 <b>Ціна:</b> {instance.price} {instance.currency.code}
+🏙️ <b>Місто:</b> {instance.city.name} - {instance.address}
+        """.strip())
+
+        chat_id =  instance.city.chat_id
+        photo_url = (
+            f"https://helpwork.com.ua{instance.image.url}"
+            if instance.image
+            else "https://i.ibb.co/fYD6Qgkg/photo-2025-08-19-18-08-57.jpg"
+        )
+
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Відкрити", url="https://t.me/HelpWorkUaBoT")]
+            ]
+        )
+
+        async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка при отправке уведомления: {e}")
+
+
+async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
+    
+    try:
+        await bot.send_photo(
+            chat_id=chat_id,
+            photo=photo_url,
+            caption=message,
+            reply_markup=keyboard
+        )
+    except Exception as e:
+        logger.error(f"❌ Ошибка при отправке уведомления целевой чат: {e}")
+
+
+
 # Асинхронный HTTP-клиент (singleton)
 _http_client: httpx.AsyncClient | None = None
 
@@ -215,6 +260,8 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
         if action == 'approve':
             post.status = 3  # Опубликовано
             await sync_to_async(post.save)(update_fields=['status'])
+            
+            send_telegram_city_chat(post)
             
             response_text = f"✅ Пост '{post.title}' одобрен и опубликован!"
             
