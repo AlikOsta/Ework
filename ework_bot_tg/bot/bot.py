@@ -71,7 +71,7 @@ def send_admin_approval_notification(instance):
 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
         """.strip()
 
-        chat_id =  admin_chat
+        chat_id = cfg['admin_chat_id']
         photo_url = (
             f"https://helpwork.com.ua{instance.image.url}"
             if instance.image
