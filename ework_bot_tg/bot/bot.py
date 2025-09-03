@@ -1,57 +1,44 @@
 import os
 import asyncio
 import logging
-from aiohttp import request
 from django.utils.translation import gettext as _ 
-import httpx
 from aiogram import Dispatcher, types
 from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
-from asgiref.sync import sync_to_async
-from ework_job.models import PostJob
-from ework_services.models import PostServices
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from asgiref.sync import async_to_sync
-from ework_post.models import AbsPost
+from asgiref.sync import sync_to_async, async_to_sync
+
+# from ework_post.models import AbsPost
 
 logger = logging.getLogger(__name__)
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ework.settings')
 
 from ework_config.bot_config import get_bot_config
+
 cfg = get_bot_config()
 
-admin_chat = cfg['admin_chat_id']
-
 default_props = DefaultBotProperties(parse_mode="HTML")
+
 bot = Bot(token=cfg['bot_token'], default=default_props)
 dp = Dispatcher()
 
-async def _send_with_local_bot(message, reply_markup=None):
-    bot_local = Bot(token=cfg['bot_token'], default=default_props)
-    try:
-        await bot_local.send_message(chat_id=cfg['admin_chat_id'], text=message, reply_markup=reply_markup)
-    finally:
-        try:
-            await bot_local.close()
-        except Exception:
-            pass
+def_photo = 'https://i.ibb.co/vCwQnC3D/photo-2025-07-05-23-14-52.jpg'
 
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
+    """Обработчик события /start"""
     webapp_button = InlineKeyboardButton(
-        text=_('Открыть'),
+        text="Відкрити",
         web_app=WebAppInfo(url=cfg['miniapp_url'])
     )
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[[webapp_button]]
     )
-    photo = 'https://i.ibb.co/vCwQnC3D/photo-2025-07-05-23-14-52.jpg'
 
     await message.answer_photo(
-        photo=photo,
+        photo=def_photo,
         caption = _("""Вас вітає Help Work🔎!
 
 Кілька слів про наш проект👇
@@ -68,67 +55,26 @@ async def cmd_start(message: types.Message):
     )
 
 
-def send_telegram_message(message):
-    async_to_sync(_send_with_local_bot)(message)
+async def send_telegram_error_mes(message):
+   chat_id = cfg['admin_chat_id']
+   await bot.send_message(chat_id=chat_id, text=message)
 
 
-def send_telegram_message_with_keyboard(message, keyboard):
-    async_to_sync(_send_with_local_bot)(message, reply_markup=keyboard)
-
-
-def send_admin_approval_notification(instance):
-    """Отправка уведомления админам с кнопками одобрения/отклонения"""
+async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
+    """Отправка постов в чат и админ_чат"""
     try:
-        message = f"""
-🔍 <b>Требуется модерация поста!</b>
-
-📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Город:</b> {instance.city.name}
-👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-        """.strip()
-
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="✅ Одобрить",
-                    callback_data=f"approve_post_{instance.id}"
-                ),
-                InlineKeyboardButton(
-                    text="❌ Отклонить",
-                    callback_data=f"reject_post_{instance.id}"
-                )
-            ]
-        ])
-
-        send_telegram_message_with_keyboard(message, keyboard)
+        await bot.send_photo(
+            chat_id=chat_id,
+            photo=photo_url,
+            caption=message,
+            reply_markup=keyboard
+        )
     except Exception as e:
-        logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
-
-
-def send_telegram_notification_async(instance):
-    try:
-        message = f"""
-Объявление {instance.id}:
-📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Город:</b> {instance.city.name}
-👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-        """.strip()
-        
-        send_telegram_message(message)
-
-    except Exception as e:
-        logger.error(f"❌ Ошибка при отправке уведомления: {e}")
+        logger.error(f"❌ Ошибка при отправке уведомления целевой чат: {e}")
 
 
 def send_telegram_city_chat(instance):
+    """Отправка поста в целевую группу Города"""
     try:
         if not instance.city or not instance.city.chat_id:
             logger.warning(f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
@@ -162,28 +108,73 @@ def send_telegram_city_chat(instance):
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
-async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
-    
-    try:
-        await bot.send_photo(
-            chat_id=chat_id,
-            photo=photo_url,
-            caption=message,
-            reply_markup=keyboard
-        )
-    except Exception as e:
-        logger.error(f"❌ Ошибка при отправке уведомления целевой чат: {e}")
+
+
+# def send_admin_approval_notification(instance):
+#     """Отправка уведомления админам с кнопками одобрения/отклонения"""
+#     try:
+#         message = f"""
+# 🔍 <b>Требуется модерация поста!</b>
+
+# 📝 <b>Название:</b> {instance.title}
+# 📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
+# 📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
+# 📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
+# 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
+# 🏙️ <b>Город:</b> {instance.city.name}
+# 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
+#         """.strip()
+
+#         keyboard = InlineKeyboardMarkup(inline_keyboard=[
+#             [
+#                 InlineKeyboardButton(
+#                     text="✅ Одобрить",
+#                     callback_data=f"approve_post_{instance.id}"
+#                 ),
+#                 InlineKeyboardButton(
+#                     text="❌ Отклонить",
+#                     callback_data=f"reject_post_{instance.id}"
+#                 )
+#             ]
+#         ])
+
+#         send_telegram_message_with_keyboard(message, keyboard)
+#     except Exception as e:
+#         logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
+
+
+# def send_telegram_notification_async(instance):
+#     try:
+#         message = f"""
+# Объявление {instance.id}:
+# 📝 <b>Название:</b> {instance.title}
+# 📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
+# 📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
+# 📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
+# 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
+# 🏙️ <b>Город:</b> {instance.city.name}
+# 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
+#         """.strip()
+        
+#         send_telegram_message(message)
+
+#     except Exception as e:
+#         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
 
-# Асинхронный HTTP-клиент (singleton)
-_http_client: httpx.AsyncClient | None = None
 
-def get_http_client() -> httpx.AsyncClient:
-    global _http_client
-    if _http_client is None:
-        _http_client = httpx.AsyncClient(timeout=30.0)
-    return _http_client
+
+
+
+# # Асинхронный HTTP-клиент (singleton)
+# _http_client: httpx.AsyncClient | None = None
+
+# def get_http_client() -> httpx.AsyncClient:
+#     global _http_client
+#     if _http_client is None:
+#         _http_client = httpx.AsyncClient(timeout=30.0)
+#     return _http_client
 
 
 # Этап 6: Генерация ссылки на оплату
