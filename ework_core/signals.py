@@ -1,5 +1,5 @@
 
-import threading
+import asyncio
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from ework_bot_tg.bot import bot
@@ -16,8 +16,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def moderate_post_async(instance):
-    """Модерация поста в отдельном потоке"""
+async def moderate_post_async(instance):
+    """Модерация поста асинхронно"""
     try:
         config = get_config()
         if not config.auto_moderation_enabled and not config.manual_approval_required:
@@ -59,9 +59,19 @@ def moderate_post_async(instance):
         logger.error(f"❌ Ошибка при модерации поста: {e}")
         type(instance).objects.filter(pk=instance.pk).update(status=1)
 
+def run_async_moderation(instance):
+    """Запуск асинхронной модерации в отдельном event loop"""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(moderate_post_async(instance))
+    except Exception as e:
+        logger.error(f"❌ Ошибка при запуске асинхронной модерации: {e}")
+    finally:
+        loop.close()
 
-@receiver(post_save, sender=PostJob)
-@receiver(post_save, sender=PostServices)
+@receiver(post_save, sender='ework_job.PostJob')
+@receiver(post_save, sender='ework_services.PostServices')
 def handle_post_save(sender, instance, created, **kwargs):
     """
     Обработка создания/обновления поста
@@ -69,14 +79,17 @@ def handle_post_save(sender, instance, created, **kwargs):
     """    
     if created:
         logger.warning("⏸️ Модерация для поста")
+        # Устанавливаем статус "На модерации" и запускаем модерацию
         type(instance).objects.filter(pk=instance.pk).update(status=1)
         instance.refresh_from_db()  # Обновляем инстанс из БД
-        thread = threading.Thread(target=moderate_post_async, args=(instance,))
+        
+        # Запускаем модерацию в отдельном потоке
+        import threading
+        thread = threading.Thread(target=run_async_moderation, args=(instance,))
         thread.daemon = True
         thread.start()
     else:
         logger.warning(f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})")
-
 
 @receiver(post_save, sender='ework_premium.Payment')
 def handle_payment_save(sender, instance, created, **kwargs):
@@ -90,8 +103,11 @@ def handle_payment_save(sender, instance, created, **kwargs):
         instance.post.status = 0 
         instance.post.save(update_fields=['status'])
         instance.post.refresh_from_db()  # Обновляем инстанс поста из БД
+        
         if instance.post.status == 0:
-            thread = threading.Thread(target=moderate_post_async, args=(instance.post,))
+            # Запускаем модерацию в отдельном потоке
+            import threading
+            thread = threading.Thread(target=run_async_moderation, args=(instance.post,))
             thread.daemon = True
             thread.start()
     else:

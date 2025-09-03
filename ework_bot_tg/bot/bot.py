@@ -83,13 +83,15 @@ def send_telegram_city_chat(instance):
         message = (f"""
 📝 <b>Назва:</b> {instance.title}
 📄 <b>Опис:</b> {instance.description}
+
 📂 <b>Категорія:</b> {instance.sub_rubric.super_rubric.name}
 📁 <b>Підкатегорія:</b> {instance.sub_rubric.name}
+
 💰 <b>Ціна:</b> {instance.price} {instance.currency.code}
 🏙️ <b>Місто:</b> {instance.city.name} - {instance.address}
         """.strip())
 
-        chat_id =  instance.city.chat_id
+        chat_id = instance.city.chat_id
         photo_url = (
             f"https://helpwork.com.ua{instance.image.url}"
             if instance.image
@@ -98,11 +100,11 @@ def send_telegram_city_chat(instance):
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Відкрити", url="https://t.me/HelpWorkUaBoT")]
+                [InlineKeyboardButton(text="Відкрити", url=f"{cfg['miniapp_url']}{instance.get_absolute_url()}")]
             ]
         )
 
-        async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
+        await send_telegram_message_chat(chat_id, message, photo_url, keyboard)
 
     except Exception as e:
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
@@ -175,6 +177,11 @@ def send_telegram_city_chat(instance):
 #     if _http_client is None:
 #         _http_client = httpx.AsyncClient(timeout=30.0)
 #     return _http_client
+# def get_http_client() -> httpx.AsyncClient:
+#     global _http_client
+#     if _http_client is None:
+#         _http_client = httpx.AsyncClient(timeout=30.0)
+#     return _http_client
 
 
 # Этап 6: Генерация ссылки на оплату
@@ -224,92 +231,6 @@ def send_telegram_city_chat(instance):
 #             payment_id, user_id
 #         )
 #     return None
-
-
-
-@dp.callback_query(lambda c: c.data and (c.data.startswith('approve_post_') or c.data.startswith('reject_post_')))
-async def handle_moderation_callback(callback_query: types.CallbackQuery):
-    user_id = callback_query.from_user.id
-    callback_data = callback_query.data
-    try:
-        if callback_data.startswith('approve_post_'):
-            action = 'approve'
-            post_id = callback_data.replace('approve_post_', '')
-        elif callback_data.startswith('reject_post_'):
-            action = 'reject'
-            post_id = callback_data.replace('reject_post_', '')
-        else:
-            logger.warning("Неизвестная команда: %s", callback_data)
-            await callback_query.answer("❌ Невідома команда", show_alert=True)
-            return
-        post = None
-        try:
-            post = await sync_to_async(AbsPost.objects.get)(id=int(post_id), status=1)  # На модерации
-        except (AbsPost.DoesNotExist, ValueError):
-            logger.warning("Пост не найден или уже обработан")
-            await callback_query.answer("❌ Пост не знайдений або вже оброблений", show_alert=True)
-            return
-
-        if action == 'approve':
-            post.status = 3  # Опубликовано
-            await sync_to_async(post.save)(update_fields=['status'])
-            
-            send_telegram_city_chat(post)
-            
-            response_text = f"✅ Пост '{post.title}' одобрен и опубликован!"
-            
-        elif action == 'reject':
-            post.status = 2  # Отклонено
-            await sync_to_async(post.save)(update_fields=['status'])
-            
-            response_text = f"❌ Пост '{post.title}' отклонен"
-        try:
-            await callback_query.message.edit_text(
-                f"✅ Обработано!\n\n{response_text}",
-                parse_mode="HTML"
-            )
-        except Exception as e:
-            try:
-                await callback_query.message.delete()
-            except:
-                pass
-        
-        # Отправляем ответ
-        await callback_query.answer(response_text, show_alert=True)
-        
-    except Exception as e:
-        logger.exception("Ошибка при обработке коллбека модерации: %s", e)
-        await callback_query.answer("❌ Сталася помилка під час модерації", show_alert=True)
-
-
-
-# Pre-checkout
-# @dp.pre_checkout_query()
-# async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
-#     await pre_checkout.bot.answer_pre_checkout_query(
-#         pre_checkout_query_id=pre_checkout.id,
-#         ok=True
-#     )
-
-
-# @dp.message(lambda msg: msg.successful_payment)
-# async def successful_payment(message: types.Message):
-#     payload = message.successful_payment.invoice_payload
-#     try:
-#         user_id_str, payment_id_str = payload.split('&&&')
-#         user_id, payment_id = int(user_id_str), int(payment_id_str)
-#         
-#         from ework_core.views import publish_post_after_payment
-#         success = await sync_to_async(publish_post_after_payment)(user_id, payment_id)
-#         
-#         if success:
-#             await message.answer(_("✅ Оплата пройшла успішно! Ваше оголошення опубліковано та надіслано на модерацію."))
-#         else:
-#             await message.answer(_("⚠️ Оплату отримано, але при публікації сталася помилка. Зверніться на підтримку."))
-#     except Exception:
-#         logger.exception("Error handling successful payment payload=%s", payload)
-#         await message.answer(_("⚠️ Оплату отримано, але сталася помилка. Зверніться на підтримку."))
-
 
 
 
