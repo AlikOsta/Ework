@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from ework_bot_tg.bot import bot
 from ework_services.models import PostServices
 from ework_job.models import PostJob
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from .utils import moderate_post
 from ework_config.utils import get_config
 import logging
@@ -18,14 +18,15 @@ async def moderate_post_async(instance):
         config = get_config()
         if not config.auto_moderation_enabled and not config.manual_approval_required:
             # Нет модерации - сразу публикуем
+            logger.warning("⏸️⏸️⏸️⏸️⏸️ Нет модерации - сразу публикуем")
             new_status = 3  # Опубликовано
-            bot.send_telegram_city_chat(instance)
+            await bot.send_telegram_city_chat(instance)
 
         elif not config.auto_moderation_enabled and config.manual_approval_required:
             # Только ручная модерация
+            logger.warning("⏸️⏸️⏸️⏸️⏸️ Только ручная модерация")
             new_status = 1  # На модерации
-            # send_admin_approval_notification(instance)
-            async_to_sync(bot.send_telegram_error_mes)(text = "Только ручная модерация")
+            await bot.send_admin_approval_notification(instance)
 
         elif config.auto_moderation_enabled and not config.manual_approval_required:
             # Только авто модерация
@@ -33,10 +34,11 @@ async def moderate_post_async(instance):
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 3  # Опубликовано
-                bot.send_telegram_city_chat(instance)
+                await bot.send_telegram_city_chat(instance)
             else:
-                new_status = 2  # Отклонено 
-                async_to_sync(bot.send_telegram_error_mes)(text = "Только авто модерация - Отклонено")
+                new_status = 2  # Отклонено
+                text = "Только авто модерация - Отклонено."
+                await bot.send_telegram_error_mes(text)
         else:
             # Авто + ручная модерация
             goods_text = f"{instance.title}\n{instance.description}"
@@ -44,14 +46,15 @@ async def moderate_post_async(instance):
             if is_approved:
                 new_status = 1  # На модерации (ждем ручного одобрения)
                 # send_admin_approval_notification(instance)
-                async_to_sync(bot.send_telegram_error_mes)(text = "На модерации (ждем ручного одобрения)")
+                await bot.send_telegram_error_mes(text = "На модерации (ждем ручного одобрения)")
             else:
                 new_status = 2  # Отклонено
 
-        type(instance).objects.filter(pk=instance.pk).update(status=new_status)
+        await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=new_status)
 
     except Exception as e:
-        async_to_sync(bot.send_telegram_error_mes)(e)
+        text=str(e)
+        await bot.send_telegram_error_mes(text)
         logger.error(f"❌ Ошибка при модерации поста: {e}")
         type(instance).objects.filter(pk=instance.pk).update(status=1)
 
@@ -66,35 +69,31 @@ def handle_post_save(sender, instance, created, **kwargs):
     """    
     if created:
         logger.warning("⏸️ Модерация для поста")
-        type(instance).objects.filter(pk=instance.pk).update(status=1)
-        instance.refresh_from_db()  # Обновляем инстанс из БД
-        thread = threading.Thread(target=moderate_post_async, args=(instance,))
-        thread.daemon = True
-        thread.start()
+        async_to_sync(moderate_post_async)(instance)
     else:
         logger.warning(f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})")
 
 
-@receiver(post_save, sender='ework_premium.Payment')
-def handle_payment_save(sender, instance, created, **kwargs):
-    """
-    Обработка изменения статуса платежа
-    Когда платеж становится оплаченным - отправляем пост на модерацию
-    """    
-    if instance.status == 'paid' and instance.post:
-        instance.post.apply_addons_from_payment(instance)
-        old_status = instance.post.status
-        instance.post.status = 0 
-        instance.post.save(update_fields=['status'])
-        instance.post.refresh_from_db()  # Обновляем инстанс поста из БД
+# @receiver(post_save, sender='ework_premium.Payment')
+# def handle_payment_save(sender, instance, created, **kwargs):
+#     """
+#     Обработка изменения статуса платежа
+#     Когда платеж становится оплаченным - отправляем пост на модерацию
+#     """    
+#     if instance.status == 'paid' and instance.post:
+#         instance.post.apply_addons_from_payment(instance)
+#         old_status = instance.post.status
+#         instance.post.status = 0 
+#         instance.post.save(update_fields=['status'])
+#         instance.post.refresh_from_db()  # Обновляем инстанс поста из БД
         
-        if instance.post.status == 0:
-            # Запускаем модерацию в отдельном потоке
-            import threading
-            thread = threading.Thread(target=moderate_post_async, args=(instance.post,))
-            thread.daemon = True
-            thread.start()
-    else:
-        logger.warning(f"⏸️ Модерация пропущена для платежа {instance.id} (статус: {instance.status})")
+#         if instance.post.status == 0:
+#             # Запускаем модерацию в отдельном потоке
+#             import threading
+#             thread = threading.Thread(target=moderate_post_async, args=(instance.post,))
+#             thread.daemon = True
+#             thread.start()
+#     else:
+#         logger.warning(f"⏸️ Модерация пропущена для платежа {instance.id} (статус: {instance.status})")
 
 

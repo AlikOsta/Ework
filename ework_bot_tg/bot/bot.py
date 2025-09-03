@@ -7,9 +7,9 @@ from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
-from asgiref.sync import sync_to_async, async_to_sync
-
-# from ework_post.models import AbsPost
+from ework_job.models import PostJob
+from ework_services.models import PostServices
+from asgiref.sync import sync_to_async
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ bot = Bot(token=cfg['bot_token'], default=default_props)
 dp = Dispatcher()
 
 def_photo = 'https://i.ibb.co/vCwQnC3D/photo-2025-07-05-23-14-52.jpg'
+
 
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
@@ -60,114 +61,122 @@ async def send_telegram_error_mes(message):
    await bot.send_message(chat_id=chat_id, text=message)
 
 
-async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
-    """Отправка постов в чат и админ_чат"""
-    try:
-        await bot.send_photo(
-            chat_id=chat_id,
-            photo=photo_url,
-            caption=message,
-            reply_markup=keyboard
-        )
-    except Exception as e:
-        async_to_sync(send_telegram_error_mes)(text = f"❌ Ошибка при отправке уведомления целевой чат: {e}")
-        logger.error(f"❌ Ошибка при отправке уведомления целевой чат: {e}")
-
-
-def send_telegram_city_chat(instance):
+async def send_telegram_city_chat(instance):
     """Отправка поста в целевую группу Города"""
     try:
         if not instance.city or not instance.city.chat_id:
-            async_to_sync(send_telegram_error_mes)(text = f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
+            text = f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id."
+            await send_telegram_error_mes(message = text)
             logger.warning(f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
             return
 
         message = (f"""
 📝 <b>Назва:</b> {instance.title}
 📄 <b>Опис:</b> {instance.description}
-
-📂 <b>Категорія:</b> {instance.sub_rubric.super_rubric.name}
 📁 <b>Підкатегорія:</b> {instance.sub_rubric.name}
-
 💰 <b>Ціна:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Місто:</b> {instance.city.name} - {instance.address}
+🏙️ <b>Місто:</b> {instance.city.name}
         """.strip())
 
         chat_id = instance.city.chat_id
         photo_url = (
             f"https://helpwork.com.ua{instance.image.url}"
             if instance.image
-            else "https://i.ibb.co/fYD6Qgkg/photo-2025-08-19-18-08-57.jpg"
+            else def_photo
         )
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Відкрити", url=f"{cfg['miniapp_url']}{instance.get_absolute_url()}")]
+                [InlineKeyboardButton(text="Відкрити", url=f"t.me/HelpWorkUaBoT")]
             ]
         )
 
-        async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
+        await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
 
     except Exception as e:
-        async_to_sync(send_telegram_error_mes)(text = f"❌ Ошибка при отправке уведомления: {e}")
+        text = f"❌ Ошибка при отправке уведомления: {e}"
+        await send_telegram_error_mes(message = text)
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
 
+async def send_admin_approval_notification(instance):
+    """Отправка уведомления админам с кнопками одобрения/отклонения"""
+    try:
+        message = f"""
+🔍 <b>Требуется модерация поста!</b>
 
-# def send_admin_approval_notification(instance):
-#     """Отправка уведомления админам с кнопками одобрения/отклонения"""
-#     try:
-#         message = f"""
-# 🔍 <b>Требуется модерация поста!</b>
+📝 <b>Название:</b> {instance.title}
+📄 <b>Описание:</b> {instance.description}
 
-# 📝 <b>Название:</b> {instance.title}
-# 📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-# 📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-# 📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-# 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-# 🏙️ <b>Город:</b> {instance.city.name}
-# 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-#         """.strip()
+📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
+💰 <b>Цена:</b> {instance.price} {instance.currency.code}
+🏙️ <b>Город:</b> {instance.city.name}
+👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
+        """.strip()
 
-#         keyboard = InlineKeyboardMarkup(inline_keyboard=[
-#             [
-#                 InlineKeyboardButton(
-#                     text="✅ Одобрить",
-#                     callback_data=f"approve_post_{instance.id}"
-#                 ),
-#                 InlineKeyboardButton(
-#                     text="❌ Отклонить",
-#                     callback_data=f"reject_post_{instance.id}"
-#                 )
-#             ]
-#         ])
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton( text="✅ Одобрить", callback_data=f"approve_post_{instance.id}"),
+                InlineKeyboardButton( text="❌ Отклонить", callback_data=f"reject_post_{instance.id}")
+            ]
+        ])
 
-#         send_telegram_message_with_keyboard(message, keyboard)
-#     except Exception as e:
-#         logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
+        chat_id = cfg['admin_chat_id']
+        photo_url = (
+            f"https://helpwork.com.ua{instance.image.url}" if instance.image else def_photo
+        )
+
+        await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
+
+    except Exception as e:
+        text = f"❌ Ошибка при отправке уведомления о модерации: {e}"
+        await send_telegram_error_mes(message = text)
+        logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
 
 
-# def send_telegram_notification_async(instance):
-#     try:
-#         message = f"""
-# Объявление {instance.id}:
-# 📝 <b>Название:</b> {instance.title}
-# 📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-# 📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-# 📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-# 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-# 🏙️ <b>Город:</b> {instance.city.name}
-# 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-#         """.strip()
+@dp.callback_query(lambda c: c.data and (c.data.startswith('approve_post_') or c.data.startswith('reject_post_')))
+async def handle_moderation_callback(callback_query: types.CallbackQuery):
+    callback_data = callback_query.data
+    try:
+        if callback_data.startswith('approve_post_'):
+            action = 'approve'
+            post_id = callback_data.replace('approve_post_', '')
+        elif callback_data.startswith('reject_post_'):
+            action = 'reject'
+            post_id = callback_data.replace('reject_post_', '')
+        else:
+            logger.warning("Неизвестная команда: %s", callback_data)
+            await callback_query.answer("❌ Невідома команда", show_alert=True)
+            return
+        post = None
+        try:
+            post = await sync_to_async(PostJob.objects.get)(id=int(post_id), status=1)  # На модерации
+        except (PostJob.DoesNotExist, ValueError):
+            try:
+                post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)  # На модерации
+            except (PostServices.DoesNotExist, ValueError):
+                logger.warning("Пост не найден или уже обработан")
+                await callback_query.answer("❌ Пост не знайдений або вже оброблений", show_alert=True)
+                return
+
+        if action == 'approve':
+            post.status = 3  # Опубликовано
+            print("✅ Обработано!")
+            await sync_to_async(post.save)(update_fields=['status'])
+
+            await send_telegram_city_chat(post)
+                        
+        elif action == 'reject':
+            post.status = 2  # Отклонено
+            print("❌ Отклонено!")
+            await sync_to_async(post.save)(update_fields=['status'])
+            
+        # await callback_query.message.delete()
         
-#         send_telegram_message(message)
-
-#     except Exception as e:
-#         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
-
-
-
+    except Exception as e:
+        logger.exception("Ошибка при обработке коллбека модерации: %s", e)
+        await callback_query.answer("❌ Сталася помилка під час модерації", show_alert=True)
 
 
 
