@@ -64,26 +64,21 @@ async def send_telegram_error_mes(message):
 async def send_telegram_city_chat(instance):
     """Отправка поста в целевую группу Города"""
     try:
-        if not instance.city or not instance.city.chat_id:
+        city = await sync_to_async(lambda: instance.city)()
+        if not city or not city.chat_id:
             text = f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id."
             await send_telegram_error_mes(message = text)
             logger.warning(f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
             return
-
+        
         message = (f"""
 📝 <b>Назва:</b> {instance.title}
 📄 <b>Опис:</b> {instance.description}
-📁 <b>Підкатегорія:</b> {instance.sub_rubric.name}
-💰 <b>Ціна:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Місто:</b> {instance.city.name}
+
         """.strip())
 
-        chat_id = instance.city.chat_id
-        photo_url = (
-            f"https://helpwork.com.ua{instance.image.url}"
-            if instance.image
-            else def_photo
-        )
+        chat_id = city.chat_id
+        photo_url = (def_photo)
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
@@ -94,7 +89,7 @@ async def send_telegram_city_chat(instance):
         await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
 
     except Exception as e:
-        text = f"❌ Ошибка при отправке уведомления: {e}"
+        text = f"❌ Ошибка при отправке уведомления: стр 105 {e}"
         await send_telegram_error_mes(message = text)
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
@@ -106,13 +101,9 @@ async def send_admin_approval_notification(instance):
         message = f"""
 🔍 <b>Требуется модерация поста!</b>
 
-📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description}
+📝 <b>Назва:</b> {instance.title}
+📄 <b>Опис:</b> {instance.description}
 
-📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Город:</b> {instance.city.name}
-👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
         """.strip()
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
@@ -123,9 +114,7 @@ async def send_admin_approval_notification(instance):
         ])
 
         chat_id = cfg['admin_chat_id']
-        photo_url = (
-            f"https://helpwork.com.ua{instance.image.url}" if instance.image else def_photo
-        )
+        photo_url = (def_photo)
 
         await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
 
@@ -172,7 +161,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
             print("❌ Отклонено!")
             await sync_to_async(post.save)(update_fields=['status'])
             
-        # await callback_query.message.delete()
+        await callback_query.message.delete()
         
     except Exception as e:
         logger.exception("Ошибка при обработке коллбека модерации: %s", e)

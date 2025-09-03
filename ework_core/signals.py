@@ -9,21 +9,29 @@ from asgiref.sync import async_to_sync, sync_to_async
 from .utils import moderate_post
 from ework_config.utils import get_config
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
+
+def run_async_in_thread(func, *args, **kwargs):
+    """Запускает асинхронную функцию в отдельном потоке с собственным циклом событий."""
+    def wrapper():
+        asyncio.run(func(*args, **kwargs))
+    
+    thread = threading.Thread(target=wrapper)
+    thread.daemon = True
+    thread.start()
 
 async def moderate_post_async(instance):
     """Модерация поста асинхронно"""
     try:
         config = get_config()
         if not config.auto_moderation_enabled and not config.manual_approval_required:
-            # Нет модерации - сразу публикуем
             logger.warning("⏸️⏸️⏸️⏸️⏸️ Нет модерации - сразу публикуем")
             new_status = 3  # Опубликовано
             await bot.send_telegram_city_chat(instance)
 
         elif not config.auto_moderation_enabled and config.manual_approval_required:
-            # Только ручная модерация
             logger.warning("⏸️⏸️⏸️⏸️⏸️ Только ручная модерация")
             new_status = 1  # На модерации
             await bot.send_admin_approval_notification(instance)
@@ -45,7 +53,6 @@ async def moderate_post_async(instance):
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 1  # На модерации (ждем ручного одобрения)
-                # send_admin_approval_notification(instance)
                 await bot.send_telegram_error_mes(text = "На модерации (ждем ручного одобрения)")
             else:
                 new_status = 2  # Отклонено
@@ -56,7 +63,7 @@ async def moderate_post_async(instance):
         text=str(e)
         await bot.send_telegram_error_mes(text)
         logger.error(f"❌ Ошибка при модерации поста: {e}")
-        type(instance).objects.filter(pk=instance.pk).update(status=1)
+        await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=1)
 
 
 
@@ -69,7 +76,7 @@ def handle_post_save(sender, instance, created, **kwargs):
     """    
     if created:
         logger.warning("⏸️ Модерация для поста")
-        async_to_sync(moderate_post_async)(instance)
+        run_async_in_thread(moderate_post_async, instance)
     else:
         logger.warning(f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})")
 
