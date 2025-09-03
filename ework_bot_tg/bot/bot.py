@@ -14,6 +14,7 @@ from ework_job.models import PostJob
 from ework_services.models import PostServices
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from asgiref.sync import async_to_sync
+from ework_post.models import AbsPost
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,10 @@ def send_telegram_notification_async(instance):
 
 def send_telegram_city_chat(instance):
     try:
+        if not instance.city or not instance.city.chat_id:
+            logger.warning(f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
+            return
+
         message = (f"""
 📝 <b>Назва:</b> {instance.title}
 📄 <b>Опис:</b> {instance.description}
@@ -248,14 +253,11 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
             return
         post = None
         try:
-            post = await sync_to_async(PostJob.objects.get)(id=int(post_id), status=1)  # На модерации
-        except (PostJob.DoesNotExist, ValueError):
-            try:
-                post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)  # На модерации
-            except (PostServices.DoesNotExist, ValueError):
-                logger.warning("Пост не найден или уже обработан")
-                await callback_query.answer("❌ Пост не знайдений або вже оброблений", show_alert=True)
-                return
+            post = await sync_to_async(AbsPost.objects.get)(id=int(post_id), status=1)  # На модерации
+        except (AbsPost.DoesNotExist, ValueError):
+            logger.warning("Пост не найден или уже обработан")
+            await callback_query.answer("❌ Пост не знайдений або вже оброблений", show_alert=True)
+            return
 
         if action == 'approve':
             post.status = 3  # Опубликовано

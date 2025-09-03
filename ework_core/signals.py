@@ -62,6 +62,7 @@ def handle_post_save(sender, instance, created, **kwargs):
     if created:
         logger.warning("⏸️ Модерация для поста")
         type(instance).objects.filter(pk=instance.pk).update(status=1)
+        instance.refresh_from_db()  # Обновляем инстанс из БД
         thread = threading.Thread(target=moderate_post_async, args=(instance,))
         thread.daemon = True
         thread.start()
@@ -80,7 +81,7 @@ def handle_payment_save(sender, instance, created, **kwargs):
         old_status = instance.post.status
         instance.post.status = 0 
         instance.post.save(update_fields=['status'])
-        instance.post.refresh_from_db()
+        instance.post.refresh_from_db()  # Обновляем инстанс поста из БД
         if instance.post.status == 0:
             thread = threading.Thread(target=moderate_post_async, args=(instance.post,))
             thread.daemon = True
