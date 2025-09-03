@@ -76,12 +76,9 @@ def send_telegram_message_with_keyboard(message, keyboard):
     async_to_sync(_send_with_local_bot)(message, reply_markup=keyboard)
 
 
-def send_admin_approval_notification(instance):
-    """Отправка уведомления админам с кнопками одобрения/отклонения"""
-    try:
-        message = f"""
-🔍 <b>Требуется модерация поста!</b>
-
+def _format_post_text_for_admin(instance):
+    """Форматирование деталей поста для административных уведомлений."""
+    return f"""
 📝 <b>Название:</b> {instance.title}
 📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
 📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
@@ -89,37 +86,60 @@ def send_admin_approval_notification(instance):
 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
 🏙️ <b>Город:</b> {instance.city.name}
 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-        """.strip()
+"""
 
-        keyboard = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text="✅ Одобрить",
-                    callback_data=f"approve_post_{instance.id}"
-                ),
-                InlineKeyboardButton(
-                    text="❌ Отклонить",
-                    callback_data=f"reject_post_{instance.id}"
-                )
-            ]
-        ])
+def send_admin_post_notification(instance, notification_type: str):
+    """Отправка унифицированного уведомления администраторам.
 
-        send_telegram_message_with_keyboard(message, keyboard)
+    Args:
+        instance: Объект поста (AbsPost).
+        notification_type (str): Тип уведомления (например, 'moderation_needed', 'approved', 'rejected', 'published').
+    """
+    try:
+        title_prefix = ""
+        if notification_type == 'moderation_needed':
+            title_prefix = "🔍 <b>Требуется модерация поста!</b>\n\n"
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="✅ Одобрить",
+                        callback_data=f"approve_post_{instance.id}"
+                    ),
+                    InlineKeyboardButton(
+                        text="❌ Отклонить",
+                        callback_data=f"reject_post_{instance.id}"
+                    )
+                ]
+            ])
+        elif notification_type == 'approved':
+            title_prefix = f"✅ Пост \'{instance.title}\' одобрен и опубликован!\n\n"
+            keyboard = None
+        elif notification_type == 'rejected':
+            title_prefix = f"❌ Пост \'{instance.title}\' отклонен\n\n"
+            keyboard = None
+        elif notification_type == 'published':
+            title_prefix = f"📢 Пост \'{instance.title}\' опубликован!\n\n"
+            keyboard = None
+        else:
+            logger.warning(f"Неизвестный тип уведомления для админа: {notification_type}")
+            return
+
+        message = f"{title_prefix}{_format_post_text_for_admin(instance)}".strip()
+
+        if keyboard:
+            send_telegram_message_with_keyboard(message, keyboard)
+        else:
+            send_telegram_message(message)
+
     except Exception as e:
-        logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
+        logger.error(f"❌ Ошибка при отправке админ-уведомления ({notification_type}): {e}")
 
 
 def send_telegram_notification_async(instance):
     try:
         message = f"""
 Объявление {instance.id}:
-📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Город:</b> {instance.city.name}
-👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
+{_format_post_text_for_admin(instance)}
         """.strip()
         
         send_telegram_message(message)
@@ -152,7 +172,7 @@ def send_telegram_city_chat(instance):
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Відкрити", url="https://t.me/HelpWorkUaBoT")]
+                [InlineKeyboardButton(text="Відкрити", url=f"{cfg['miniapp_url']}{instance.get_absolute_url()}")]
             ]
         )
 
