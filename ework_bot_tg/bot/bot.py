@@ -94,7 +94,7 @@ def send_admin_approval_notification(instance):
         async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
 
     except Exception as e:
-        logger.error(f"❌ Ошибка при отправке админ-уведомления ({notification_type}): {e}")
+        logger.error(f"❌ Ошибка при отправке админ-уведомления : {e}")
 
 
 
