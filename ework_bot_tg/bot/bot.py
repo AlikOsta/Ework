@@ -53,7 +53,7 @@ async def cmd_start(message: types.Message):
     )
 
 
-def send_admin_approval_notification(instance):
+async def send_admin_approval_notification(instance):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
     try:
         message = f"""
@@ -91,15 +91,13 @@ def send_admin_approval_notification(instance):
             ]
         ])
 
-        async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
+        await send_telegram_message_chat(chat_id, message, photo_url, keyboard)
 
     except Exception as e:
         logger.error(f"❌ Ошибка при отправке админ-уведомления : {e}")
 
 
-
-
-def send_telegram_city_chat(instance):
+async def send_telegram_city_chat(instance):
     try:
         if not instance.city or not instance.city.chat_id:
             logger.warning(f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
@@ -116,7 +114,7 @@ def send_telegram_city_chat(instance):
 🏙️ <b>Місто:</b> {instance.city.name} - {instance.address}
         """.strip())
 
-        chat_id =  instance.city.chat_id
+        chat_id = instance.city.chat_id
         photo_url = (
             f"https://helpwork.com.ua{instance.image.url}"
             if instance.image
@@ -129,12 +127,10 @@ def send_telegram_city_chat(instance):
             ]
         )
 
-        async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
+        await send_telegram_message_chat(chat_id, message, photo_url, keyboard)
 
     except Exception as e:
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
-
-
 
 
 async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
@@ -177,7 +173,8 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
             post.status = 3  # Опубликовано
             await sync_to_async(post.save)(update_fields=['status'])
             
-            send_telegram_city_chat(post)
+            # Отправляем в городской чат асинхронно
+            await send_telegram_city_chat(post)
             
             response_text = f"✅ Пост '{post.title}' одобрен и опубликован!"
             
@@ -207,12 +204,12 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
 
 
 # Pre-checkout
-# @dp.pre_checkout_query()
-# async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
-#     await pre_checkout.bot.answer_pre_checkout_query(
-#         pre_checkout_query_id=pre_checkout.id,
-#         ok=True
-#     )
+@dp.pre_checkout_query()
+async def pre_checkout_query(pre_checkout: types.PreCheckoutQuery):
+    await pre_checkout.bot.answer_pre_checkout_query(
+        pre_checkout_query_id=pre_checkout.id,
+        ok=True
+    )
 
 
 # @dp.message(lambda msg: msg.successful_payment)
