@@ -70,6 +70,7 @@ async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
             reply_markup=keyboard
         )
     except Exception as e:
+        async_to_sync(send_telegram_error_mes)(text = f"❌ Ошибка при отправке уведомления целевой чат: {e}")
         logger.error(f"❌ Ошибка при отправке уведомления целевой чат: {e}")
 
 
@@ -77,6 +78,7 @@ def send_telegram_city_chat(instance):
     """Отправка поста в целевую группу Города"""
     try:
         if not instance.city or not instance.city.chat_id:
+            async_to_sync(send_telegram_error_mes)(text = f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
             logger.warning(f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
             return
 
@@ -104,9 +106,10 @@ def send_telegram_city_chat(instance):
             ]
         )
 
-        await send_telegram_message_chat(chat_id, message, photo_url, keyboard)
+        async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
 
     except Exception as e:
+        async_to_sync(send_telegram_error_mes)(text = f"❌ Ошибка при отправке уведомления: {e}")
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
