@@ -1,19 +1,13 @@
 import os
 import asyncio
 import logging
-from aiohttp import request
 from django.utils.translation import gettext as _ 
-import httpx
 from aiogram import Dispatcher, types
 from aiogram.client.bot import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
 from aiogram.types import WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
-from asgiref.sync import sync_to_async
-from ework_job.models import PostJob
-from ework_services.models import PostServices
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from asgiref.sync import async_to_sync
+from asgiref.sync import sync_to_async, async_to_sync
 from ework_post.models import AbsPost
 
 logger = logging.getLogger(__name__)
@@ -29,15 +23,6 @@ default_props = DefaultBotProperties(parse_mode="HTML")
 bot = Bot(token=cfg['bot_token'], default=default_props)
 dp = Dispatcher()
 
-async def _send_with_local_bot(message, reply_markup=None):
-    bot_local = Bot(token=cfg['bot_token'], default=default_props)
-    try:
-        await bot_local.send_message(chat_id=cfg['admin_chat_id'], text=message, reply_markup=reply_markup)
-    finally:
-        try:
-            await bot_local.close()
-        except Exception:
-            pass
 
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
@@ -68,14 +53,6 @@ async def cmd_start(message: types.Message):
     )
 
 
-def send_telegram_message(message):
-    async_to_sync(_send_with_local_bot)(message)
-
-
-def send_telegram_message_with_keyboard(message, keyboard):
-    async_to_sync(_send_with_local_bot)(message, reply_markup=keyboard)
-
-
 def send_admin_approval_notification(instance):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
     try:
@@ -83,13 +60,23 @@ def send_admin_approval_notification(instance):
 🔍 <b>Требуется модерация поста!</b>
 
 📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
+📄 <b>Описание:</b> {instance.description}
+
 📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
 📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
+
 💰 <b>Цена:</b> {instance.price} {instance.currency.code}
 🏙️ <b>Город:</b> {instance.city.name}
+
 👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
         """.strip()
+
+        chat_id =  admin_chat
+        photo_url = (
+            f"https://helpwork.com.ua{instance.image.url}"
+            if instance.image
+            else "https://i.ibb.co/fYD6Qgkg/photo-2025-08-19-18-08-57.jpg"
+        )
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [
@@ -104,28 +91,12 @@ def send_admin_approval_notification(instance):
             ]
         ])
 
-        send_telegram_message_with_keyboard(message, keyboard)
+        async_to_sync(send_telegram_message_chat)(chat_id, message, photo_url, keyboard)
+
     except Exception as e:
         logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
 
 
-def send_telegram_notification_async(instance):
-    try:
-        message = f"""
-Объявление {instance.id}:
-📝 <b>Название:</b> {instance.title}
-📄 <b>Описание:</b> {instance.description[:200]}{'...' if len(instance.description) > 200 else ''}
-📂 <b>Категория:</b> {instance.sub_rubric.super_rubric.name}
-📁 <b>Подкатегория:</b> {instance.sub_rubric.name}
-💰 <b>Цена:</b> {instance.price} {instance.currency.code}
-🏙️ <b>Город:</b> {instance.city.name}
-👤 <b>Автор:</b> @{getattr(instance.user, 'username', 'неизвестен')}
-        """.strip()
-        
-        send_telegram_message(message)
-
-    except Exception as e:
-        logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
 def send_telegram_city_chat(instance):
@@ -137,8 +108,10 @@ def send_telegram_city_chat(instance):
         message = (f"""
 📝 <b>Назва:</b> {instance.title}
 📄 <b>Опис:</b> {instance.description}
+
 📂 <b>Категорія:</b> {instance.sub_rubric.super_rubric.name}
 📁 <b>Підкатегорія:</b> {instance.sub_rubric.name}
+
 💰 <b>Ціна:</b> {instance.price} {instance.currency.code}
 🏙️ <b>Місто:</b> {instance.city.name} - {instance.address}
         """.strip())
@@ -162,6 +135,8 @@ def send_telegram_city_chat(instance):
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
+
+
 async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
     
     try:
@@ -173,67 +148,6 @@ async def send_telegram_message_chat(chat_id, message, photo_url, keyboard):
         )
     except Exception as e:
         logger.error(f"❌ Ошибка при отправке уведомления целевой чат: {e}")
-
-
-
-# Асинхронный HTTP-клиент (singleton)
-_http_client: httpx.AsyncClient | None = None
-
-def get_http_client() -> httpx.AsyncClient:
-    global _http_client
-    if _http_client is None:
-        _http_client = httpx.AsyncClient(timeout=30.0)
-    return _http_client
-
-
-# Этап 6: Генерация ссылки на оплату
-# async def create_invoice_link( user_id: int, payment_id: int, payload: str, amount: float, order_id: int, addons_data: dict | None = None) -> str | None:
-#     """
-#     Создать инвойс через HTTP API Telegram и вернуть ссылку
-#     """
-#     description = f"Публікація оголошення #{order_id}"
-#     if addons_data:
-#         addons = []
-#         if addons_data.get('photo'):
-#             addons.append("Фото")
-#         if addons_data.get('highlight'):
-#             addons.append("Виділення")
-#         if addons:
-#             description += f" з опціями: {', '.join(addons)}"
-
-#     price_kopecks = int(amount * 100)
-#     data = {
-#         "title": "Публікація оголошення",
-#         "description": description,
-#         "payload": payload,
-#         "provider_token": cfg['payment_provider_token'],
-#         "currency": "UAH", # заменить валюту
-#         "prices": [{"label": "Публікація оголошення", "amount": price_kopecks}],
-#         "need_name": False,
-#         "need_phone_number": False,
-#         "need_email": False,
-#         "need_shipping_address": False,
-#         "send_phone_number_to_provider": False,
-#         "send_email_to_provider": False,
-#         "is_flexible": False,
-#     }
-#     url = f"https://api.telegram.org/bot{cfg['bot_token']}/createInvoiceLink"
-#     try:
-#         client = get_http_client()
-#         response = await client.post(url, json=data)
-#         response.raise_for_status()
-#         result = response.json()
-#         if result.get('ok'):
-#             return result['result']
-#         else:
-#             logger.error("Telegram API error creating invoice: %s", result)
-#     except Exception:
-#         logger.exception(
-#             "Failed to create invoice link for payment %s (user %s)",
-#             payment_id, user_id
-#         )
-#     return None
-
 
 
 @dp.callback_query(lambda c: c.data and (c.data.startswith('approve_post_') or c.data.startswith('reject_post_')))
@@ -319,6 +233,64 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
 #         logger.exception("Error handling successful payment payload=%s", payload)
 #         await message.answer(_("⚠️ Оплату отримано, але сталася помилка. Зверніться на підтримку."))
 
+
+# Асинхронный HTTP-клиент (singleton)
+# _http_client: httpx.AsyncClient | None = None
+
+# def get_http_client() -> httpx.AsyncClient:
+#     global _http_client
+#     if _http_client is None:
+#         _http_client = httpx.AsyncClient(timeout=30.0)
+#     return _http_client
+
+
+# Этап 6: Генерация ссылки на оплату
+# async def create_invoice_link( user_id: int, payment_id: int, payload: str, amount: float, order_id: int, addons_data: dict | None = None) -> str | None:
+#     """
+#     Создать инвойс через HTTP API Telegram и вернуть ссылку
+#     """
+#     description = f"Публікація оголошення #{order_id}"
+#     if addons_data:
+#         addons = []
+#         if addons_data.get('photo'):
+#             addons.append("Фото")
+#         if addons_data.get('highlight'):
+#             addons.append("Виділення")
+#         if addons:
+#             description += f" з опціями: {', '.join(addons)}"
+
+#     price_kopecks = int(amount * 100)
+#     data = {
+#         "title": "Публікація оголошення",
+#         "description": description,
+#         "payload": payload,
+#         "provider_token": cfg['payment_provider_token'],
+#         "currency": "UAH", # заменить валюту
+#         "prices": [{"label": "Публікація оголошення", "amount": price_kopecks}],
+#         "need_name": False,
+#         "need_phone_number": False,
+#         "need_email": False,
+#         "need_shipping_address": False,
+#         "send_phone_number_to_provider": False,
+#         "send_email_to_provider": False,
+#         "is_flexible": False,
+#     }
+#     url = f"https://api.telegram.org/bot{cfg['bot_token']}/createInvoiceLink"
+#     try:
+#         client = get_http_client()
+#         response = await client.post(url, json=data)
+#         response.raise_for_status()
+#         result = response.json()
+#         if result.get('ok'):
+#             return result['result']
+#         else:
+#             logger.error("Telegram API error creating invoice: %s", result)
+#     except Exception:
+#         logger.exception(
+#             "Failed to create invoice link for payment %s (user %s)",
+#             payment_id, user_id
+#         )
+#     return None
 
 
 

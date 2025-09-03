@@ -2,7 +2,7 @@
 import threading
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from ework_bot_tg.bot.bot import send_telegram_notification_async, send_admin_approval_notification, send_telegram_city_chat
+from ework_bot_tg.bot.bot import send_admin_approval_notification, send_telegram_city_chat
 from ework_services.models import PostServices
 from ework_job.models import PostJob
 
@@ -21,7 +21,7 @@ def moderate_post_async(instance):
         if not config.auto_moderation_enabled and not config.manual_approval_required:
             # Нет модерации - сразу публикуем
             new_status = 3  # Опубликовано
-            send_telegram_notification_async(instance)
+            # отправка поста в цел канал
             send_telegram_city_chat(instance)
         elif not config.auto_moderation_enabled and config.manual_approval_required:
             # Только ручная модерация
@@ -33,7 +33,7 @@ def moderate_post_async(instance):
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 3  # Опубликовано
-                send_telegram_notification_async(instance)
+                # отправка поста в цел канал
                 send_telegram_city_chat(instance)
             else:
                 new_status = 2  # Отклонено 
@@ -70,23 +70,23 @@ def handle_post_save(sender, instance, created, **kwargs):
         logger.warning(f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})")
 
 
-@receiver(post_save, sender='ework_premium.Payment')
-def handle_payment_save(sender, instance, created, **kwargs):
-    """
-    Обработка изменения статуса платежа
-    Когда платеж становится оплаченным - отправляем пост на модерацию
-    """    
-    if instance.status == 'paid' and instance.post:
-        instance.post.apply_addons_from_payment(instance)
-        old_status = instance.post.status
-        instance.post.status = 0 
-        instance.post.save(update_fields=['status'])
-        instance.post.refresh_from_db()  # Обновляем инстанс поста из БД
-        if instance.post.status == 0:
-            thread = threading.Thread(target=moderate_post_async, args=(instance.post,))
-            thread.daemon = True
-            thread.start()
-    else:
-        logger.warning(f"⏸️ Модерация пропущена для платежа {instance.id} (статус: {instance.status})")
+# @receiver(post_save, sender='ework_premium.Payment')
+# def handle_payment_save(sender, instance, created, **kwargs):
+#     """
+#     Обработка изменения статуса платежа
+#     Когда платеж становится оплаченным - отправляем пост на модерацию
+#     """    
+#     if instance.status == 'paid' and instance.post:
+#         instance.post.apply_addons_from_payment(instance)
+#         old_status = instance.post.status
+#         instance.post.status = 0 
+#         instance.post.save(update_fields=['status'])
+#         instance.post.refresh_from_db()  # Обновляем инстанс поста из БД
+#         if instance.post.status == 0:
+#             thread = threading.Thread(target=moderate_post_async, args=(instance.post,))
+#             thread.daemon = True
+#             thread.start()
+#     else:
+#         logger.warning(f"⏸️ Модерация пропущена для платежа {instance.id} (статус: {instance.status})")
 
 
