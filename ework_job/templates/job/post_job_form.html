@@ -12,13 +12,6 @@
     </div>
 
     <div class="modal-body">
-        <!-- Отображение общих ошибок формы -->
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger">
-            {{ form.non_field_errors }}
-        </div>
-        {% endif %}
-        
         <!-- Основная информация -->
         <div class="mb-3">
             <label for="{{ form.title.id_for_label }}" class="form-label">{% trans "Название вакансии" %}</label>
@@ -142,15 +135,40 @@
         </div>
         {% endif %}
 
+        <!-- Отображение общих ошибок формы -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
         <div class="d-grid gap-3 d-md-flex justify-content-md-end">
-        <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</button>
-        {% if object %}
-            <button type="submit" class="btn btn-primary">{% trans "Сохранить изменения" %}</button>
-        {% else %}
-            <button type="submit" id="submit-btn" class="btn btn-primary">
-                {% trans "Опубликовать" %}
+            <button
+                id="contactSellerBtn"
+                type="button"
+                class="btn btn-primary mb-3" target="_blank"
+                onclick="
+                    const msg = 'Привіт! Я хочу поповнити свій баланс. Як це зробити?';
+                    window.open(
+                        'https://t.me/{{ site_config.admin_telegram|cut:"@" }}?text=' + encodeURIComponent(msg),
+                        '_blank'
+                    );">
+
+                <span>{% trans "Пополнить баланс" %}</span>
             </button>
+        </div>
         {% endif %}
+
+        <div class="d-grid gap-3 d-md-flex justify-content-md-end">
+            
+            {% if object %}
+                <button type="submit" class="btn btn-primary">{% trans "Сохранить изменения" %}</button>
+            {% else %}
+                <button type="submit" id="submit-btn" class="btn btn-primary">
+                    {% trans "Опубликовать" %}
+                </button>
+            {% endif %}
+
+            <button type='button' class='btn btn-secondary' data-bs-dismiss='modal'>{% trans "Отмена" %}</button>
+        </div>
     </div>
 </form>
 
