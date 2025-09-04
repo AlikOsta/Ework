@@ -66,14 +66,14 @@ async def send_telegram_error_mes(message):
 async def send_telegram_city_chat(instance):
     """Отправка поста в целевую группу Города"""
     try:
-        title = await sync_to_async(lambda: instance.title)()
-        description = await sync_to_async(lambda: instance.description)()
-        sub_rubric = await sync_to_async(lambda: instance.sub_rubric)()
-        city = await sync_to_async(lambda: instance.city)()
-        address = await sync_to_async(lambda: instance.address or "")()
-        price = await sync_to_async(lambda: instance.price)()
-
-        user = await sync_to_async(lambda: instance.user)()
+        title = instance.title
+        description = instance.description or ""
+        sub_rubric = instance.sub_rubric
+        city = instance.city
+        address = instance.address or ""
+        price = instance.price
+        user = instance.user
+        
         username = getattr(user, "username", None) or f"id{getattr  (user, 'id', 'неизвестно')}"
         
         if not city or not city.chat_id:
@@ -113,14 +113,14 @@ async def send_telegram_city_chat(instance):
 async def send_admin_approval_notification(instance):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
     try:
-        title = await sync_to_async(lambda: instance.title)()
-        description = await sync_to_async(lambda: instance.description)()
-        sub_rubric = await sync_to_async(lambda: instance.sub_rubric)()
-        city = await sync_to_async(lambda: instance.city)()
-        address = await sync_to_async(lambda: instance.address or "")()
-        price = await sync_to_async(lambda: instance.price)()
+        title = instance.title
+        description = instance.description or ""
+        sub_rubric = instance.sub_rubric
+        city = instance.city
+        address = instance.address or ""
+        price = instance.price
+        user = instance.user
 
-        user = await sync_to_async(lambda: instance.user)()
         username = getattr(user, "username", None) or f"id{getattr(user, 'id', 'неизвестно')}"
 
         if not city or not city.chat_id:
