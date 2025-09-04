@@ -21,6 +21,8 @@ cfg = get_bot_config()
 
 default_props = DefaultBotProperties(parse_mode="HTML")
 
+main_loop = asyncio.get_event_loop()
+
 bot = Bot(token=cfg['bot_token'], default=default_props)
 dp = Dispatcher()
 
@@ -85,10 +87,9 @@ async def send_telegram_city_chat(instance):
 🗒️ <b>Опис:</b> {description}
 
 📂 <b>Категорія:</b> {sub_rubric}
-📍 <b>Місто:</b> {city} - {address}
+📍 <b>Місто:</b> {city} {address}
 💰 <b>UAH:</b> {price}
 👤 <b>Користувач:</b> @{username}
-
         """.strip())
 
         chat_id = city.chat_id
@@ -136,7 +137,7 @@ async def send_admin_approval_notification(instance):
 🗒️ <b>Опис:</b> {description}
 📂 <b>Категорія:</b> {sub_rubric}
 
-📍 <b>Місто:</b> {city} - {address}
+📍 <b>Місто:</b> {city} {address}
 💰 <b>UAH:</b> {price}
 👤 <b>Користувач:</b> @{username}
         """.strip()

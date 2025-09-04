@@ -2,7 +2,7 @@
 import threading
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from ework_bot_tg.bot import bot
+from ework_bot_tg.bot.bot import send_telegram_city_chat, send_admin_approval_notification, send_telegram_error_mes, bot
 from ework_services.models import PostServices
 from ework_job.models import PostJob
 from asgiref.sync import async_to_sync, sync_to_async
@@ -22,19 +22,21 @@ def run_async_in_thread(func, *args, **kwargs):
     thread.daemon = True
     thread.start()
 
+
 async def moderate_post_async(instance):
     """Модерация поста асинхронно"""
+
     try:
         config = get_config()
         if not config.auto_moderation_enabled and not config.manual_approval_required:
             logger.warning("⏸️⏸️⏸️⏸️⏸️ Нет модерации - сразу публикуем")
             new_status = 3  # Опубликовано
-            await bot.send_telegram_city_chat(instance)
+            await send_telegram_city_chat(instance)
 
         elif not config.auto_moderation_enabled and config.manual_approval_required:
             logger.warning("⏸️⏸️⏸️⏸️⏸️ Только ручная модерация")
             new_status = 1  # На модерации
-            await bot.send_admin_approval_notification(instance)
+            await send_admin_approval_notification(instance)
 
         elif config.auto_moderation_enabled and not config.manual_approval_required:
             # Только авто модерация
@@ -42,18 +44,18 @@ async def moderate_post_async(instance):
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 3  # Опубликовано
-                await bot.send_telegram_city_chat(instance)
+                await send_telegram_city_chat(instance)
             else:
                 new_status = 2  # Отклонено
                 text = "Только авто модерация - Отклонено."
-                await bot.send_telegram_error_mes(text)
+                await send_telegram_error_mes(text)
         else:
             # Авто + ручная модерация
             goods_text = f"{instance.title}\n{instance.description}"
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 1  # На модерации (ждем ручного одобрения)
-                await bot.send_telegram_error_mes(text = "На модерации (ждем ручного одобрения)")
+                await send_admin_approval_notification(instance)
             else:
                 new_status = 2  # Отклонено
 
@@ -61,10 +63,11 @@ async def moderate_post_async(instance):
 
     except Exception as e:
         text=str(e)
-        await bot.send_telegram_error_mes(text)
+        await send_telegram_error_mes(text)
         logger.error(f"❌ Ошибка при модерации поста: {e}")
         await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=1)
-
+    finally:
+        await bot.session.close()
 
 
 @receiver(post_save, sender=PostJob)
@@ -73,7 +76,10 @@ def handle_post_save(sender, instance, created, **kwargs):
     """
     Обработка создания/обновления поста
     ВАЖНО: Модерация запускается только для статуса 0 (На модерации)
-    """    
+    """ 
+
+    logger.warning("⏸️ ОБРАБОТКА")
+
     if created:
         logger.warning("⏸️ Модерация для поста")
         run_async_in_thread(moderate_post_async, instance)
