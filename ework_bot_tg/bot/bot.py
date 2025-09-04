@@ -64,7 +64,16 @@ async def send_telegram_error_mes(message):
 async def send_telegram_city_chat(instance):
     """Отправка поста в целевую группу Города"""
     try:
+        title = await sync_to_async(lambda: instance.title)()
+        description = await sync_to_async(lambda: instance.description)()
+        sub_rubric = await sync_to_async(lambda: instance.sub_rubric)()
         city = await sync_to_async(lambda: instance.city)()
+        address = await sync_to_async(lambda: instance.address or "")()
+        price = await sync_to_async(lambda: instance.price)()
+
+        user = await sync_to_async(lambda: instance.user)()
+        username = getattr(user, "username", None) or f"id{getattr  (user, 'id', 'неизвестно')}"
+        
         if not city or not city.chat_id:
             text = f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id."
             await send_telegram_error_mes(message = text)
@@ -72,8 +81,13 @@ async def send_telegram_city_chat(instance):
             return
         
         message = (f"""
-📝 <b>Назва:</b> {instance.title}
-📄 <b>Опис:</b> {instance.description}
+📝 <b>Назва:</b> {title}
+🗒️ <b>Опис:</b> {description}
+
+📂 <b>Категорія:</b> {sub_rubric}
+📍 <b>Місто:</b> {city} - {address}
+💰 <b>UAH:</b> {price}
+👤 <b>Користувач:</b> @{username}
 
         """.strip())
 
@@ -98,13 +112,35 @@ async def send_telegram_city_chat(instance):
 async def send_admin_approval_notification(instance):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
     try:
+        title = await sync_to_async(lambda: instance.title)()
+        description = await sync_to_async(lambda: instance.description)()
+        sub_rubric = await sync_to_async(lambda: instance.sub_rubric)()
+        city = await sync_to_async(lambda: instance.city)()
+        address = await sync_to_async(lambda: instance.address or "")()
+        price = await sync_to_async(lambda: instance.price)()
+
+        user = await sync_to_async(lambda: instance.user)()
+        username = getattr(user, "username", None) or f"id{getattr(user, 'id', 'неизвестно')}"
+
+        if not city or not city.chat_id:
+            text = (
+                f"❌ Не удалось отправить сообщение в чат города: "
+                f"у поста {instance.id} отсутствует город или chat_id."
+            )
+            await send_telegram_error_mes(message=text)
+            logger.warning(text)
+            return
+
         message = f"""
-🔍 <b>Требуется модерация поста!</b>
+📝 <b>Назва:</b> {title}
+🗒️ <b>Опис:</b> {description}
+📂 <b>Категорія:</b> {sub_rubric}
 
-📝 <b>Назва:</b> {instance.title}
-📄 <b>Опис:</b> {instance.description}
-
+📍 <b>Місто:</b> {city} - {address}
+💰 <b>UAH:</b> {price}
+👤 <b>Користувач:</b> @{username}
         """.strip()
+
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [
