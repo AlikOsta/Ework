@@ -177,13 +177,13 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
             return
         post = None
         try:
-            post = await sync_to_async(PostJob.objects.get)(id=int(post_id), status=1)  # На модерации
+            post = await sync_to_async(PostJob.objects.get)(id=int(post_id))  # На модерации
         except (PostJob.DoesNotExist, ValueError):
             try:
-                post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)  # На модерации
-            except (PostServices.DoesNotExist, ValueError):
+                post = await sync_to_async(PostServices.objects.get)(id=int(post_id))  # На модерации
+            except (PostServices.DoesNotExist, ValueError) as e:
                 logger.warning("Пост не найден или уже обработан")
-                await callback_query.answer("❌ Пост не знайдений або вже оброблений", show_alert=True)
+                await callback_query.answer(f"❌ Пост не знайдений або вже оброблений {e}", show_alert=True)
                 return
 
         if action == 'approve':
