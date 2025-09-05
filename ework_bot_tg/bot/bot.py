@@ -63,35 +63,20 @@ async def send_telegram_error_mes(message):
    await bot.send_message(chat_id=chat_id, text=message)
 
 
-async def send_telegram_city_chat(instance):
+async def send_telegram_city_chat(data):
     """Отправка поста в целевую группу Города"""
     try:
-        title = await sync_to_async(lambda: instance.title)()
-        description = await sync_to_async(lambda: instance.description or "")()
-        sub_rubric = await sync_to_async(lambda: instance.sub_rubric)()
-        city = await sync_to_async(lambda: instance.city)()
-        address = await sync_to_async(lambda: instance.address or "")()
-        price = await sync_to_async(lambda: instance.price)()
-        user = await sync_to_async(lambda: instance.user)()
-        username = getattr(user, "username", None) or f"id{getattr(user, 'id', 'неизвестно')}"
-        
-        if not city or not city.chat_id:
-            text = f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id."
-            await send_telegram_error_mes(message = text)
-            logger.warning(f"❌ Не удалось отправить сообщение в чат города: у поста {instance.id} отсутствует город или chat_id.")
-            return
-        
         message = (f"""
-📝 <b>Назва:</b> {title}
-🗒️ <b>Опис:</b> {description}
+📝 <b>Назва:</b> {data["title"]}
+🗒️ <b>Опис:</b> {data["description"]}
 
-📂 <b>Категорія:</b> {sub_rubric}
-📍 <b>Місто:</b> {city} {address}
-💰 <b>UAH:</b> {price}
-👤 <b>Користувач:</b> @{username}
+📂 <b>Категорія:</b> {data['sub_rubric']}
+📍 <b>Місто:</b> {data['city']} {data['address']}
+💰 <b>UAH:</b> {data['price']}
+👤 <b>Користувач:</b> @{data['username']}
         """.strip())
 
-        chat_id = city.chat_id
+        chat_id = data['city_chat_id']
         photo_url = (def_photo)
 
         keyboard = InlineKeyboardMarkup(
@@ -109,42 +94,23 @@ async def send_telegram_city_chat(instance):
 
 
 
-async def send_admin_approval_notification(instance):
+async def send_admin_approval_notification(data):
     """Отправка уведомления админам с кнопками одобрения/отклонения"""
     try:
-        title = await sync_to_async(lambda: instance.title)()
-        description = await sync_to_async(lambda: instance.description or "")()
-        sub_rubric = await sync_to_async(lambda: instance.sub_rubric)()
-        city = await sync_to_async(lambda: instance.city)()
-        address = await sync_to_async(lambda: instance.address or "")()
-        price = await sync_to_async(lambda: instance.price)()
-        user = await sync_to_async(lambda: instance.user)()
-        username = getattr(user, "username", None) or f"id{getattr(user, 'id', 'неизвестно')}"
+        message = (f"""
+📝 <b>Назва:</b> {data["title"]}
+🗒️ <b>Опис:</b> {data["description"]}
 
-        if not city or not city.chat_id:
-            text = (
-                f"❌ Не удалось отправить сообщение в чат города: "
-                f"у поста {instance.id} отсутствует город или chat_id."
-            )
-            await send_telegram_error_mes(message=text)
-            logger.warning(text)
-            return
-
-        message = f"""
-📝 <b>Назва:</b> {title}
-🗒️ <b>Опис:</b> {description}
-📂 <b>Категорія:</b> {sub_rubric}
-
-📍 <b>Місто:</b> {city} {address}
-💰 <b>UAH:</b> {price}
-👤 <b>Користувач:</b> @{username}
-        """.strip()
-
+📂 <b>Категорія:</b> {data['sub_rubric']}
+📍 <b>Місто:</b> {data['city']} {data['address']}
+💰 <b>UAH:</b> {data['price']}
+👤 <b>Користувач:</b> @{data['username']}
+        """.strip())
 
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [
-                InlineKeyboardButton( text="✅ Одобрить", callback_data=f"approve_post_{instance.id}"),
-                InlineKeyboardButton( text="❌ Отклонить", callback_data=f"reject_post_{instance.id}")
+                InlineKeyboardButton( text="✅ Одобрить", callback_data=f"approve_post_{data['post_id']}"),
+                InlineKeyboardButton( text="❌ Отклонить", callback_data=f"reject_post_{data['post_id']}")
             ]
         ])
 
@@ -181,19 +147,34 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
                 post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)
             except (PostServices.DoesNotExist, ValueError) as e:
                 logger.warning("Пост не найден или уже обработан")
-                await callback_query.answer(f"❌ Пост не знайдений або вже оброблений {e}", show_alert=True)
+                await callback_query.answer(f"❌ Пост не знайдений або вже оброблений стр 184", show_alert=True)
                 return
 
         if action == 'approve':
             post.status = 3  # Опубликовано
-            print("✅ Обработано!")
             await sync_to_async(post.save)(update_fields=['status'])
 
-            await send_telegram_city_chat(post)
-                        
+            async def get_post_data(post):
+                def _extract():
+                    return {
+                        "post_id": post.id,
+                        "title": post.title,
+                        "description": post.description,
+                        "price": post.price,
+                        "sub_rubric": post.sub_rubric.name, 
+                        "city": post.city.name,              
+                        "address": post.address if post.address else "",
+                        "username": post.user.username,
+                        "phone_user": post.user_phone if post.city else "Не вказано",
+                        "city_chat_id": post.city.chat_id if post.city else cfg['admin_chat_id'],
+                    }
+                return await sync_to_async(_extract, thread_sensitive=True)()
+            
+            data = await get_post_data(post)
+            await send_telegram_city_chat(data)
+            
         elif action == 'reject':
-            post.status = 2  # Отклонено
-            print("❌ Отклонено!")
+            post.status = 2 
             await sync_to_async(post.save)(update_fields=['status'])
             
         await callback_query.message.delete()
