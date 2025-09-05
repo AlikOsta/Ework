@@ -32,6 +32,9 @@ def_photo = 'https://i.ibb.co/vCwQnC3D/photo-2025-07-05-23-14-52.jpg'
 @dp.message(Command(commands=["start"]))
 async def cmd_start(message: types.Message):
     """Обработчик события /start"""
+
+    cfg = get_bot_config()
+
     webapp_button = InlineKeyboardButton(
         text="Відкрити",
         web_app=WebAppInfo(url=cfg['miniapp_url'])
@@ -59,6 +62,7 @@ async def cmd_start(message: types.Message):
 
 
 async def send_telegram_error_mes(message):
+   cfg = get_bot_config()
    chat_id = cfg['admin_chat_id']
    await bot.send_message(chat_id=chat_id, text=message)
 
@@ -75,6 +79,9 @@ async def send_telegram_city_chat(data):
 💰 <b>UAH:</b> {data['price']}
 👤 <b>Користувач:</b> @{data['username']}
         """.strip())
+
+        if data['username']:
+            message += f"\n📱 <b>Телефон:</b> {data['phone_user']}"
 
         chat_id = data['city_chat_id']
         photo_url = (def_photo)
@@ -107,12 +114,17 @@ async def send_admin_approval_notification(data):
 👤 <b>Користувач:</b> @{data['username']}
         """.strip())
 
+        if data['username']:
+            message += f"\n📱 <b>Телефон:</b> {data['phone_user']}"
+
         keyboard = InlineKeyboardMarkup(inline_keyboard=[
             [
                 InlineKeyboardButton( text="✅ Одобрить", callback_data=f"approve_post_{data['post_id']}"),
                 InlineKeyboardButton( text="❌ Отклонить", callback_data=f"reject_post_{data['post_id']}")
             ]
         ])
+
+        cfg = get_bot_config()
 
         chat_id = cfg['admin_chat_id']
         photo_url = (def_photo)
@@ -141,10 +153,10 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
             return
         post = None
         try:
-            post = await sync_to_async(PostJob.objects.get)(id=int(post_id), status=1)
+            post = await sync_to_async(PostJob.objects.get)(id=int(post_id))
         except (PostJob.DoesNotExist, ValueError):
             try:
-                post = await sync_to_async(PostServices.objects.get)(id=int(post_id), status=1)
+                post = await sync_to_async(PostServices.objects.get)(id=int(post_id))
             except (PostServices.DoesNotExist, ValueError) as e:
                 logger.warning("Пост не найден или уже обработан")
                 await callback_query.answer(f"❌ Пост не знайдений або вже оброблений стр 184", show_alert=True)
@@ -165,7 +177,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
                         "city": post.city.name,              
                         "address": post.address if post.address else "",
                         "username": post.user.username,
-                        "phone_user": post.user_phone if post.city else "Не вказано",
+                        "phone_user": post.user_phone,
                         "city_chat_id": post.city.chat_id if post.city else cfg['admin_chat_id'],
                     }
                 return await sync_to_async(_extract, thread_sensitive=True)()
