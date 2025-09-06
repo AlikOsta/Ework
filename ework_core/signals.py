@@ -1,18 +1,21 @@
-
 import threading
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from ework_bot_tg.bot.bot import send_telegram_city_chat, send_admin_approval_notification, send_telegram_error_mes, bot
+from ework_bot_tg.bot.bot import (
+    send_telegram_city_chat,
+    send_admin_approval_notification,
+    send_telegram_error_mes,
+    bot,
+)
 from ework_services.models import PostServices
 from ework_job.models import PostJob
-from asgiref.sync import async_to_sync, sync_to_async
 from .utils import moderate_post
 from ework_config.utils import get_config
-from typing import TypedDict, List
+from typing import TypedDict
 
 import asyncio
-
 from logger_config import logger
+
 
 class PostState(TypedDict):
     post_id: int
@@ -22,19 +25,24 @@ class PostState(TypedDict):
     sub_rubric: str
     city: str
     city_chat_id: int
-    address: str| None
+    address: str | None
     username: str
-    phone_user: int| None
-    
+    phone_user: int | None
+
 
 def run_async_in_thread(func, *args, **kwargs):
     """Запускает асинхронную функцию в отдельном потоке с собственным циклом событий."""
     def wrapper():
         asyncio.run(func(*args, **kwargs))
-    
+
     thread = threading.Thread(target=wrapper)
     thread.daemon = True
     thread.start()
+
+
+def update_post_status(instance, status: int):
+    """Синхронное обновление статуса поста."""
+    type(instance).objects.filter(pk=instance.pk).update(status=status)
 
 
 async def moderate_post_async(instance):
@@ -51,7 +59,7 @@ async def moderate_post_async(instance):
         "address": instance.address,
         "username": instance.user.username,
         "phone_user": instance.user_phone,
-        }
+    }
 
     try:
         config = get_config()
@@ -68,7 +76,7 @@ async def moderate_post_async(instance):
 
         elif config.auto_moderation_enabled and not config.manual_approval_required:
             # Только авто модерация
-            goods_text = f"{data["title"]}\n{data["description"]}"
+            goods_text = f"{data['title']}\n{data['description']}"
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 3  # Опубликовано
@@ -78,10 +86,10 @@ async def moderate_post_async(instance):
                     logger.error(f"Ошибка отправки поста только с авто модерацией - {e}")
             else:
                 new_status = 2  # Отклонено
-                logger.warning(f"❌ Только авто модерация - Отклонено.")
+                logger.warning("❌ Только авто модерация - Отклонено.")
         else:
             # Авто + ручная модерация
-            goods_text = f"{data["title"]}\n{data["description"]}"
+            goods_text = f"{data['title']}\n{data['description']}"
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 1  # На модерации (ждем ручного одобрения)
@@ -91,18 +99,15 @@ async def moderate_post_async(instance):
                     logger.error(f"Ошибка отправки поста Авто + ручная модерация - {e}")
             else:
                 new_status = 2  # Отклонено
+
         try:
-            await sync_to_async(
-                lambda: type(instance).objects.filter(pk=instance.pk).update(status=new_status)
-            )()
+            update_post_status(instance, new_status)
         except Exception as e:
             logger.error(f"Ошибка изменения статуса поста - {e}")
 
     except Exception as e:
         logger.error(f"❌ Ошибка при модерации поста: {e}")
-        await sync_to_async(
-            lambda: type(instance).objects.filter(pk=instance.pk).update(status=1)
-        )()
+        update_post_status(instance, 1)
     finally:
         await bot.session.close()
 
@@ -113,12 +118,15 @@ def handle_post_save(sender, instance, created, **kwargs):
     """
     Обработка создания/обновления поста
     ВАЖНО: Модерация запускается только для статуса 0 (На модерации)
-    """ 
+    """
     if created:
         logger.warning("⏸️ Модерация для поста")
         run_async_in_thread(moderate_post_async, instance)
     else:
-        logger.warning(f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})")
+        logger.warning(
+            f"⏸️ Модерация пропущена для поста {instance.title} (статус: {instance.get_status_display()})"
+        )
+
 
 
 # @receiver(post_save, sender='ework_premium.Payment')
