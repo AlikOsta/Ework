@@ -78,7 +78,7 @@ async def moderate_post_async(instance):
         elif config.auto_moderation_enabled and not config.manual_approval_required:
             # Только авто модерация
             goods_text = f"{data['title']}\n{data['description']}"
-            is_approved = moderate_post(goods_text)
+            is_approved = await sync_to_async(moderate_post)(goods_text)
             if is_approved:
                 new_status = 3  # Опубликовано
                 try:
@@ -91,7 +91,7 @@ async def moderate_post_async(instance):
         else:
             # Авто + ручная модерация
             goods_text = f"{data['title']}\n{data['description']}"
-            is_approved = moderate_post(goods_text)
+            is_approved = await sync_to_async(moderate_post)(goods_text)
             if is_approved:
                 new_status = 1  # На модерации (ждем ручного одобрения)
                 try:
