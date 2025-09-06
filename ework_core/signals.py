@@ -15,6 +15,7 @@ from typing import TypedDict
 
 import asyncio
 from logger_config import logger
+from asgiref.sync import sync_to_async
 
 
 class PostState(TypedDict):
@@ -101,13 +102,13 @@ async def moderate_post_async(instance):
                 new_status = 2  # Отклонено
 
         try:
-            update_post_status(instance, new_status)
+            await sync_to_async(update_post_status)(instance, new_status)
         except Exception as e:
             logger.error(f"Ошибка изменения статуса поста - {e}")
 
     except Exception as e:
         logger.error(f"❌ Ошибка при модерации поста: {e}")
-        update_post_status(instance, 1)
+        await sync_to_async(update_post_status)(instance, 1)
     finally:
         await bot.session.close()
 
