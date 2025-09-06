@@ -29,7 +29,7 @@ class AbsPost(PolymorphicModel):
     objects = PolymorphicManager()
     
     title = models.CharField(max_length=50, db_index=True, verbose_name=_('Название'))
-    description = models.TextField(db_index=True, verbose_name=_('Описание'))
+    description = models.TextField(max_length=500, db_index=True, verbose_name=_('Описание'))
     image = models.ImageField(upload_to='post_img/', verbose_name=_('Изображение'), null=True, blank=True) 
     price = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(99999999)], db_index=True, verbose_name=_('Сумма'))
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, verbose_name=_('Валюта'))
