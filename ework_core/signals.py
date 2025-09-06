@@ -9,10 +9,10 @@ from asgiref.sync import async_to_sync, sync_to_async
 from .utils import moderate_post
 from ework_config.utils import get_config
 from typing import TypedDict, List
-import logging
+
 import asyncio
 
-logger = logging.getLogger(__name__)
+from logger_config import logger
 
 class PostState(TypedDict):
     post_id: int
@@ -61,7 +61,10 @@ async def moderate_post_async(instance):
 
         elif not config.auto_moderation_enabled and config.manual_approval_required:
             new_status = 1  # На модерации
-            await send_admin_approval_notification(data)
+            try:
+                await send_admin_approval_notification(data)
+            except Exception as e:
+                logger.error(f"Ошибка отправки поста только с ручной модерацией - {e}")
 
         elif config.auto_moderation_enabled and not config.manual_approval_required:
             # Только авто модерация
@@ -69,25 +72,31 @@ async def moderate_post_async(instance):
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 3  # Опубликовано
-                await send_telegram_city_chat(data)
+                try:
+                    await send_telegram_city_chat(data)
+                except Exception as e:
+                    logger.error(f"Ошибка отправки поста только с авто модерацией - {e}")
             else:
                 new_status = 2  # Отклонено
-                text = "Только авто модерация - Отклонено."
-                await send_telegram_error_mes(text)
+                logger.warning(f"❌ Только авто модерация - Отклонено.")
         else:
             # Авто + ручная модерация
             goods_text = f"{data["title"]}\n{data["description"]}"
             is_approved = moderate_post(goods_text)
             if is_approved:
                 new_status = 1  # На модерации (ждем ручного одобрения)
-                await send_admin_approval_notification(data)
+                try:
+                    await send_admin_approval_notification(data)
+                except Exception as e:
+                    logger.error(f"Ошибка отправки поста Авто + ручная модерация - {e}")
             else:
                 new_status = 2  # Отклонено
-
-        await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=new_status)
+        try:
+            await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=new_status)
+        except Exception as e:
+            logger.error(f"Ошибка изменения статуса поста - {e}")
 
     except Exception as e:
-        await send_telegram_error_mes(text=str(e))
         logger.error(f"❌ Ошибка при модерации поста: {e}")
         await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=1)
     finally:

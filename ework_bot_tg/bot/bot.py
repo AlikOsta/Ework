@@ -11,7 +11,8 @@ from ework_job.models import PostJob
 from ework_services.models import PostServices
 from asgiref.sync import sync_to_async
 
-logger = logging.getLogger(__name__)
+from logger_config import logger
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ework.settings')
 
@@ -62,9 +63,12 @@ async def cmd_start(message: types.Message):
 
 
 async def send_telegram_error_mes(message):
-   cfg = get_bot_config()
-   chat_id = cfg['admin_chat_id']
-   await bot.send_message(chat_id=chat_id, text=message)
+    try:
+        cfg = get_bot_config()
+        chat_id = cfg['admin_chat_id']
+        await bot.send_message(chat_id=chat_id, text=message)
+    except Exception as e:
+       logger.error(f"Ошибка отправки сообщения с ошибкой админу. {e}")
 
 
 async def send_telegram_city_chat(data):
@@ -91,12 +95,12 @@ async def send_telegram_city_chat(data):
                 [InlineKeyboardButton(text="Відкрити", url=f"t.me/HelpWorkUaBoT")]
             ]
         )
-
-        await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
+        try:
+            await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
+        except Exception as e:
+            logger.error(f"❌ Ошибка при отправке сообщения: {e}")
 
     except Exception as e:
-        text = f"❌ Ошибка при отправке уведомления: стр 105 {e}"
-        await send_telegram_error_mes(message = text)
         logger.error(f"❌ Ошибка при отправке уведомления: {e}")
 
 
@@ -123,17 +127,17 @@ async def send_admin_approval_notification(data):
                 InlineKeyboardButton( text="❌ Отклонить", callback_data=f"reject_post_{data['post_id']}")
             ]
         ])
+        try:
+            cfg = get_bot_config()
 
-        cfg = get_bot_config()
-
-        chat_id = cfg['admin_chat_id']
-        photo_url = (def_photo)
-
-        await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
+            chat_id = cfg['admin_chat_id']
+            photo_url = (def_photo)
+        
+            await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
+        except Exception as e:
+            logger.error(f"❌ Ошибка при отправке сообщения о модерации: {e}")
 
     except Exception as e:
-        text = f"❌ Ошибка при отправке уведомления о модерации: {e}"
-        await send_telegram_error_mes(message = text)
         logger.error(f"❌ Ошибка при отправке уведомления о модерации: {e}")
 
 
@@ -266,6 +270,7 @@ async def handle_moderation_callback(callback_query: types.CallbackQuery):
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
+    logger.info("Запуск бота")
 
 
 
