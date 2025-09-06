@@ -92,13 +92,17 @@ async def moderate_post_async(instance):
             else:
                 new_status = 2  # Отклонено
         try:
-            await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=new_status)
+            await sync_to_async(
+                lambda: type(instance).objects.filter(pk=instance.pk).update(status=new_status)
+            )()
         except Exception as e:
             logger.error(f"Ошибка изменения статуса поста - {e}")
 
     except Exception as e:
         logger.error(f"❌ Ошибка при модерации поста: {e}")
-        await sync_to_async(type(instance).objects.filter(pk=instance.pk).update)(status=1)
+        await sync_to_async(
+            lambda: type(instance).objects.filter(pk=instance.pk).update(status=1)
+        )()
     finally:
         await bot.session.close()
 
