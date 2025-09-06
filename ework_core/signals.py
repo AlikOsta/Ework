@@ -63,7 +63,8 @@ async def moderate_post_async(instance):
     }
 
     try:
-        config = get_config()
+        config = await sync_to_async(get_config)()
+
         if not config.auto_moderation_enabled and not config.manual_approval_required:
             new_status = 3  # Опубликовано
             await send_telegram_city_chat(data)
