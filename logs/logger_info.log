@@ -1,0 +1,46 @@
+2025-09-06 20:47:50,508 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-06 21:01:19,429 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-06 21:02:41,758 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 08:50:01,420 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 08:50:10,441 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста продавець (статус: Опубліковано)
+2025-09-07 08:55:12,549 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 08:55:21,207 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Формовщик тіста (статус: Опубліковано)
+2025-09-07 08:59:35,235 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 08:59:43,704 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Бариста (статус: Опубліковано)
+2025-09-07 09:08:45,334 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 09:08:54,451 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста кухар (статус: Опубліковано)
+2025-09-07 09:12:16,041 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 09:12:31,362 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Адміністратор (статус: Опубліковано)
+2025-09-07 09:22:48,375 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 09:22:48,690 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 09:23:10,582 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста кухар-касир (статус: Опубліковано)
+2025-09-07 09:23:12,964 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста кухар-касир (статус: Опубліковано)
+2025-09-07 09:30:37,704 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 09:30:51,228 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста продавц-консультант (статус: Опубліковано)
+2025-09-07 09:40:03,394 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 09:40:11,063 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Працівник меблевої (статус: Опубліковано)
+2025-09-07 09:52:17,128 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 09:52:27,957 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста офіціант (статус: Опубліковано)
+2025-09-07 10:01:40,188 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 10:01:46,641 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Продавець-консультант (статус: Опубліковано)
+2025-09-07 10:13:10,335 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 10:13:16,986 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Продавець (статус: Опубліковано)
+2025-09-07 10:24:39,406 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 10:24:45,311 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Продавець-консультант (статус: Опубліковано)
+2025-09-07 10:24:45,315 - ERROR - bot.py:101 - ❌ Ошибка при отправке сообщения: 2 validation errors for SendPhoto
+chat_id.int
+  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/int_type
+chat_id.str
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type
+2025-09-07 10:29:53,031 - WARNING - signals.py:125 - ⏸️ Модерация для поста
+2025-09-07 10:30:01,308 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста Продавець-касир (статус: Опубліковано)
+2025-09-07 10:30:01,311 - ERROR - bot.py:101 - ❌ Ошибка при отправке сообщения: 2 validation errors for SendPhoto
+chat_id.int
+  Input should be a valid integer [type=int_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/int_type
+chat_id.str
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.11/v/string_type
+2025-09-07 12:02:23,580 - WARNING - signals.py:128 - ⏸️ Модерация пропущена для поста 💥Бариста💥 (статус: Опубліковано)
