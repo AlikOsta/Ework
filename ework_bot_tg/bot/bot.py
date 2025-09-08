@@ -92,7 +92,12 @@ async def send_telegram_city_chat(data):
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Відкрити", url=f"t.me/HelpWorkUaBoT")]
+                [
+                    InlineKeyboardButton(text="Розмістити вакансію на HW", web_app=WebAppInfo(url=cfg['miniapp_url'])),
+                ],
+                [
+                    InlineKeyboardButton(text="Переглянути інші вакансії", web_app=WebAppInfo(url=cfg['miniapp_url']))
+                ]
             ]
         )
         try:
