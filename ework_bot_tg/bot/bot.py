@@ -92,21 +92,10 @@ async def send_telegram_city_chat(data):
 
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
-                [
-                    InlineKeyboardButton(
-                        text="Розмістити вакансію на HW",
-                        web_app=WebAppInfo(url=cfg['miniapp_url'])
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text="Переглянути інші вакансії",
-                        web_app=WebAppInfo(url=cfg['miniapp_url'])
-                    )
-                ]
+                [InlineKeyboardButton(text="Розмістити вакансію на HW", url=f"t.me/HelpWorkUaBoT")],
+                [InlineKeyboardButton(text="Переглянути інші вакансії ", url=f"t.me/HelpWorkUaBoT")]
             ]
         )
-        
         try:
             await bot.send_photo(chat_id=chat_id, photo=photo_url, caption=message, reply_markup=keyboard)
         except Exception as e:
